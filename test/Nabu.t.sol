@@ -78,6 +78,8 @@ contract NabuTest is Test {
     function testCreateWork() public {
         cheats.prank(alice);
         uint256 workId = createWork();
+        assert(workId == 1);
+
         Work memory work = nabu.getWork(workId);
 
         string memory author = work.author;
@@ -103,6 +105,45 @@ contract NabuTest is Test {
         uint256 alicePassBalance = ashurbanipal.balanceOf(alice, workId);
         uint256 expectedAlicePassBalance = 10_000;
         assert(alicePassBalance == expectedAlicePassBalance);
+    }
+
+    function testCreateSecondWork() public {
+        cheats.prank(alice);
+        createWork();
+
+        cheats.prank(bob);
+
+        uint256 workId = nabu.createWork(
+            "William Shakespeare", "Arbitrary informative metadata", "Hamlet", 20_000, "https://baz.qux/{id}.json", 50
+        );
+
+        assert(workId == 2);
+
+        Work memory work = nabu.getWork(workId);
+
+        string memory author = work.author;
+        string memory expectedAuthor = "William Shakespeare";
+        assert(keccak256(bytes(author)) == keccak256(bytes(expectedAuthor)));
+
+        string memory metadata = work.metadata;
+        string memory expectedMetadata = "Arbitrary informative metadata";
+        assert(keccak256(bytes(metadata)) == keccak256(bytes(expectedMetadata)));
+
+        string memory title = nabu.getWork(workId).title;
+        string memory expectedTitle = "Hamlet";
+        assert(keccak256(bytes(title)) == keccak256(bytes(expectedTitle)));
+
+        uint256 totalPassagesCount = work.totalPassagesCount;
+        uint256 expectedTotalPassagesCount = 20_000;
+        assert(totalPassagesCount == expectedTotalPassagesCount);
+
+        string memory uri = ashurbanipal.uri(workId);
+        string memory expectedUri = "https://baz.qux/{id}.json";
+        assert(keccak256(bytes(uri)) == keccak256(bytes(expectedUri)));
+
+        uint256 bobPassBalance = ashurbanipal.balanceOf(bob, workId);
+        uint256 expectedBobPassBalance = 50;
+        assert(bobPassBalance == expectedBobPassBalance);
     }
 
     function testDistributePasses() public {
@@ -216,6 +257,68 @@ contract NabuTest is Test {
         cheats.prank(mallory);
         cheats.expectRevert(abi.encodeWithSelector(PassageAlreadyFinalized.selector, workId, 1));
         nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
+    }
+
+    function testConfirmPassageOnce() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.roll(42_069_420);
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(42_069_420 + 7_200);
+        cheats.prank(charlie);
+        nabu.confirmPassageContent(workId, 1);
+
+        Passage memory passage = nabu.getPassage(workId, 1);
+        assert(passage.at == 42_069_420 + 7_200);
+        assert(passage.byZero == bob);
+        assert(passage.byOne == charlie);
+        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(passage.count == 1);
+    }
+
+    function testConfirmPassageTwice() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.roll(42_069_420);
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(42_069_420 + 7_200);
+        cheats.prank(charlie);
+        nabu.confirmPassageContent(workId, 1);
+
+        cheats.roll(42_069_420 + 7_200 + 50_400);
+        cheats.prank(dave);
+        nabu.confirmPassageContent(workId, 1);
+
+        Passage memory passage = nabu.getPassage(workId, 1);
+        assert(passage.at == 42_069_420 + 7_200 + 50_400);
+        assert(passage.byZero == bob);
+        assert(passage.byOne == charlie);
+        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(passage.count == 2);
+    }
+
+    function testConfirmPassageAlreadyFinalized() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.roll(42_069_420);
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(42_069_420 + 7_200);
+        cheats.prank(charlie);
+        nabu.confirmPassageContent(workId, 1);
+
+        cheats.roll(42_069_420 + 7_200 + 50_400);
+        cheats.prank(dave);
+        nabu.confirmPassageContent(workId, 1);
+
+        cheats.prank(mallory);
+        cheats.expectRevert(abi.encodeWithSelector(PassageAlreadyFinalized.selector, workId, 1));
+        nabu.confirmPassageContent(workId, 1);
     }
 
     function testOverwritePassage() public {

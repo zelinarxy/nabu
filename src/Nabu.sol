@@ -5,6 +5,10 @@ import "forge-std/console.sol";
 import "@solady/src/auth/Ownable.sol";
 import "./Ashurbanipal.sol";
 
+uint256 constant ONE_DAY = 7_200;
+uint256 constant SEVEN_DAYS = 50_400;
+uint256 constant THIRTY_DAYS = 216_000;
+
 error CannotDoubleConfirmPassage(uint256 workId, uint256 passageId);
 error InvalidPassageId(uint256 workId, uint256 passageId);
 error PassageAlreadyFinalized(uint256 workId, uint256 passageId);
@@ -54,7 +58,7 @@ contract Nabu is Ownable {
 
     // 30 days
     modifier onlyForASpell(uint256 workId) {
-        require(block.number - _works[workId].createdAt < 216_000, "Window to update work details elapsed");
+        require(block.number - _works[workId].createdAt < THIRTY_DAYS, "Window to update work details elapsed");
         _;
     }
 
@@ -106,9 +110,9 @@ contract Nabu is Ownable {
         uint256 canAssignAfter;
 
         if (count == 0) {
-            canAssignAfter = passage.at + 7_200; // 1 day
+            canAssignAfter = passage.at + ONE_DAY;
         } else if (count == 1) {
-            canAssignAfter = passage.at + 50_400; // 7 days
+            canAssignAfter = passage.at + SEVEN_DAYS;
         }
 
         if (block.number < canAssignAfter) {
@@ -139,7 +143,49 @@ contract Nabu is Ownable {
         return _passages[workId][passageId].count;
     }
 
-    // TODO: confirm passage content
+    function confirmPassageContent(uint256 workId, uint256 passageId) public returns (uint8) {
+        Work storage work = _works[workId];
+
+        if (passageId > work.totalPassagesCount) {
+            revert InvalidPassageId(workId, passageId);
+        }
+
+        Passage memory passage = _passages[workId][passageId];
+        uint8 count = passage.count;
+
+        if (count == 2) {
+            revert PassageAlreadyFinalized(workId, passageId);
+        }
+
+        uint256 canAssignAfter;
+
+        if (count == 0) {
+            canAssignAfter = passage.at + ONE_DAY;
+        } else if (count == 1) {
+            canAssignAfter = passage.at + SEVEN_DAYS;
+        }
+
+        if (block.number < canAssignAfter) {
+            revert TooSoonToAssignContent(workId, passageId, canAssignAfter);
+        }
+
+        if (passage.byZero == msg.sender || passage.byOne == msg.sender) {
+            revert CannotDoubleConfirmPassage(workId, passageId);
+        }
+
+        if (ashurbanipal.balanceOf(msg.sender, workId) == 0) {
+            revert PermissionDenied(workId);
+        }
+
+        _passages[workId][passageId].count = count + 1;
+
+        if (count == 0) {
+            _passages[workId][passageId].byOne = msg.sender;
+        }
+
+        _passages[workId][passageId].at = block.number;
+        return _passages[workId][passageId].count;
+    }
 
     function createWork(
         string memory author,
