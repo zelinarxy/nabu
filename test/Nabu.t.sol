@@ -398,4 +398,50 @@ contract NabuTest is Test {
         assert(keccak256(LibZip.flzDecompress(restoredPassage.content)) == keccak256(passageOne));
         assert(restoredPassage.count == 0);
     }
+
+    function testUpdateAshurbanipalAddress() public {
+        assert(nabu.ashurbanipalAddress() == address(ashurbanipal));
+
+        nabu.updateAshurbanipalAddress(address(69));
+        assert(nabu.ashurbanipalAddress() == address(69));
+    }
+
+    function testFailUpdateAshurbanipalAddressNotOwner() public {
+        cheats.prank(mallory);
+        nabu.updateAshurbanipalAddress(address(69));
+    }
+
+    function testUpdateWorkAdmin() public {}
+
+    function testUpdateWorkAdminNotAdmin() public {}
+
+    function testUpdateWorkAuthor() public {}
+
+    function testUpdateWorkAuthorNotAdmin() public {}
+
+    function testUpdateWorkAuthorTooLate() public {}
+
+    function testUpdateWorkMetadata() public {}
+
+    function testUpdateWorkMetadataNotAdmin() public {}
+
+    function testUpdateWorkMetadataTooLate() public {}
+
+    function testUpdateWorkNftUri() public {}
+
+    function testUpdateWorkNftUriNotAdmin() public {}
+
+    function testUpdateWorkNftUriTooLate() public {}
+
+    function testUpdateWorkTitle() public {}
+
+    function testUpdateWorkTitleNotAdmin() public {}
+
+    function testUpdateWorkTitleTooLate() public {}
+
+    function testUpdateWorkTotalPassagesCount() public {}
+
+    function testUpdateWorkTotalPassagesCountNotAdmin() public {}
+
+    function testUpdateWorkTotalPassagesCountTooLate() public {}
 }

@@ -14,6 +14,7 @@ error InvalidPassageId(uint256 workId, uint256 passageId);
 error PassageAlreadyFinalized(uint256 workId, uint256 passageId);
 error PermissionDenied(uint256 workId);
 error TooSoonToAssignContent(uint256 workId, uint256 passageId, uint256 canAssignAfter);
+// TODO: custom errors for modifiers
 
 struct Passage {
     // the compressed content of the passage (TODO: compression algorithm)
@@ -50,6 +51,7 @@ struct Work {
 }
 
 contract Nabu is Ownable {
+    address public ashurbanipalAddress;
     Ashurbanipal ashurbanipal;
 
     mapping(uint256 => Work) private _works;
@@ -214,6 +216,7 @@ contract Nabu is Ownable {
     }
 
     function updateAshurbanipalAddress(address newAshurbanipalAddress) public onlyOwner {
+        ashurbanipalAddress = newAshurbanipalAddress;
         ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
     }
 
