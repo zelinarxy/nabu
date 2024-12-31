@@ -121,15 +121,15 @@ contract Nabu is Ownable {
         }
 
         if (keccak256(passage.content) == keccak256(content)) {
-            passage.count = count + 1;
+            _passages[workId][passageId].count = count + 1;
         } else {
-            passage.content = content;
-            passage.count = 0;
+            _passages[workId][passageId].content = content;
+            _passages[workId][passageId].count = 0;
         }
 
-        passage.at = block.number;
+        _passages[workId][passageId].at = block.number;
 
-        return passage.count;
+        return _passages[workId][passageId].count;
     }
 
     function createWork(
