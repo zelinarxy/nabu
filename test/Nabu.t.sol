@@ -251,4 +251,50 @@ contract NabuTest is Test {
         assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
         assert(passage.count == 0);
     }
+
+    function testOverwritePassageTwice() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.roll(42_069_420);
+        cheats.prank(alice);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        bytes memory content = nabu.getPassageContent(workId, 1);
+        assert(keccak256(LibZip.flzDecompress(content)) == keccak256(passageOne));
+
+        Passage memory passage = nabu.getPassage(workId, 1);
+        assert(passage.at == 42_069_420 + 7_200);
+        assert(passage.byZero == alice);
+        assert(passage.byOne == address(0));
+        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(passage.count == 0);
+
+        cheats.roll(42_069_420 + 7_200);
+        cheats.prank(mallory);
+        nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
+
+        bytes memory maliciousContent = nabu.getPassageContent(workId, 1);
+        assert(keccak256(LibZip.flzDecompress(maliciousContent)) == keccak256(passageOneMalicious));
+
+        Passage memory maliciousPassage = nabu.getPassage(workId, 1);
+        assert(maliciousPassage.at == 42_069_420);
+        assert(maliciousPassage.byZero == mallory);
+        assert(maliciousPassage.byOne == address(0));
+        assert(keccak256(LibZip.flzDecompress(maliciousPassage.content)) == keccak256(passageOneMalicious));
+        assert(maliciousPassage.count == 0);
+
+        cheats.roll(42_069_420 + 7_200 + 50_400);
+                cheats.prank(alice);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        bytes memory content = nabu.getPassageContent(workId, 1);
+        assert(keccak256(LibZip.flzDecompress(content)) == keccak256(passageOne));
+
+        Passage memory passage = nabu.getPassage(workId, 1);
+        assert(passage.at == 42_069_420 + 7_200 + 50_400);
+        assert(passage.byZero == alice);
+        assert(passage.byOne == address(0));
+        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(passage.count == 0);
+    }
 }
