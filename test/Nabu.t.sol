@@ -66,6 +66,7 @@ contract NabuTest is Test {
         ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
         ashurbanipal.safeTransferFrom(alice, charlie, workId, 2_000, "");
         ashurbanipal.safeTransferFrom(alice, dave, workId, 500, "");
+        ashurbanipal.safeTransferFrom(alice, mallory, workId, 666, "");
     }
 
     function createWorkAndDistributePassesAsAlice() private returns (uint256) {
@@ -110,7 +111,7 @@ contract NabuTest is Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         uint256 endingAlicePassBalance = ashurbanipal.balanceOf(alice, workId);
-        uint256 expectedEndingAlicePassBalance = 6_500;
+        uint256 expectedEndingAlicePassBalance = 5_834;
         assert(endingAlicePassBalance == expectedEndingAlicePassBalance);
 
         uint256 bobPassBalance = ashurbanipal.balanceOf(bob, workId);
@@ -124,6 +125,10 @@ contract NabuTest is Test {
         uint256 davePassBalance = ashurbanipal.balanceOf(dave, workId);
         uint256 expectedDavePassBalance = 500;
         assert(davePassBalance == expectedDavePassBalance);
+
+        uint256 malloryPassBalance = ashurbanipal.balanceOf(mallory, workId);
+        uint256 expectedMalloryPassBalance = 666;
+        assert(malloryPassBalance == expectedMalloryPassBalance);
     }
 
     function testWritePassage() public {
