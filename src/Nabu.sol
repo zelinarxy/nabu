@@ -9,13 +9,15 @@ error CannotDoubleConfirmPassage(uint256 workId, uint256 passageId);
 error InvalidPassageId(uint256 workId, uint256 passageId);
 error PassageAlreadyFinalized(uint256 workId, uint256 passageId);
 error PermissionDenied(uint256 workId);
-error TooSoonToAssignContent(uint256 workId, uint256 passageId, uint256 canAssignAt);
+error TooSoonToAssignContent(uint256 workId, uint256 passageId, uint256 canAssignAfter);
 
 struct Passage {
     // the compressed content of the passage (TODO: compression algorithm)
     bytes content;
-    // who performed the assignment or confirmation?
-    address by;
+    // who performed the initial assignment?
+    address byZero;
+    // who performed the first confirmation?
+    address byOne;
     // the block at which `count` last reset or incremented
     uint256 at;
     // how many times the passage's content has been confirmed. assigning new or different content to the passage
@@ -44,20 +46,15 @@ struct Work {
 }
 
 contract Nabu is Ownable {
-    // maps a passage's `count` to the time that must have elapsed before its content can be confirmed or reassigned:
-    //   0 => 7,200 blocks (~1 day)
-    //   1 => 50,400 blocks (~7 days)
-    //   2 => 216,000 blocks (~30 days)
-    uint32[3] private CAN_ASSIGN_PASSAGE_CONTENT_AT = [7_200, 50_400, 216_000];
-
     Ashurbanipal ashurbanipal;
 
     mapping(uint256 => Work) private _works;
     mapping(uint256 => mapping(uint256 => Passage)) private _passages;
     uint256 private worksTip;
 
+    // 30 days
     modifier onlyForASpell(uint256 workId) {
-        require(block.number - _works[workId].createdAt < 273_600, "Window to update work details elapsed");
+        require(block.number - _works[workId].createdAt < 216_000, "Window to update work details elapsed");
         _;
     }
 
@@ -84,7 +81,8 @@ contract Nabu is Ownable {
         Passage memory passage = _passages[workId][passageId];
 
         passage.at = block.number;
-        passage.by = msg.sender;
+        passage.byZero = msg.sender;
+        passage.byOne = address(0);
         passage.content = content;
         passage.count = 0;
 
@@ -99,21 +97,26 @@ contract Nabu is Ownable {
         }
 
         Passage memory passage = _passages[workId][passageId];
-
-        if (passage.by == msg.sender) {
-            revert CannotDoubleConfirmPassage(workId, passageId);
-        }
-
         uint8 count = passage.count;
 
-        if (count > 2) {
+        if (count == 2) {
             revert PassageAlreadyFinalized(workId, passageId);
         }
 
-        uint256 canAssignAt = CAN_ASSIGN_PASSAGE_CONTENT_AT[count];
+        uint256 canAssignAfter;
 
-        if (block.number - passage.at < canAssignAt) {
-            revert TooSoonToAssignContent(workId, passageId, canAssignAt);
+        if (count == 0) {
+            canAssignAfter = passage.at + 7_200; // 1 day
+        } else if (count == 1) {
+            canAssignAfter = passage.at + 50_400; // 7 days
+        }
+        
+        if (block.number < canAssignAfter) {
+            revert TooSoonToAssignContent(workId, passageId, canAssignAfter);
+        }
+
+        if (passage.byZero == msg.sender || passage.byOne == msg.sender) {
+            revert CannotDoubleConfirmPassage(workId, passageId);
         }
 
         if (ashurbanipal.balanceOf(msg.sender, workId) == 0) {
@@ -122,15 +125,21 @@ contract Nabu is Ownable {
 
         if (keccak256(passage.content) == keccak256(content)) {
             _passages[workId][passageId].count = count + 1;
+
+            if (count == 0) {
+                _passages[workId][passageId].byOne = msg.sender;
+            }
         } else {
+            _passages[workId][passageId].byZero = msg.sender;
             _passages[workId][passageId].content = content;
             _passages[workId][passageId].count = 0;
         }
 
         _passages[workId][passageId].at = block.number;
-
         return _passages[workId][passageId].count;
     }
+
+    // TODO: confirm passage content
 
     function createWork(
         string memory author,
@@ -141,12 +150,13 @@ contract Nabu is Ownable {
         uint256 supply
     ) public returns (uint256) {
         worksTip += 1;
-
         _works[worksTip] = Work(author, metadata, title, msg.sender, totalPassagesCount, block.number, uri);
-
         ashurbanipal.mint(msg.sender, worksTip, supply, uri);
-
         return worksTip;
+    }
+
+    function getPassage(uint256 workId, uint256 passageId) public view returns (Passage memory) {
+        return _passages[workId][passageId];
     }
 
     function getPassageContent(uint256 workId, uint256 passageId) public view returns (bytes memory) {

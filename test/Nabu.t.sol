@@ -27,6 +27,9 @@ contract NabuTest is Test {
 
     address alice = address(1);
     address bob = address(2);
+    address charlie = address(3);
+    address dave = address(4);
+    address mallory = address(5);
 
     function setUp() public {
         cheats.roll(21_000_000);
@@ -39,8 +42,12 @@ contract NabuTest is Test {
     bytes passageOne = bytes(
         unicode"En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad."
     );
-
     bytes passageOneCompressed = LibZip.flzCompress(passageOne);
+
+    bytes passageOneMalicious = bytes(
+        unicode"¡Soy muy malo y quiero destruir el patrimonio literario de España!"
+    );
+    bytes passageOneMaliciousCompressed = LibZip.flzCompress(passageOneMalicious);
 
     function createWork() private returns (uint256) {
         uint256 workId = nabu.createWork(
@@ -55,9 +62,18 @@ contract NabuTest is Test {
         return workId;
     }
 
-    // alice sends 1k passes to bob
     function distributePasses(uint256 workId) private {
         ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
+        ashurbanipal.safeTransferFrom(alice, charlie, workId, 2_000, "");
+        ashurbanipal.safeTransferFrom(alice, dave, workId, 500, "");
+    }
+
+    function createWorkAndDistributePassesAsAlice() private returns (uint256) {
+        cheats.startPrank(alice, alice);
+        uint256 workId = createWork();
+        distributePasses(workId);
+        cheats.stopPrank();
+        return workId;
     }
 
     function testCreateWork() public {
@@ -91,32 +107,111 @@ contract NabuTest is Test {
     }
 
     function testDistributePasses() public {
-        cheats.startPrank(alice, alice);
-        uint256 workId = createWork();
-
-        distributePasses(workId);
+        uint256 workId = createWorkAndDistributePassesAsAlice();
 
         uint256 endingAlicePassBalance = ashurbanipal.balanceOf(alice, workId);
-        uint256 expectedEndingAlicePassBalance = 9_000;
+        uint256 expectedEndingAlicePassBalance = 6_500;
         assert(endingAlicePassBalance == expectedEndingAlicePassBalance);
 
         uint256 bobPassBalance = ashurbanipal.balanceOf(bob, workId);
         uint256 expectedBobPassBalance = 1_000;
         assert(bobPassBalance == expectedBobPassBalance);
 
-        cheats.stopPrank();
+        uint256 charliePassBalance = ashurbanipal.balanceOf(charlie, workId);
+        uint256 expectedCharliePassBalance = 2_000;
+        assert(charliePassBalance == expectedCharliePassBalance);
+
+        uint256 davePassBalance = ashurbanipal.balanceOf(dave, workId);
+        uint256 expectedDavePassBalance = 500;
+        assert(davePassBalance == expectedDavePassBalance);
     }
 
     function testWritePassage() public {
-        cheats.startPrank(alice, alice);
-        uint256 workId = createWork();
-        distributePasses(workId);
-        cheats.stopPrank();
+        uint256 workId = createWorkAndDistributePassesAsAlice();
 
+        cheats.roll(42_069_420);
         cheats.prank(bob);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
         bytes memory content = nabu.getPassageContent(workId, 1);
         assert(keccak256(LibZip.flzDecompress(content)) == keccak256(passageOne));
+
+        Passage memory passage = nabu.getPassage(workId, 1);
+        assert(passage.at == 42_069_420);
+        assert(passage.byZero == bob);
+        assert(passage.byOne == address(0));
+        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(passage.count == 0);
+    }
+
+    function testWritePassagePermissionDenied() public {
+        cheats.prank(alice);
+        uint256 workId = createWork();
+
+        cheats.prank(bob);
+        cheats.expectRevert(abi.encodeWithSelector(PermissionDenied.selector, workId));
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+    }
+
+    function testManuallyConfirmPassageOnce() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.roll(42_069_420);
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(42_069_420 + 7_200);
+        cheats.prank(charlie);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        Passage memory passage = nabu.getPassage(workId, 1);
+        assert(passage.at == 42_069_420 + 7_200);
+        assert(passage.byZero == bob);
+        assert(passage.byOne == charlie);
+        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(passage.count == 1);
+    }
+
+    function testManuallyConfirmPassageTwice() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.roll(42_069_420);
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(42_069_420 + 7_200);
+        cheats.prank(charlie);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(42_069_420 + 7_200 + 50_400);
+        cheats.prank(dave);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        Passage memory passage = nabu.getPassage(workId, 1);
+        assert(passage.at == 42_069_420 + 7_200 + 50_400);
+        assert(passage.byZero == bob);
+        assert(passage.byOne == charlie);
+        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(passage.count == 2);
+    }
+
+    function testWritePassageAlreadyFinalized() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.roll(42_069_420);
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(42_069_420 + 7_200);
+        cheats.prank(charlie);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(42_069_420 + 7_200 + 50_400);
+        cheats.prank(dave);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.prank(mallory);
+        cheats.expectRevert(abi.encodeWithSelector(PassageAlreadyFinalized.selector, workId, 1));
+        nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
     }
 }
