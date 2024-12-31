@@ -44,9 +44,7 @@ contract NabuTest is Test {
     );
     bytes passageOneCompressed = LibZip.flzCompress(passageOne);
 
-    bytes passageOneMalicious = bytes(
-        unicode"¡Soy muy malo y quiero destruir el patrimonio literario de España!"
-    );
+    bytes passageOneMalicious = bytes(unicode"¡Soy muy malo y quiero destruir el patrimonio literario de España!");
     bytes passageOneMaliciousCompressed = LibZip.flzCompress(passageOneMalicious);
 
     function createWork() private returns (uint256) {
@@ -263,7 +261,7 @@ contract NabuTest is Test {
         assert(keccak256(LibZip.flzDecompress(content)) == keccak256(passageOne));
 
         Passage memory passage = nabu.getPassage(workId, 1);
-        assert(passage.at == 42_069_420 + 7_200);
+        assert(passage.at == 42_069_420);
         assert(passage.byZero == alice);
         assert(passage.byOne == address(0));
         assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
@@ -277,24 +275,24 @@ contract NabuTest is Test {
         assert(keccak256(LibZip.flzDecompress(maliciousContent)) == keccak256(passageOneMalicious));
 
         Passage memory maliciousPassage = nabu.getPassage(workId, 1);
-        assert(maliciousPassage.at == 42_069_420);
+        assert(maliciousPassage.at == 42_069_420 + 7_200);
         assert(maliciousPassage.byZero == mallory);
         assert(maliciousPassage.byOne == address(0));
         assert(keccak256(LibZip.flzDecompress(maliciousPassage.content)) == keccak256(passageOneMalicious));
         assert(maliciousPassage.count == 0);
 
         cheats.roll(42_069_420 + 7_200 + 50_400);
-                cheats.prank(alice);
+        cheats.prank(alice);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
-        bytes memory content = nabu.getPassageContent(workId, 1);
-        assert(keccak256(LibZip.flzDecompress(content)) == keccak256(passageOne));
+        bytes memory restoredContent = nabu.getPassageContent(workId, 1);
+        assert(keccak256(LibZip.flzDecompress(restoredContent)) == keccak256(passageOne));
 
-        Passage memory passage = nabu.getPassage(workId, 1);
-        assert(passage.at == 42_069_420 + 7_200 + 50_400);
-        assert(passage.byZero == alice);
-        assert(passage.byOne == address(0));
-        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
-        assert(passage.count == 0);
+        Passage memory restoredPassage = nabu.getPassage(workId, 1);
+        assert(restoredPassage.at == 42_069_420 + 7_200 + 50_400);
+        assert(restoredPassage.byZero == alice);
+        assert(restoredPassage.byOne == address(0));
+        assert(keccak256(LibZip.flzDecompress(restoredPassage.content)) == keccak256(passageOne));
+        assert(restoredPassage.count == 0);
     }
 }

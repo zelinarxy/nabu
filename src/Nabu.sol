@@ -110,7 +110,7 @@ contract Nabu is Ownable {
         } else if (count == 1) {
             canAssignAfter = passage.at + 50_400; // 7 days
         }
-        
+
         if (block.number < canAssignAfter) {
             revert TooSoonToAssignContent(workId, passageId, canAssignAfter);
         }
