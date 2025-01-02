@@ -7,6 +7,9 @@ import "@solady/src/utils/LibZip.sol";
 import "../src/Ashurbanipal.sol";
 import "../src/Nabu.sol";
 
+// TODO: remove
+uint256 constant STARTING_BLOCK = 42_069_420;
+
 interface CheatCodes {
     function expectRevert(bytes calldata) external;
 
@@ -173,7 +176,7 @@ contract NabuTest is Test {
     function testWritePassage() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
-        cheats.roll(42_069_420);
+        cheats.roll(STARTING_BLOCK);
         cheats.prank(bob);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
@@ -181,7 +184,7 @@ contract NabuTest is Test {
         assert(keccak256(LibZip.flzDecompress(content)) == keccak256(passageOne));
 
         Passage memory passage = nabu.getPassage(workId, 1);
-        assert(passage.at == 42_069_420);
+        assert(passage.at == STARTING_BLOCK);
         assert(passage.byZero == bob);
         assert(passage.byOne == address(0));
         assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
@@ -200,16 +203,16 @@ contract NabuTest is Test {
     function testManuallyConfirmPassageOnce() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
-        cheats.roll(42_069_420);
+        cheats.roll(STARTING_BLOCK);
         cheats.prank(bob);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
-        cheats.roll(42_069_420 + 7_200);
+        cheats.roll(STARTING_BLOCK + ONE_DAY);
         cheats.prank(charlie);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
         Passage memory passage = nabu.getPassage(workId, 1);
-        assert(passage.at == 42_069_420 + 7_200);
+        assert(passage.at == STARTING_BLOCK + ONE_DAY);
         assert(passage.byZero == bob);
         assert(passage.byOne == charlie);
         assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
@@ -219,20 +222,20 @@ contract NabuTest is Test {
     function testManuallyConfirmPassageTwice() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
-        cheats.roll(42_069_420);
+        cheats.roll(STARTING_BLOCK);
         cheats.prank(bob);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
-        cheats.roll(42_069_420 + 7_200);
+        cheats.roll(STARTING_BLOCK + ONE_DAY);
         cheats.prank(charlie);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
-        cheats.roll(42_069_420 + 7_200 + 50_400);
+        cheats.roll(STARTING_BLOCK + ONE_DAY + SEVEN_DAYS);
         cheats.prank(dave);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
         Passage memory passage = nabu.getPassage(workId, 1);
-        assert(passage.at == 42_069_420 + 7_200 + 50_400);
+        assert(passage.at == STARTING_BLOCK + ONE_DAY + SEVEN_DAYS);
         assert(passage.byZero == bob);
         assert(passage.byOne == charlie);
         assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
@@ -242,15 +245,15 @@ contract NabuTest is Test {
     function testWritePassageAlreadyFinalized() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
-        cheats.roll(42_069_420);
+        cheats.roll(STARTING_BLOCK);
         cheats.prank(bob);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
-        cheats.roll(42_069_420 + 7_200);
+        cheats.roll(STARTING_BLOCK + ONE_DAY);
         cheats.prank(charlie);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
-        cheats.roll(42_069_420 + 7_200 + 50_400);
+        cheats.roll(STARTING_BLOCK + ONE_DAY + SEVEN_DAYS);
         cheats.prank(dave);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
@@ -262,16 +265,16 @@ contract NabuTest is Test {
     function testConfirmPassageOnce() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
-        cheats.roll(42_069_420);
+        cheats.roll(STARTING_BLOCK);
         cheats.prank(bob);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
-        cheats.roll(42_069_420 + 7_200);
+        cheats.roll(STARTING_BLOCK + ONE_DAY);
         cheats.prank(charlie);
         nabu.confirmPassageContent(workId, 1);
 
         Passage memory passage = nabu.getPassage(workId, 1);
-        assert(passage.at == 42_069_420 + 7_200);
+        assert(passage.at == STARTING_BLOCK + ONE_DAY);
         assert(passage.byZero == bob);
         assert(passage.byOne == charlie);
         assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
@@ -281,20 +284,20 @@ contract NabuTest is Test {
     function testConfirmPassageTwice() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
-        cheats.roll(42_069_420);
+        cheats.roll(STARTING_BLOCK);
         cheats.prank(bob);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
-        cheats.roll(42_069_420 + 7_200);
+        cheats.roll(STARTING_BLOCK + ONE_DAY);
         cheats.prank(charlie);
         nabu.confirmPassageContent(workId, 1);
 
-        cheats.roll(42_069_420 + 7_200 + 50_400);
+        cheats.roll(STARTING_BLOCK + ONE_DAY + SEVEN_DAYS);
         cheats.prank(dave);
         nabu.confirmPassageContent(workId, 1);
 
         Passage memory passage = nabu.getPassage(workId, 1);
-        assert(passage.at == 42_069_420 + 7_200 + 50_400);
+        assert(passage.at == STARTING_BLOCK + ONE_DAY + SEVEN_DAYS);
         assert(passage.byZero == bob);
         assert(passage.byOne == charlie);
         assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
@@ -304,15 +307,15 @@ contract NabuTest is Test {
     function testConfirmPassageAlreadyFinalized() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
-        cheats.roll(42_069_420);
+        cheats.roll(STARTING_BLOCK);
         cheats.prank(bob);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
-        cheats.roll(42_069_420 + 7_200);
+        cheats.roll(STARTING_BLOCK + ONE_DAY);
         cheats.prank(charlie);
         nabu.confirmPassageContent(workId, 1);
 
-        cheats.roll(42_069_420 + 7_200 + 50_400);
+        cheats.roll(STARTING_BLOCK + ONE_DAY + SEVEN_DAYS);
         cheats.prank(dave);
         nabu.confirmPassageContent(workId, 1);
 
@@ -324,7 +327,7 @@ contract NabuTest is Test {
     function testOverwritePassage() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
-        cheats.roll(42_069_420);
+        cheats.roll(STARTING_BLOCK);
         cheats.prank(mallory);
         nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
 
@@ -332,13 +335,13 @@ contract NabuTest is Test {
         assert(keccak256(LibZip.flzDecompress(maliciousContent)) == keccak256(passageOneMalicious));
 
         Passage memory maliciousPassage = nabu.getPassage(workId, 1);
-        assert(maliciousPassage.at == 42_069_420);
+        assert(maliciousPassage.at == STARTING_BLOCK);
         assert(maliciousPassage.byZero == mallory);
         assert(maliciousPassage.byOne == address(0));
         assert(keccak256(LibZip.flzDecompress(maliciousPassage.content)) == keccak256(passageOneMalicious));
         assert(maliciousPassage.count == 0);
 
-        cheats.roll(42_069_420 + 7_200);
+        cheats.roll(STARTING_BLOCK + ONE_DAY);
         cheats.prank(alice);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
@@ -346,7 +349,7 @@ contract NabuTest is Test {
         assert(keccak256(LibZip.flzDecompress(content)) == keccak256(passageOne));
 
         Passage memory passage = nabu.getPassage(workId, 1);
-        assert(passage.at == 42_069_420 + 7_200);
+        assert(passage.at == STARTING_BLOCK + ONE_DAY);
         assert(passage.byZero == alice);
         assert(passage.byOne == address(0));
         assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
@@ -356,7 +359,7 @@ contract NabuTest is Test {
     function testOverwritePassageTwice() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
-        cheats.roll(42_069_420);
+        cheats.roll(STARTING_BLOCK);
         cheats.prank(alice);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
@@ -364,13 +367,13 @@ contract NabuTest is Test {
         assert(keccak256(LibZip.flzDecompress(content)) == keccak256(passageOne));
 
         Passage memory passage = nabu.getPassage(workId, 1);
-        assert(passage.at == 42_069_420);
+        assert(passage.at == STARTING_BLOCK);
         assert(passage.byZero == alice);
         assert(passage.byOne == address(0));
         assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
         assert(passage.count == 0);
 
-        cheats.roll(42_069_420 + 7_200);
+        cheats.roll(STARTING_BLOCK + ONE_DAY);
         cheats.prank(mallory);
         nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
 
@@ -378,13 +381,13 @@ contract NabuTest is Test {
         assert(keccak256(LibZip.flzDecompress(maliciousContent)) == keccak256(passageOneMalicious));
 
         Passage memory maliciousPassage = nabu.getPassage(workId, 1);
-        assert(maliciousPassage.at == 42_069_420 + 7_200);
+        assert(maliciousPassage.at == STARTING_BLOCK + ONE_DAY);
         assert(maliciousPassage.byZero == mallory);
         assert(maliciousPassage.byOne == address(0));
         assert(keccak256(LibZip.flzDecompress(maliciousPassage.content)) == keccak256(passageOneMalicious));
         assert(maliciousPassage.count == 0);
 
-        cheats.roll(42_069_420 + 7_200 + 50_400);
+        cheats.roll(STARTING_BLOCK + ONE_DAY + SEVEN_DAYS);
         cheats.prank(alice);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
@@ -392,7 +395,7 @@ contract NabuTest is Test {
         assert(keccak256(LibZip.flzDecompress(restoredContent)) == keccak256(passageOne));
 
         Passage memory restoredPassage = nabu.getPassage(workId, 1);
-        assert(restoredPassage.at == 42_069_420 + 7_200 + 50_400);
+        assert(restoredPassage.at == STARTING_BLOCK + ONE_DAY + SEVEN_DAYS);
         assert(restoredPassage.byZero == alice);
         assert(restoredPassage.byOne == address(0));
         assert(keccak256(LibZip.flzDecompress(restoredPassage.content)) == keccak256(passageOne));
@@ -411,37 +414,155 @@ contract NabuTest is Test {
         nabu.updateAshurbanipalAddress(address(69));
     }
 
-    function testUpdateWorkAdmin() public {}
+    function testUpdateWorkAdmin() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        assert(nabu.getWork(workId).admin == alice);
 
-    function testUpdateWorkAdminNotAdmin() public {}
+        cheats.prank(alice);
+        nabu.updateWorkAdmin(workId, bob);
+        assert(nabu.getWork(workId).admin == bob);
+    }
 
-    function testUpdateWorkAuthor() public {}
+    function testUpdateWorkAdminNotAdmin() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.prank(bob);
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        nabu.updateWorkAdmin(workId, bob);
+    }
 
-    function testUpdateWorkAuthorNotAdmin() public {}
+    function testUpdateWorkAuthor() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        assert(keccak256(bytes(nabu.getWork(workId).author)) == keccak256(bytes("Miguel de Cervantes")));
 
-    function testUpdateWorkAuthorTooLate() public {}
+        cheats.prank(alice);
+        nabu.updateWorkAuthor(workId, "Mickey C");
+        assert(keccak256(bytes(nabu.getWork(workId).author)) == keccak256(bytes("Mickey C")));
+    }
 
-    function testUpdateWorkMetadata() public {}
+    function testUpdateWorkAuthorNotAdmin() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.prank(bob);
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        nabu.updateWorkAuthor(workId, "Mickey C");
+    }
 
-    function testUpdateWorkMetadataNotAdmin() public {}
+    function testUpdateWorkAuthorTooLate() public {
+        cheats.roll(STARTING_BLOCK);
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.roll(STARTING_BLOCK + THIRTY_DAYS + 1);
+        cheats.prank(alice);
+        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, workId, STARTING_BLOCK + THIRTY_DAYS));
+        nabu.updateWorkAuthor(workId, "Mickey C");
+    }
 
-    function testUpdateWorkMetadataTooLate() public {}
+    function testUpdateWorkMetadata() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        assert(
+            keccak256(bytes(nabu.getWork(workId).metadata))
+                == keccak256(bytes("Original title: El ingenioso hidalgo don Quijote de la Mancha"))
+        );
 
-    function testUpdateWorkNftUri() public {}
+        cheats.prank(alice);
+        nabu.updateWorkMetadata(workId, "New metadata");
+        assert(keccak256(bytes(nabu.getWork(workId).metadata)) == keccak256(bytes("New metadata")));
+    }
 
-    function testUpdateWorkNftUriNotAdmin() public {}
+    function testUpdateWorkMetadataNotAdmin() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.prank(bob);
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        nabu.updateWorkMetadata(workId, "New metadata");
+    }
 
-    function testUpdateWorkNftUriTooLate() public {}
+    function testUpdateWorkMetadataTooLate() public {
+        cheats.roll(STARTING_BLOCK);
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.roll(STARTING_BLOCK + THIRTY_DAYS + 1);
+        cheats.prank(alice);
+        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, workId, STARTING_BLOCK + THIRTY_DAYS));
+        nabu.updateWorkMetadata(workId, "New metadata");
+    }
 
-    function testUpdateWorkTitle() public {}
+    function testUpdateWorkUri() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        assert(keccak256(bytes(nabu.getWork(workId).uri)) == keccak256(bytes("https://foo.bar/{id}.json")));
+        assert(keccak256(bytes(ashurbanipal.uri(workId))) == keccak256(bytes("https://foo.bar/{id}.json")));
 
-    function testUpdateWorkTitleNotAdmin() public {}
+        cheats.prank(alice);
+        nabu.updateWorkUri(workId, "https://lol.lmao/{id}.json");
+        assert(keccak256(bytes(nabu.getWork(workId).uri)) == keccak256(bytes("https://lol.lmao/{id}.json")));
+        assert(keccak256(bytes(ashurbanipal.uri(workId))) == keccak256(bytes("https://lol.lmao/{id}.json")));
+    }
 
-    function testUpdateWorkTitleTooLate() public {}
+    function testUpdateWorkUriNotAdmin() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.prank(bob);
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        nabu.updateWorkUri(workId, "https://lol.lmao/{id}.json");
+    }
 
-    function testUpdateWorkTotalPassagesCount() public {}
+    function testUpdateWorkUriTooLate() public {
+        cheats.roll(STARTING_BLOCK);
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.roll(STARTING_BLOCK + THIRTY_DAYS + 1);
+        cheats.prank(alice);
+        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, workId, STARTING_BLOCK + THIRTY_DAYS));
+        nabu.updateWorkUri(workId, "https://lol.lmao/{id}.json");
+    }
 
-    function testUpdateWorkTotalPassagesCountNotAdmin() public {}
+    function testUpdateWorkTitle() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        assert(keccak256(bytes(nabu.getWork(workId).title)) == keccak256(bytes("Don Quijote")));
 
-    function testUpdateWorkTotalPassagesCountTooLate() public {}
+        cheats.prank(alice);
+        nabu.updateWorkTitle(workId, "Donny Q");
+        assert(keccak256(bytes(nabu.getWork(workId).title)) == keccak256(bytes("Donny Q")));
+    }
+
+    function testUpdateWorkTitleNotAdmin() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.prank(bob);
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        nabu.updateWorkTitle(workId, "Donny Q");
+    }
+
+    function testUpdateWorkTitleTooLate() public {
+        cheats.roll(STARTING_BLOCK);
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.roll(STARTING_BLOCK + THIRTY_DAYS + 1);
+        cheats.prank(alice);
+        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, workId, STARTING_BLOCK + THIRTY_DAYS));
+        nabu.updateWorkTitle(workId, "Donny Q");
+    }
+
+    function testUpdateWorkTotalPassagesCount() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        assert(nabu.getWork(workId).totalPassagesCount == 1_000_000);
+
+        cheats.prank(alice);
+        nabu.updateWorkTotalPassagesCount(workId, 69_000);
+        assert(nabu.getWork(workId).totalPassagesCount == 69_000);
+    }
+
+    function testUpdateWorkTotalPassagesCountNotAdmin() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.prank(bob);
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        nabu.updateWorkTotalPassagesCount(workId, 69_000);
+    }
+
+    function testUpdateWorkTotalPassagesCountTooLate() public {
+        cheats.roll(STARTING_BLOCK);
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.roll(STARTING_BLOCK + THIRTY_DAYS + 1);
+        cheats.prank(alice);
+        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, workId, STARTING_BLOCK + THIRTY_DAYS));
+        nabu.updateWorkTotalPassagesCount(workId, 69_000);
+    }
+
+    // TODO: test admin override of finalized block
+
+    // TODO: test admin switch - old admin can't update
+
+    // TODO: test admin switch - new admin can update
 }

@@ -11,6 +11,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     mapping(uint256 => string) private _uris;
 
     modifier onlyNabu() {
+        // TODO: use custom error
         require(msg.sender == nabuAddress, "Not Nabu");
         _;
     }

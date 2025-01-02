@@ -9,12 +9,14 @@ uint256 constant ONE_DAY = 7_200;
 uint256 constant SEVEN_DAYS = 50_400;
 uint256 constant THIRTY_DAYS = 216_000;
 
+// TODO: remove unhelpful information
 error CannotDoubleConfirmPassage(uint256 workId, uint256 passageId);
 error InvalidPassageId(uint256 workId, uint256 passageId);
+error NotWorkAdmin(uint256 workId, address workAdmin);
 error PassageAlreadyFinalized(uint256 workId, uint256 passageId);
 error PermissionDenied(uint256 workId);
+error TooLate(uint256 workId, uint256 expiredAt);
 error TooSoonToAssignContent(uint256 workId, uint256 passageId, uint256 canAssignAfter);
-// TODO: custom errors for modifiers
 
 struct Passage {
     // the compressed content of the passage (TODO: compression algorithm)
@@ -58,14 +60,17 @@ contract Nabu is Ownable {
     mapping(uint256 => mapping(uint256 => Passage)) private _passages;
     uint256 private worksTip;
 
-    // 30 days
-    modifier onlyForASpell(uint256 workId) {
-        require(block.number - _works[workId].createdAt < THIRTY_DAYS, "Window to update work details elapsed");
+    // a work's `admin` has 30 days to make updates to the work's `title`, `author`, etc.
+    modifier notTooLate(uint256 workId) {
+        uint256 expiredAt = _works[workId].createdAt + THIRTY_DAYS;
+        // note the buffer: they can still make changes in the `expiredAt` block itself
+        require(block.number < expiredAt + 1, TooLate(workId, expiredAt));
         _;
     }
 
     modifier onlyWorkAdmin(uint256 workId) {
-        require(msg.sender == _works[workId].admin, "Not the work admin");
+        address admin = _works[workId].admin;
+        require(msg.sender == admin, NotWorkAdmin(workId, admin));
         _;
     }
 
@@ -226,7 +231,7 @@ contract Nabu is Ownable {
 
     function updateWorkAuthor(uint256 workId, string memory newAuthor)
         public
-        onlyForASpell(workId)
+        notTooLate(workId)
         onlyWorkAdmin(workId)
     {
         _works[workId].author = newAuthor;
@@ -234,31 +239,24 @@ contract Nabu is Ownable {
 
     function updateWorkMetadata(uint256 workId, string memory newMetadata)
         public
-        onlyForASpell(workId)
+        notTooLate(workId)
         onlyWorkAdmin(workId)
     {
         _works[workId].metadata = newMetadata;
     }
 
-    function updateWorkNftUri(uint256 workId, string memory newUri)
-        public
-        onlyForASpell(workId)
-        onlyWorkAdmin(workId)
-    {
+    function updateWorkUri(uint256 workId, string memory newUri) public notTooLate(workId) onlyWorkAdmin(workId) {
         ashurbanipal.updateUri(workId, newUri);
+        _works[workId].uri = newUri;
     }
 
-    function updateWorkTitle(uint256 workId, string memory newTitle)
-        public
-        onlyForASpell(workId)
-        onlyWorkAdmin(workId)
-    {
+    function updateWorkTitle(uint256 workId, string memory newTitle) public notTooLate(workId) onlyWorkAdmin(workId) {
         _works[workId].title = newTitle;
     }
 
     function updateWorkTotalPassagesCount(uint256 workId, uint256 newTotalPassagesCount)
         public
-        onlyForASpell(workId)
+        notTooLate(workId)
         onlyWorkAdmin(workId)
     {
         _works[workId].totalPassagesCount = newTotalPassagesCount;
