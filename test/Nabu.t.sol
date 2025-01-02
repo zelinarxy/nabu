@@ -187,6 +187,14 @@ contract NabuTest is Test {
         assert(passage.count == 0);
     }
 
+    function testWritePassageInvalidPassageId() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.prank(bob);
+        cheats.expectRevert(abi.encodeWithSelector(InvalidPassageId.selector));
+        nabu.assignPassageContent(workId, 1_000_001, passageOneCompressed);
+    }
+
     function testWritePassagePermissionDenied() public {
         cheats.prank(alice);
         uint256 workId = createWork();
@@ -234,6 +242,40 @@ contract NabuTest is Test {
         assert(passage.byOne == charlie);
         assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
         assert(passage.count == 2);
+    }
+
+    // TODO: this but for second confirmation
+    function testConfirmPassageCannotDoubleConfirm() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(ONE_DAY);
+        cheats.prank(charlie);
+        nabu.confirmPassageContent(workId, 1);
+
+        cheats.roll(ONE_DAY + SEVEN_DAYS);
+        cheats.expectRevert(abi.encodeWithSelector(CannotDoubleConfirmPassage.selector));
+        cheats.prank(charlie);
+        nabu.confirmPassageContent(workId, 1);
+    }
+
+    // TODO: this but for second confirmation
+    function testManuallyConfirmPassageCannotDoubleConfirm() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(ONE_DAY);
+        cheats.prank(charlie);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(ONE_DAY + SEVEN_DAYS);
+        cheats.expectRevert(abi.encodeWithSelector(CannotDoubleConfirmPassage.selector));
+        cheats.prank(charlie);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
     }
 
     function testWritePassageAlreadyFinalized() public {
@@ -543,15 +585,63 @@ contract NabuTest is Test {
         nabu.updateWorkTotalPassagesCount(workId, 69_000);
     }
 
+    function testConfirmPassageTooSoonToAssignContent() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(ONE_DAY - 1);
+        cheats.prank(charlie);
+        cheats.expectRevert(abi.encodeWithSelector(TooSoonToAssignContent.selector, ONE_DAY));
+        nabu.confirmPassageContent(workId, 1);
+    }
+
+    function testManuallyConfirmPassageTooSoonToAssignContent() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(ONE_DAY - 1);
+        cheats.prank(charlie);
+        cheats.expectRevert(abi.encodeWithSelector(TooSoonToAssignContent.selector, ONE_DAY));
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+    }
+
+    function testDoubleConfirmPassageTooSoonToAssignContent() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(ONE_DAY);
+        cheats.prank(charlie);
+        nabu.confirmPassageContent(workId, 1);
+
+        cheats.roll(ONE_DAY + SEVEN_DAYS - 1);
+        cheats.prank(dave);
+        cheats.expectRevert(abi.encodeWithSelector(TooSoonToAssignContent.selector, ONE_DAY + SEVEN_DAYS));
+        nabu.confirmPassageContent(workId, 1);
+    }
+
+    function testManuallyDoubleConfirmPassageTooSoonToAssignContent() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(ONE_DAY);
+        cheats.prank(charlie);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        cheats.roll(ONE_DAY + SEVEN_DAYS - 1);
+        cheats.prank(dave);
+        cheats.expectRevert(abi.encodeWithSelector(TooSoonToAssignContent.selector, ONE_DAY + SEVEN_DAYS));
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+    }
+
     // TODO: test admin override of finalized block
-
     // TODO: test admin switch - old admin can't update
-
     // TODO: test admin switch - new admin can update
-
-    // TODO: CannotDoubleConfirmPassage
-
-    // TODO: InvalidPassageId
-
-    // TODO: TooSoonToAssignContent
 }
