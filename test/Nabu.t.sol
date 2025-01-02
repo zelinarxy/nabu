@@ -192,7 +192,7 @@ contract NabuTest is Test {
         uint256 workId = createWork();
 
         cheats.prank(bob);
-        cheats.expectRevert(abi.encodeWithSelector(PermissionDenied.selector, workId));
+        cheats.expectRevert(abi.encodeWithSelector(PermissionDenied.selector));
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
     }
 
@@ -251,7 +251,7 @@ contract NabuTest is Test {
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
         cheats.prank(mallory);
-        cheats.expectRevert(abi.encodeWithSelector(PassageAlreadyFinalized.selector, workId, 1));
+        cheats.expectRevert(abi.encodeWithSelector(PassageAlreadyFinalized.selector));
         nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
     }
 
@@ -310,7 +310,7 @@ contract NabuTest is Test {
         nabu.confirmPassageContent(workId, 1);
 
         cheats.prank(mallory);
-        cheats.expectRevert(abi.encodeWithSelector(PassageAlreadyFinalized.selector, workId, 1));
+        cheats.expectRevert(abi.encodeWithSelector(PassageAlreadyFinalized.selector));
         nabu.confirmPassageContent(workId, 1);
     }
 
@@ -414,7 +414,7 @@ contract NabuTest is Test {
     function testUpdateWorkAdminNotAdmin() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.prank(bob);
-        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, alice));
         nabu.updateWorkAdmin(workId, bob);
     }
 
@@ -430,7 +430,7 @@ contract NabuTest is Test {
     function testUpdateWorkAuthorNotAdmin() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.prank(bob);
-        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, alice));
         nabu.updateWorkAuthor(workId, "Mickey C");
     }
 
@@ -438,7 +438,7 @@ contract NabuTest is Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.roll(THIRTY_DAYS + 1);
         cheats.prank(alice);
-        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, workId, THIRTY_DAYS));
+        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         nabu.updateWorkAuthor(workId, "Mickey C");
     }
 
@@ -457,7 +457,7 @@ contract NabuTest is Test {
     function testUpdateWorkMetadataNotAdmin() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.prank(bob);
-        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, alice));
         nabu.updateWorkMetadata(workId, "New metadata");
     }
 
@@ -465,7 +465,7 @@ contract NabuTest is Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.roll(THIRTY_DAYS + 1);
         cheats.prank(alice);
-        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, workId, THIRTY_DAYS));
+        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         nabu.updateWorkMetadata(workId, "New metadata");
     }
 
@@ -483,7 +483,7 @@ contract NabuTest is Test {
     function testUpdateWorkUriNotAdmin() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.prank(bob);
-        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, alice));
         nabu.updateWorkUri(workId, "https://lol.lmao/{id}.json");
     }
 
@@ -491,7 +491,7 @@ contract NabuTest is Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.roll(THIRTY_DAYS + 1);
         cheats.prank(alice);
-        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, workId, THIRTY_DAYS));
+        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         nabu.updateWorkUri(workId, "https://lol.lmao/{id}.json");
     }
 
@@ -507,7 +507,7 @@ contract NabuTest is Test {
     function testUpdateWorkTitleNotAdmin() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.prank(bob);
-        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, alice));
         nabu.updateWorkTitle(workId, "Donny Q");
     }
 
@@ -515,7 +515,7 @@ contract NabuTest is Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.roll(THIRTY_DAYS + 1);
         cheats.prank(alice);
-        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, workId, THIRTY_DAYS));
+        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         nabu.updateWorkTitle(workId, "Donny Q");
     }
 
@@ -531,7 +531,7 @@ contract NabuTest is Test {
     function testUpdateWorkTotalPassagesCountNotAdmin() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.prank(bob);
-        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, workId, alice));
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, alice));
         nabu.updateWorkTotalPassagesCount(workId, 69_000);
     }
 
@@ -539,7 +539,7 @@ contract NabuTest is Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.roll(THIRTY_DAYS + 1);
         cheats.prank(alice);
-        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, workId, THIRTY_DAYS));
+        cheats.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         nabu.updateWorkTotalPassagesCount(workId, 69_000);
     }
 
@@ -548,4 +548,10 @@ contract NabuTest is Test {
     // TODO: test admin switch - old admin can't update
 
     // TODO: test admin switch - new admin can update
+
+    // TODO: CannotDoubleConfirmPassage
+
+    // TODO: InvalidPassageId
+
+    // TODO: TooSoonToAssignContent
 }

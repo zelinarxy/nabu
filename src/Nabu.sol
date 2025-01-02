@@ -9,14 +9,13 @@ uint256 constant ONE_DAY = 7_200;
 uint256 constant SEVEN_DAYS = 50_400;
 uint256 constant THIRTY_DAYS = 216_000;
 
-// TODO: remove unhelpful information
-error CannotDoubleConfirmPassage(uint256 workId, uint256 passageId);
-error InvalidPassageId(uint256 workId, uint256 passageId);
-error NotWorkAdmin(uint256 workId, address workAdmin);
-error PassageAlreadyFinalized(uint256 workId, uint256 passageId);
-error PermissionDenied(uint256 workId);
-error TooLate(uint256 workId, uint256 expiredAt);
-error TooSoonToAssignContent(uint256 workId, uint256 passageId, uint256 canAssignAfter);
+error CannotDoubleConfirmPassage();
+error InvalidPassageId();
+error NotWorkAdmin(address workAdmin);
+error PassageAlreadyFinalized();
+error PermissionDenied(); // TODO: better name
+error TooLate(uint256 expiredAt);
+error TooSoonToAssignContent(uint256 canAssignAfter);
 
 struct Passage {
     // the compressed content of the passage (TODO: compression algorithm)
@@ -64,13 +63,13 @@ contract Nabu is Ownable {
     modifier notTooLate(uint256 workId) {
         uint256 expiredAt = _works[workId].createdAt + THIRTY_DAYS;
         // note the buffer: they can still make changes in the `expiredAt` block itself
-        require(block.number < expiredAt + 1, TooLate(workId, expiredAt));
+        require(block.number < expiredAt + 1, TooLate(expiredAt));
         _;
     }
 
     modifier onlyWorkAdmin(uint256 workId) {
         address admin = _works[workId].admin;
-        require(msg.sender == admin, NotWorkAdmin(workId, admin));
+        require(msg.sender == admin, NotWorkAdmin(admin));
         _;
     }
 
@@ -86,7 +85,7 @@ contract Nabu is Ownable {
         Work storage work = _works[workId];
 
         if (passageId > work.totalPassagesCount) {
-            revert InvalidPassageId(workId, passageId);
+            revert InvalidPassageId();
         }
 
         Passage memory passage = _passages[workId][passageId];
@@ -104,14 +103,14 @@ contract Nabu is Ownable {
         Work storage work = _works[workId];
 
         if (passageId > work.totalPassagesCount) {
-            revert InvalidPassageId(workId, passageId);
+            revert InvalidPassageId();
         }
 
         Passage memory passage = _passages[workId][passageId];
         uint8 count = passage.count;
 
         if (count == 2) {
-            revert PassageAlreadyFinalized(workId, passageId);
+            revert PassageAlreadyFinalized();
         }
 
         uint256 canAssignAfter;
@@ -123,15 +122,15 @@ contract Nabu is Ownable {
         }
 
         if (block.number < canAssignAfter) {
-            revert TooSoonToAssignContent(workId, passageId, canAssignAfter);
+            revert TooSoonToAssignContent(canAssignAfter);
         }
 
         if (passage.byZero == msg.sender || passage.byOne == msg.sender) {
-            revert CannotDoubleConfirmPassage(workId, passageId);
+            revert CannotDoubleConfirmPassage();
         }
 
         if (ashurbanipal.balanceOf(msg.sender, workId) == 0) {
-            revert PermissionDenied(workId);
+            revert PermissionDenied();
         }
 
         if (keccak256(passage.content) == keccak256(content)) {
@@ -154,14 +153,14 @@ contract Nabu is Ownable {
         Work storage work = _works[workId];
 
         if (passageId > work.totalPassagesCount) {
-            revert InvalidPassageId(workId, passageId);
+            revert InvalidPassageId();
         }
 
         Passage memory passage = _passages[workId][passageId];
         uint8 count = passage.count;
 
         if (count == 2) {
-            revert PassageAlreadyFinalized(workId, passageId);
+            revert PassageAlreadyFinalized();
         }
 
         uint256 canAssignAfter;
@@ -173,15 +172,15 @@ contract Nabu is Ownable {
         }
 
         if (block.number < canAssignAfter) {
-            revert TooSoonToAssignContent(workId, passageId, canAssignAfter);
+            revert TooSoonToAssignContent(canAssignAfter);
         }
 
         if (passage.byZero == msg.sender || passage.byOne == msg.sender) {
-            revert CannotDoubleConfirmPassage(workId, passageId);
+            revert CannotDoubleConfirmPassage();
         }
 
         if (ashurbanipal.balanceOf(msg.sender, workId) == 0) {
-            revert PermissionDenied(workId);
+            revert PermissionDenied();
         }
 
         _passages[workId][passageId].count = count + 1;
