@@ -116,7 +116,7 @@ contract Nabu is Ownable {
 
         uint256 canAssignAfter;
 
-        if (count == 0) {
+        if (count == 0 && keccak256(passage.content) != keccak256(bytes(""))) {
             canAssignAfter = passage.at + ONE_DAY;
         } else if (count == 1) {
             canAssignAfter = passage.at + SEVEN_DAYS;
