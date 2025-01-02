@@ -244,11 +244,6 @@ contract Nabu is Ownable {
         _works[workId].metadata = newMetadata;
     }
 
-    function updateWorkUri(uint256 workId, string memory newUri) public notTooLate(workId) onlyWorkAdmin(workId) {
-        ashurbanipal.updateUri(workId, newUri);
-        _works[workId].uri = newUri;
-    }
-
     function updateWorkTitle(uint256 workId, string memory newTitle) public notTooLate(workId) onlyWorkAdmin(workId) {
         _works[workId].title = newTitle;
     }
@@ -259,5 +254,10 @@ contract Nabu is Ownable {
         onlyWorkAdmin(workId)
     {
         _works[workId].totalPassagesCount = newTotalPassagesCount;
+    }
+
+    function updateWorkUri(uint256 workId, string memory newUri) public notTooLate(workId) onlyWorkAdmin(workId) {
+        ashurbanipal.updateUri(workId, newUri);
+        _works[workId].uri = newUri;
     }
 }
