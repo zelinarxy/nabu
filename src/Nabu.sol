@@ -11,9 +11,9 @@ uint256 constant THIRTY_DAYS = 216_000;
 
 error CannotDoubleConfirmPassage();
 error InvalidPassageId();
+error NoPass();
 error NotWorkAdmin(address workAdmin);
 error PassageAlreadyFinalized();
-error PermissionDenied(); // TODO: better name
 error TooLate(uint256 expiredAt);
 error TooSoonToAssignContent(uint256 canAssignAfter);
 
@@ -130,7 +130,7 @@ contract Nabu is Ownable {
         }
 
         if (ashurbanipal.balanceOf(msg.sender, workId) == 0) {
-            revert PermissionDenied();
+            revert NoPass();
         }
 
         if (keccak256(passage.content) == keccak256(content)) {
@@ -180,7 +180,7 @@ contract Nabu is Ownable {
         }
 
         if (ashurbanipal.balanceOf(msg.sender, workId) == 0) {
-            revert PermissionDenied();
+            revert NoPass();
         }
 
         _passages[workId][passageId].count = count + 1;

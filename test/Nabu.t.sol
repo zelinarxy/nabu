@@ -195,12 +195,12 @@ contract NabuTest is Test {
         nabu.assignPassageContent(workId, 1_000_001, passageOneCompressed);
     }
 
-    function testWritePassagePermissionDenied() public {
+    function testWritePassageNoPass() public {
         cheats.prank(alice);
         uint256 workId = createWork();
 
         cheats.prank(bob);
-        cheats.expectRevert(abi.encodeWithSelector(PermissionDenied.selector));
+        cheats.expectRevert(abi.encodeWithSelector(NoPass.selector));
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
     }
 
