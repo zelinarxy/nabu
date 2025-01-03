@@ -669,6 +669,31 @@ contract NabuTest is Test {
         assert(passage.count == 0);
     }
 
-    // TODO: test admin switch - old admin can't update
-    // TODO: test admin switch - new admin can update
+    function updateWorkAdminOldAdminUnauthorized() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        assert(nabu.getWork(workId).admin == alice);
+
+        cheats.startPrank(alice, alice);
+        nabu.updateWorkAdmin(workId, bob);
+        assert(nabu.getWork(workId).admin == bob);
+
+        cheats.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, bob));
+        nabu.updateWorkTitle(workId, "Donny Q");
+        cheats.stopPrank();
+    }
+
+    function updateWorkAdminNewAdminCanUpdate() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        assert(nabu.getWork(workId).admin == alice);
+
+        cheats.prank(alice);
+        nabu.updateWorkAdmin(workId, bob);
+        assert(nabu.getWork(workId).admin == bob);
+
+        assert(keccak256(bytes(nabu.getWork(workId).title)) == keccak256(bytes("Don Quijote")));
+
+        cheats.prank(bob);
+        nabu.updateWorkTitle(workId, "Donny Q");
+        assert(keccak256(bytes(nabu.getWork(workId).title)) == keccak256(bytes("Donny Q")));
+    }
 }
