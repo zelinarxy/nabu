@@ -195,6 +195,18 @@ contract NabuTest is Test {
         nabu.assignPassageContent(workId, 1_000_001, passageOneCompressed);
     }
 
+    function testConfirmPassageNoPass() public {
+        cheats.startPrank(alice, alice);
+        uint256 workId = createWork();
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        cheats.stopPrank();
+
+        cheats.roll(ONE_DAY);
+        cheats.prank(bob);
+        cheats.expectRevert(abi.encodeWithSelector(NoPass.selector));
+        nabu.confirmPassageContent(workId, 1);
+    }
+
     function testWritePassageNoPass() public {
         cheats.prank(alice);
         uint256 workId = createWork();
@@ -667,6 +679,20 @@ contract NabuTest is Test {
         assert(passage.byOne == address(0));
         assert(keccak256(passage.content) == keccak256(passageOneCompressed));
         assert(passage.count == 0);
+    }
+
+    function testAdminAssignContentInvalidPassageId() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.prank(alice);
+        cheats.expectRevert(abi.encodeWithSelector(InvalidPassageId.selector));
+        nabu.adminAssignPassageContent(workId, 1_000_001, passageOneCompressed);
+    }
+
+    function testConfirmPassageInvalidPassageId() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.expectRevert(abi.encodeWithSelector(InvalidPassageId.selector));
+        nabu.confirmPassageContent(workId, 1_000_001);
     }
 
     function updateWorkAdminOldAdminUnauthorized() public {
