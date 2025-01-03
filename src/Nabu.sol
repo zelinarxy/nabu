@@ -79,7 +79,7 @@ contract Nabu is Ownable {
 
     function adminAssignPassageContent(uint256 workId, uint256 passageId, bytes memory content)
         public
-        onlyOwner
+        onlyWorkAdmin(workId)
         returns (uint8)
     {
         Work storage work = _works[workId];
@@ -88,13 +88,11 @@ contract Nabu is Ownable {
             revert InvalidPassageId();
         }
 
-        Passage memory passage = _passages[workId][passageId];
-
-        passage.at = block.number;
-        passage.byZero = msg.sender;
-        passage.byOne = address(0);
-        passage.content = content;
-        passage.count = 0;
+        _passages[workId][passageId].at = block.number;
+        _passages[workId][passageId].byZero = msg.sender;
+        _passages[workId][passageId].byOne = address(0);
+        _passages[workId][passageId].content = content;
+        _passages[workId][passageId].count = 0;
 
         return 0; // passage.count
     }

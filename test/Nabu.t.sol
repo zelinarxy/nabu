@@ -641,7 +641,34 @@ contract NabuTest is Test {
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
     }
 
-    // TODO: test admin override of finalized block
+    function testAdminOverrideFinalizedBlock() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        cheats.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
+
+        cheats.roll(ONE_DAY);
+        cheats.prank(charlie);
+        nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
+
+        cheats.roll(ONE_DAY + SEVEN_DAYS);
+        cheats.prank(dave);
+        nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
+
+        assert(keccak256(nabu.getPassageContent(workId, 1)) == keccak256(passageOneMaliciousCompressed));
+
+        cheats.prank(alice);
+        nabu.adminAssignPassageContent(workId, 1, passageOneCompressed);
+
+        Passage memory passage = nabu.getPassage(workId, 1);
+
+        assert(passage.at == ONE_DAY + SEVEN_DAYS);
+        assert(passage.byZero == alice);
+        assert(passage.byOne == address(0));
+        assert(keccak256(passage.content) == keccak256(passageOneCompressed));
+        assert(passage.count == 0);
+    }
+
     // TODO: test admin switch - old admin can't update
     // TODO: test admin switch - new admin can update
 }
