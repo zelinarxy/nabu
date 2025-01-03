@@ -21,20 +21,20 @@ contract Ashurbanipal is ERC1155, Ownable {
         _nabuAddress = initialNabuAddress;
     }
 
-    function mint(address account, uint256 id, uint256 supply, string memory workUri) public onlyNabu {
-        _mint(account, id, supply, "");
-        _uris[id] = workUri;
+    function mint(address account, uint256 workId, uint256 supply, string memory workUri) public onlyNabu {
+        _mint(account, workId, supply, "");
+        _uris[workId] = workUri;
     }
 
     function nabuAddress() public returns (address) {
         return _nabuAddress;
     }
 
-    function updateUri(uint256 id, string memory newUri) public onlyNabu {
-        _uris[id] = newUri;
+    function updateUri(uint256 workId, string memory newUri) public onlyNabu {
+        _uris[workId] = newUri;
     }
 
-    function uri(uint256 id) public view override returns (string memory) {
-        return _uris[id];
+    function uri(uint256 workId) public view override returns (string memory) {
+        return _uris[workId];
     }
 }

@@ -722,4 +722,11 @@ contract NabuTest is Test {
         nabu.updateWorkTitle(workId, "Donny Q");
         assert(keccak256(bytes(nabu.getWork(workId).title)) == keccak256(bytes("Donny Q")));
     }
+
+    function testUpdateAshurbanipalUriNotNabu() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        cheats.prank(mallory);
+        cheats.expectRevert(abi.encodeWithSelector(NotNabu.selector));
+        ashurbanipal.updateUri(workId, "https://hmmm.cool/{id}.json");
+    }
 }
