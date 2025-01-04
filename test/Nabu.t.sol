@@ -723,10 +723,6 @@ contract NabuTest is Test {
         assert(keccak256(bytes(nabu.getWork(workId).title)) == keccak256(bytes("Donny Q")));
     }
 
-    function testUpdateAshurbanipalUri() public {
-
-    }
-
     function testUpdateAshurbanipalUriNotNabu() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         cheats.prank(mallory);
