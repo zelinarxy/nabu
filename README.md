@@ -1,4 +1,4 @@
-# Nabu
+# Nabu 𒀭𒀝
 
 Nabu is an experiment in permissionless, decentralized text preservation using the EVM. It provides a structure for dozens, hundreds or thousands of people to collaborate in committing a document to a blockchain so that it can't be tampered with by inquisitors, fact checkers, trust and safety teams or sensitivity readers.
 
