@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 import "forge-std/console.sol"; // TODO: remove
 import "@solady/src/auth/Ownable.sol";
+import "@solady/src/utils/SSTORE2.sol";
 import "./Ashurbanipal.sol";
 
 uint256 constant ONE_DAY = 7_200;
@@ -16,10 +17,11 @@ error NotWorkAdmin(address workAdmin);
 error PassageAlreadyFinalized();
 error TooLate(uint256 expiredAt);
 error TooSoonToAssignContent(uint256 canAssignAfter);
+error PassageTooLarge();
 
 struct Passage {
-    // the compressed content of the passage (TODO: compression algorithm)
-    bytes content;
+    // the address pointer for the compressed content of the passage (TODO: compression algorithm)
+    address content;
     // who performed the initial assignment?
     address byZero;
     // who performed the first confirmation?
@@ -82,6 +84,10 @@ contract Nabu is Ownable {
         onlyWorkAdmin(workId)
         returns (uint8)
     {
+        if (content.length > 24576) { // SSTORE2 max size
+            revert PassageTooLarge();
+        }
+
         Work storage work = _works[workId];
 
         if (passageId > work.totalPassagesCount) {
@@ -91,7 +97,7 @@ contract Nabu is Ownable {
         _passages[workId][passageId].at = block.number;
         _passages[workId][passageId].byZero = msg.sender;
         _passages[workId][passageId].byOne = address(0);
-        _passages[workId][passageId].content = content;
+        _passages[workId][passageId].content = SSTORE2.write(content);
         _passages[workId][passageId].count = 0;
 
         return 0; // passage.count
@@ -113,7 +119,7 @@ contract Nabu is Ownable {
 
         uint256 canAssignAfter;
 
-        if (count == 0 && keccak256(passage.content) != keccak256(bytes(""))) {
+        if (count == 0 && passage.content != address(0)) {
             canAssignAfter = passage.at + ONE_DAY;
         } else if (count == 1) {
             canAssignAfter = passage.at + SEVEN_DAYS;
@@ -131,15 +137,26 @@ contract Nabu is Ownable {
             revert NoPass();
         }
 
-        if (keccak256(passage.content) == keccak256(content)) {
-            _passages[workId][passageId].count = count + 1;
+        // Preserve the original capability of overwriting the content if different (not sure if intended)
+        if (passage.content != address(0)) {
+            // If content is a match, increment count
+            if (keccak256(SSTORE2.read(passage.content)) == keccak256(content)) {
+                _passages[workId][passageId].count = count + 1;
 
-            if (count == 0) {
-                _passages[workId][passageId].byOne = msg.sender;
+                if (count == 0) {
+                    _passages[workId][passageId].byOne = msg.sender;
+                }
+            }
+            // If content is different, overwrite it and reset count
+            else {
+                _passages[workId][passageId].byZero = msg.sender;
+                _passages[workId][passageId].content = SSTORE2.write(content);
+                _passages[workId][passageId].count = 0;
             }
         } else {
+            // If content is not yet set, initialize it
             _passages[workId][passageId].byZero = msg.sender;
-            _passages[workId][passageId].content = content;
+            _passages[workId][passageId].content = SSTORE2.write(content);
             _passages[workId][passageId].count = 0;
         }
 
@@ -210,7 +227,7 @@ contract Nabu is Ownable {
     }
 
     function getPassageContent(uint256 workId, uint256 passageId) public view returns (bytes memory) {
-        return _passages[workId][passageId].content;
+        return SSTORE2.read(_passages[workId][passageId].content);
     }
 
     function getWork(uint256 workId) public view returns (Work memory) {

@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import "forge-std/console.sol";
 import "forge-std/Test.sol";
 import "@solady/src/utils/LibZip.sol";
+import "@solady/src/utils/SSTORE2.sol";
 import "../src/Ashurbanipal.sol";
 import "../src/Nabu.sol";
 
@@ -183,7 +184,7 @@ contract NabuTest is Test {
         assert(passage.at == 0);
         assert(passage.byZero == bob);
         assert(passage.byOne == address(0));
-        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))) == keccak256(passageOne));
         assert(passage.count == 0);
     }
 
@@ -230,7 +231,7 @@ contract NabuTest is Test {
         assert(passage.at == ONE_DAY);
         assert(passage.byZero == bob);
         assert(passage.byOne == charlie);
-        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))) == keccak256(passageOne));
         assert(passage.count == 1);
     }
 
@@ -252,7 +253,7 @@ contract NabuTest is Test {
         assert(passage.at == ONE_DAY + SEVEN_DAYS);
         assert(passage.byZero == bob);
         assert(passage.byOne == charlie);
-        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))) == keccak256(passageOne));
         assert(passage.count == 2);
     }
 
@@ -323,7 +324,7 @@ contract NabuTest is Test {
         assert(passage.at == ONE_DAY);
         assert(passage.byZero == bob);
         assert(passage.byOne == charlie);
-        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))) == keccak256(passageOne));
         assert(passage.count == 1);
     }
 
@@ -345,7 +346,7 @@ contract NabuTest is Test {
         assert(passage.at == ONE_DAY + SEVEN_DAYS);
         assert(passage.byZero == bob);
         assert(passage.byOne == charlie);
-        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))) == keccak256(passageOne));
         assert(passage.count == 2);
     }
 
@@ -381,7 +382,7 @@ contract NabuTest is Test {
         assert(maliciousPassage.at == 0);
         assert(maliciousPassage.byZero == mallory);
         assert(maliciousPassage.byOne == address(0));
-        assert(keccak256(LibZip.flzDecompress(maliciousPassage.content)) == keccak256(passageOneMalicious));
+        assert(keccak256(LibZip.flzDecompress(SSTORE2.read(maliciousPassage.content))) == keccak256(passageOneMalicious));
         assert(maliciousPassage.count == 0);
 
         cheats.roll(ONE_DAY);
@@ -395,7 +396,7 @@ contract NabuTest is Test {
         assert(passage.at == ONE_DAY);
         assert(passage.byZero == alice);
         assert(passage.byOne == address(0));
-        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))) == keccak256(passageOne));
         assert(passage.count == 0);
     }
 
@@ -412,7 +413,7 @@ contract NabuTest is Test {
         assert(passage.at == 0);
         assert(passage.byZero == alice);
         assert(passage.byOne == address(0));
-        assert(keccak256(LibZip.flzDecompress(passage.content)) == keccak256(passageOne));
+        assert(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))) == keccak256(passageOne));
         assert(passage.count == 0);
 
         cheats.roll(ONE_DAY);
@@ -426,7 +427,7 @@ contract NabuTest is Test {
         assert(maliciousPassage.at == ONE_DAY);
         assert(maliciousPassage.byZero == mallory);
         assert(maliciousPassage.byOne == address(0));
-        assert(keccak256(LibZip.flzDecompress(maliciousPassage.content)) == keccak256(passageOneMalicious));
+        assert(keccak256(LibZip.flzDecompress(SSTORE2.read(maliciousPassage.content))) == keccak256(passageOneMalicious));
         assert(maliciousPassage.count == 0);
 
         cheats.roll(ONE_DAY + SEVEN_DAYS);
@@ -440,7 +441,7 @@ contract NabuTest is Test {
         assert(restoredPassage.at == ONE_DAY + SEVEN_DAYS);
         assert(restoredPassage.byZero == alice);
         assert(restoredPassage.byOne == address(0));
-        assert(keccak256(LibZip.flzDecompress(restoredPassage.content)) == keccak256(passageOne));
+        assert(keccak256(LibZip.flzDecompress(SSTORE2.read(restoredPassage.content))) == keccak256(passageOne));
         assert(restoredPassage.count == 0);
     }
 
@@ -677,7 +678,7 @@ contract NabuTest is Test {
         assert(passage.at == ONE_DAY + SEVEN_DAYS);
         assert(passage.byZero == alice);
         assert(passage.byOne == address(0));
-        assert(keccak256(passage.content) == keccak256(passageOneCompressed));
+        assert(keccak256(SSTORE2.read(passage.content)) == keccak256(passageOneCompressed));
         assert(passage.count == 0);
     }
 
