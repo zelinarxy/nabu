@@ -362,13 +362,21 @@ contract NabuTest is Test {
         nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
 
         bytes memory maliciousContent = nabu.getPassageContent(workId, 1);
-        assertEq(keccak256(LibZip.flzDecompress(maliciousContent)), keccak256(passageOneMalicious), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(maliciousContent)),
+            keccak256(passageOneMalicious),
+            "Passage.content mismatch"
+        );
 
         Passage memory maliciousPassage = nabu.getPassage(workId, 1);
         assertEq(maliciousPassage.at, 0, "Passage.at mismatch");
         assertEq(maliciousPassage.byZero, mallory, "Passage.byZero mismatch");
         assertEq(maliciousPassage.byOne, address(0), "Passage.byOne mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(maliciousPassage.content)), keccak256(passageOneMalicious), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(maliciousPassage.content)),
+            keccak256(passageOneMalicious),
+            "Passage.content mismatch"
+        );
         assertEq(maliciousPassage.count, 0, "Passage.count mismatch");
 
         vm.roll(ONE_DAY);
@@ -407,13 +415,21 @@ contract NabuTest is Test {
         nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
 
         bytes memory maliciousContent = nabu.getPassageContent(workId, 1);
-        assertEq(keccak256(LibZip.flzDecompress(maliciousContent)), keccak256(passageOneMalicious), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(maliciousContent)),
+            keccak256(passageOneMalicious),
+            "Passage.content mismatch"
+        );
 
         Passage memory maliciousPassage = nabu.getPassage(workId, 1);
         assertEq(maliciousPassage.at, ONE_DAY, "Passage.at mismatch");
         assertEq(maliciousPassage.byZero, mallory, "Passage.byZero mismatch");
         assertEq(maliciousPassage.byOne, address(0), "Passage.byOne mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(maliciousPassage.content)), keccak256(passageOneMalicious), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(maliciousPassage.content)),
+            keccak256(passageOneMalicious),
+            "Passage.content mismatch"
+        );
         assertEq(maliciousPassage.count, 0, "Passage.count mismatch");
 
         vm.roll(ONE_DAY + SEVEN_DAYS);
@@ -427,7 +443,9 @@ contract NabuTest is Test {
         assertEq(restoredPassage.at, ONE_DAY + SEVEN_DAYS, "Passage.at mismatch");
         assertEq(restoredPassage.byZero, alice, "Passage.byZero mismatch");
         assertEq(restoredPassage.byOne, address(0), "Passage.byOne mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(restoredPassage.content)), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(restoredPassage.content)), keccak256(passageOne), "Passage.content mismatch"
+        );
         assertEq(restoredPassage.count, 0, "Passage.count mismatch");
     }
 
@@ -460,7 +478,11 @@ contract NabuTest is Test {
 
     function testUpdateWorkAuthor() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
-        assertEq(keccak256(bytes(nabu.getWork(workId).author)), keccak256(bytes("Miguel de Cervantes")), "Work author mismatch");
+        assertEq(
+            keccak256(bytes(nabu.getWork(workId).author)),
+            keccak256(bytes("Miguel de Cervantes")),
+            "Work author mismatch"
+        );
 
         vm.prank(alice);
         nabu.updateWorkAuthor(workId, "Mickey C");
@@ -492,7 +514,9 @@ contract NabuTest is Test {
 
         vm.prank(alice);
         nabu.updateWorkMetadata(workId, "New metadata");
-        assertEq(keccak256(bytes(nabu.getWork(workId).metadata)), keccak256(bytes("New metadata")), "Work metadata mismatch");
+        assertEq(
+            keccak256(bytes(nabu.getWork(workId).metadata)), keccak256(bytes("New metadata")), "Work metadata mismatch"
+        );
     }
 
     function testUpdateWorkMetadataNotAdmin() public {
@@ -512,13 +536,29 @@ contract NabuTest is Test {
 
     function testUpdateWorkUri() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
-        assertEq(keccak256(bytes(nabu.getWork(workId).uri)), keccak256(bytes("https://foo.bar/{id}.json")), "Work uri mismatch");
-        assertEq(keccak256(bytes(ashurbanipal.uri(workId))), keccak256(bytes("https://foo.bar/{id}.json")), "Work uri mismatch");
+        assertEq(
+            keccak256(bytes(nabu.getWork(workId).uri)),
+            keccak256(bytes("https://foo.bar/{id}.json")),
+            "Work uri mismatch"
+        );
+        assertEq(
+            keccak256(bytes(ashurbanipal.uri(workId))),
+            keccak256(bytes("https://foo.bar/{id}.json")),
+            "Work uri mismatch"
+        );
 
         vm.prank(alice);
         nabu.updateWorkUri(workId, "https://lol.lmao/{id}.json");
-        assertEq(keccak256(bytes(nabu.getWork(workId).uri)), keccak256(bytes("https://lol.lmao/{id}.json")), "Work uri mismatch");
-        assertEq(keccak256(bytes(ashurbanipal.uri(workId))), keccak256(bytes("https://lol.lmao/{id}.json")), "Work uri mismatch");
+        assertEq(
+            keccak256(bytes(nabu.getWork(workId).uri)),
+            keccak256(bytes("https://lol.lmao/{id}.json")),
+            "Work uri mismatch"
+        );
+        assertEq(
+            keccak256(bytes(ashurbanipal.uri(workId))),
+            keccak256(bytes("https://lol.lmao/{id}.json")),
+            "Work uri mismatch"
+        );
     }
 
     function testUpdateWorkUriNotAdmin() public {
@@ -654,7 +694,11 @@ contract NabuTest is Test {
         vm.prank(dave);
         nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
 
-        assertEq(keccak256(nabu.getPassageContent(workId, 1)), keccak256(passageOneMaliciousCompressed), "Passage.content mismatch");
+        assertEq(
+            keccak256(nabu.getPassageContent(workId, 1)),
+            keccak256(passageOneMaliciousCompressed),
+            "Passage.content mismatch"
+        );
 
         vm.prank(alice);
         nabu.adminAssignPassageContent(workId, 1, passageOneCompressed);
