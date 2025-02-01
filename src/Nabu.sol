@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "forge-std/console.sol"; // TODO: remove
 import "@solady/src/auth/Ownable.sol";
 import "./Ashurbanipal.sol";
 
@@ -24,13 +23,10 @@ struct Passage {
     address byZero;
     // who performed the first confirmation?
     address byOne;
-    // the block at which `count` last reset or incremented
+    // who performed the second confirmation (finalized the passage)?
+    address byTwo;
+    // the block at which the last assignment or confirmation was performed
     uint256 at;
-    // how many times the passage's content has been confirmed. assigning new or different content to the passage
-    // resets `count` to 0. assigning the same content increments `count`. a passage is considered finalized when
-    // `count` reaches 2, at which point only the work's `admin` can assign it new or different content (reseting
-    // `count` to 0 in the process)
-    uint8 count;
 }
 
 struct Work {
@@ -80,7 +76,6 @@ contract Nabu is Ownable {
     function adminAssignPassageContent(uint256 workId, uint256 passageId, bytes memory content)
         public
         onlyWorkAdmin(workId)
-        returns (uint8)
     {
         Work storage work = _works[workId];
 
@@ -88,16 +83,14 @@ contract Nabu is Ownable {
             revert InvalidPassageId();
         }
 
-        _passages[workId][passageId].at = block.number;
+        _passages[workId][passageId].content = content;
         _passages[workId][passageId].byZero = msg.sender;
         _passages[workId][passageId].byOne = address(0);
-        _passages[workId][passageId].content = content;
-        _passages[workId][passageId].count = 0;
-
-        return 0; // passage.count
+        _passages[workId][passageId].byTwo = address(0);
+        _passages[workId][passageId].at = block.number;
     }
 
-    function assignPassageContent(uint256 workId, uint256 passageId, bytes memory content) public returns (uint8) {
+    function assignPassageContent(uint256 workId, uint256 passageId, bytes memory content) public {
         Work storage work = _works[workId];
 
         if (passageId > work.totalPassagesCount) {
@@ -105,26 +98,25 @@ contract Nabu is Ownable {
         }
 
         Passage memory passage = _passages[workId][passageId];
-        uint8 count = passage.count;
 
-        if (count == 2) {
+        if (passage.byTwo != address(0)) {
             revert PassageAlreadyFinalized();
-        }
-
-        uint256 canAssignAfter;
-
-        if (count == 0 && keccak256(passage.content) != keccak256(bytes(""))) {
-            canAssignAfter = passage.at + ONE_DAY;
-        } else if (count == 1) {
-            canAssignAfter = passage.at + SEVEN_DAYS;
-        }
-
-        if (block.number < canAssignAfter) {
-            revert TooSoonToAssignContent(canAssignAfter);
         }
 
         if (passage.byZero == msg.sender || passage.byOne == msg.sender) {
             revert CannotDoubleConfirmPassage();
+        }
+
+        uint256 canAssignAfter;
+
+        if (passage.byOne != address(0)) {
+            canAssignAfter = passage.at + SEVEN_DAYS;
+        } else if (passage.byZero != address(0)) {
+            canAssignAfter = passage.at + ONE_DAY;
+        }
+
+        if (block.number < canAssignAfter) {
+            revert TooSoonToAssignContent(canAssignAfter);
         }
 
         if (ashurbanipal.balanceOf(msg.sender, workId) == 0) {
@@ -132,22 +124,21 @@ contract Nabu is Ownable {
         }
 
         if (keccak256(passage.content) == keccak256(content)) {
-            _passages[workId][passageId].count = count + 1;
-
-            if (count == 0) {
+            if (passage.byOne == address(0)) {
                 _passages[workId][passageId].byOne = msg.sender;
+            } else {
+                _passages[workId][passageId].byTwo = msg.sender;
             }
         } else {
-            _passages[workId][passageId].byZero = msg.sender;
             _passages[workId][passageId].content = content;
-            _passages[workId][passageId].count = 0;
+            _passages[workId][passageId].byZero = msg.sender;
+            _passages[workId][passageId].byOne = address(0);
         }
 
         _passages[workId][passageId].at = block.number;
-        return _passages[workId][passageId].count;
     }
 
-    function confirmPassageContent(uint256 workId, uint256 passageId) public returns (uint8) {
+    function confirmPassageContent(uint256 workId, uint256 passageId) public {
         Work storage work = _works[workId];
 
         if (passageId > work.totalPassagesCount) {
@@ -155,40 +146,38 @@ contract Nabu is Ownable {
         }
 
         Passage memory passage = _passages[workId][passageId];
-        uint8 count = passage.count;
 
-        if (count == 2) {
+        if (passage.byTwo != address(0)) {
             revert PassageAlreadyFinalized();
-        }
-
-        uint256 canAssignAfter;
-
-        if (count == 0) {
-            canAssignAfter = passage.at + ONE_DAY;
-        } else if (count == 1) {
-            canAssignAfter = passage.at + SEVEN_DAYS;
-        }
-
-        if (block.number < canAssignAfter) {
-            revert TooSoonToAssignContent(canAssignAfter);
         }
 
         if (passage.byZero == msg.sender || passage.byOne == msg.sender) {
             revert CannotDoubleConfirmPassage();
         }
 
+        uint256 canAssignAfter;
+
+        if (passage.byOne != address(0)) {
+            canAssignAfter = passage.at + SEVEN_DAYS;
+        } else {
+            canAssignAfter = passage.at + ONE_DAY;
+        }
+
+        if (block.number < canAssignAfter) {
+            revert TooSoonToAssignContent(canAssignAfter);
+        }
+
         if (ashurbanipal.balanceOf(msg.sender, workId) == 0) {
             revert NoPass();
         }
 
-        _passages[workId][passageId].count = count + 1;
-
-        if (count == 0) {
+        if (passage.byOne != address(0)) {
+            _passages[workId][passageId].byTwo = msg.sender;
+        } else {
             _passages[workId][passageId].byOne = msg.sender;
         }
 
         _passages[workId][passageId].at = block.number;
-        return _passages[workId][passageId].count;
     }
 
     function createWork(
