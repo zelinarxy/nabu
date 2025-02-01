@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "@solady/src/auth/Ownable.sol";
+import {Ownable} from "@solady/src/auth/Ownable.sol";
+import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "./Ashurbanipal.sol";
 
 uint256 constant ONE_DAY = 7_200;
@@ -13,12 +14,13 @@ error InvalidPassageId();
 error NoPass();
 error NotWorkAdmin(address workAdmin);
 error PassageAlreadyFinalized();
+error PassageTooLarge();
 error TooLate(uint256 expiredAt);
 error TooSoonToAssignContent(uint256 canAssignAfter);
 
 struct Passage {
-    // the compressed content of the passage (TODO: compression algorithm)
-    bytes content;
+    // the address pointer for the compressed content of the passage (TODO: compression algorithm)
+    address content;
     // who performed the initial assignment?
     address byZero;
     // who performed the first confirmation?
@@ -77,13 +79,18 @@ contract Nabu is Ownable {
         public
         onlyWorkAdmin(workId)
     {
+        // SSTORE2 max size
+        if (content.length > 24576) {
+            revert PassageTooLarge();
+        }
+
         Work storage work = _works[workId];
 
         if (passageId > work.totalPassagesCount) {
             revert InvalidPassageId();
         }
 
-        _passages[workId][passageId].content = content;
+        _passages[workId][passageId].content = SSTORE2.write(content);
         _passages[workId][passageId].byZero = msg.sender;
         _passages[workId][passageId].byOne = address(0);
         _passages[workId][passageId].byTwo = address(0);
@@ -91,6 +98,11 @@ contract Nabu is Ownable {
     }
 
     function assignPassageContent(uint256 workId, uint256 passageId, bytes memory content) public {
+        // SSTORE2 max size
+        if (content.length > 24576) {
+            revert PassageTooLarge();
+        }
+
         Work storage work = _works[workId];
 
         if (passageId > work.totalPassagesCount) {
@@ -123,16 +135,23 @@ contract Nabu is Ownable {
             revert NoPass();
         }
 
-        if (keccak256(passage.content) == keccak256(content)) {
-            if (passage.byOne == address(0)) {
-                _passages[workId][passageId].byOne = msg.sender;
-            } else {
-                _passages[workId][passageId].byTwo = msg.sender;
+
+        if (passage.content != address(0)) {
+            if (keccak256(SSTORE2.read(passage.content)) == keccak256(content)) {
+                if (passage.byOne != address(0)) {
+                    _passages[workId][passageId].byTwo = msg.sender;
+                } else {
+                    _passages[workId][passageId].byOne = msg.sender;
+                }
+            }
+            else {
+                _passages[workId][passageId].content = SSTORE2.write(content);
+                _passages[workId][passageId].byZero = msg.sender;
+                _passages[workId][passageId].byOne = address(0);
             }
         } else {
-            _passages[workId][passageId].content = content;
+            _passages[workId][passageId].content = SSTORE2.write(content);
             _passages[workId][passageId].byZero = msg.sender;
-            _passages[workId][passageId].byOne = address(0);
         }
 
         _passages[workId][passageId].at = block.number;
@@ -199,7 +218,7 @@ contract Nabu is Ownable {
     }
 
     function getPassageContent(uint256 workId, uint256 passageId) public view returns (bytes memory) {
-        return _passages[workId][passageId].content;
+        return SSTORE2.read(_passages[workId][passageId].content);
     }
 
     function getWork(uint256 workId) public view returns (Work memory) {

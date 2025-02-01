@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {LibZip} from "@solady/src/utils/LibZip.sol";
+import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "../src/Ashurbanipal.sol";
 import "../src/Nabu.sol";
 
@@ -171,7 +172,7 @@ contract NabuTest is Test {
         assertEq(passage.byZero, bob, "Passage.byZero mismatch");
         assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(passage.content)), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
     }
 
     function testWritePassageInvalidPassageId() public {
@@ -218,7 +219,7 @@ contract NabuTest is Test {
         assertEq(passage.byZero, bob, "Passage.byZero mismatch");
         assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(passage.content)), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
     }
 
     function testManuallyConfirmPassageTwice() public {
@@ -240,7 +241,7 @@ contract NabuTest is Test {
         assertEq(passage.byZero, bob, "Passage.byZero mismatch");
         assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
         assertEq(passage.byTwo, dave, "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(passage.content)), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
     }
 
     // TODO: this but for second confirmation
@@ -311,7 +312,7 @@ contract NabuTest is Test {
         assertEq(passage.byZero, bob, "Passage.byZero mismatch");
         assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(passage.content)), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
     }
 
     function testConfirmPassageTwice() public {
@@ -333,7 +334,7 @@ contract NabuTest is Test {
         assertEq(passage.byZero, bob, "Passage.byZero mismatch");
         assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
         assertEq(passage.byTwo, dave, "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(passage.content)), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
     }
 
     function testConfirmPassageAlreadyFinalized() public {
@@ -374,7 +375,7 @@ contract NabuTest is Test {
         assertEq(maliciousPassage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(maliciousPassage.byTwo, address(0), "Passage.byTwo mismatch");
         assertEq(
-            keccak256(LibZip.flzDecompress(maliciousPassage.content)),
+            keccak256(LibZip.flzDecompress(SSTORE2.read(maliciousPassage.content))),
             keccak256(passageOneMalicious),
             "Passage.content mismatch"
         );
@@ -391,7 +392,7 @@ contract NabuTest is Test {
         assertEq(passage.byZero, alice, "Passage.byZero mismatch");
         assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(passage.content)), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
     }
 
     function testOverwritePassageTwice() public {
@@ -408,7 +409,7 @@ contract NabuTest is Test {
         assertEq(passage.byZero, alice, "Passage.byZero mismatch");
         assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(passage.content)), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
 
         vm.roll(ONE_DAY);
         vm.prank(mallory);
@@ -427,7 +428,7 @@ contract NabuTest is Test {
         assertEq(maliciousPassage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(maliciousPassage.byTwo, address(0), "Passage.byTwo mismatch");
         assertEq(
-            keccak256(LibZip.flzDecompress(maliciousPassage.content)),
+            keccak256(LibZip.flzDecompress(SSTORE2.read(maliciousPassage.content))),
             keccak256(passageOneMalicious),
             "Passage.content mismatch"
         );
@@ -445,7 +446,7 @@ contract NabuTest is Test {
         assertEq(restoredPassage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(restoredPassage.byTwo, address(0), "Passage.byOne mismatch");
         assertEq(
-            keccak256(LibZip.flzDecompress(restoredPassage.content)), keccak256(passageOne), "Passage.content mismatch"
+            keccak256(LibZip.flzDecompress(SSTORE2.read(restoredPassage.content))), keccak256(passageOne), "Passage.content mismatch"
         );
     }
 
@@ -709,7 +710,7 @@ contract NabuTest is Test {
         assertEq(passage.byZero, alice, "Passage.byZero mismatch");
         assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(passage.content), keccak256(passageOneCompressed), "Passage.content mismatch");
+        assertEq(keccak256(SSTORE2.read((passage.content))), keccak256(passageOneCompressed), "Passage.content mismatch");
     }
 
     function testAdminAssignContentInvalidPassageId() public {
