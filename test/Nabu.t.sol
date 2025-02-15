@@ -625,7 +625,7 @@ contract NabuTest is Test {
         nabu.updateWorkTotalPassagesCount(workId, 69_000);
     }
 
-    function testConfirmPassageTooSoonToAssignContent() public {
+    function testConfirmPassageTooSoonToConfirmContent() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -633,7 +633,7 @@ contract NabuTest is Test {
 
         vm.roll(ONE_DAY - 1);
         vm.prank(charlie);
-        vm.expectRevert(abi.encodeWithSelector(TooSoonToAssignContent.selector, ONE_DAY));
+        vm.expectRevert(abi.encodeWithSelector(TooSoonToConfirmContent.selector, ONE_DAY));
         nabu.confirmPassageContent(workId, 1);
     }
 
@@ -649,7 +649,7 @@ contract NabuTest is Test {
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
     }
 
-    function testDoubleConfirmPassageTooSoonToAssignContent() public {
+    function testDoubleConfirmPassageTooSoonToConfirmContent() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -661,7 +661,7 @@ contract NabuTest is Test {
 
         vm.roll(ONE_DAY + SEVEN_DAYS - 1);
         vm.prank(dave);
-        vm.expectRevert(abi.encodeWithSelector(TooSoonToAssignContent.selector, ONE_DAY + SEVEN_DAYS));
+        vm.expectRevert(abi.encodeWithSelector(TooSoonToConfirmContent.selector, ONE_DAY + SEVEN_DAYS));
         nabu.confirmPassageContent(workId, 1);
     }
 
