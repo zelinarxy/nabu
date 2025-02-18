@@ -32,7 +32,7 @@ Like so:
 }
 ```
 
-The Great Book is divided into passages that everyone agrees on (except the hateful schismatics, of whom we don't speak). If the text weren't a standardized classic of this sort, Alice would need to divide it into passages.
+The Great Book is divided into passages that everyone agrees on (except the hateful schismatics, of whom we don't speak). If the text weren't a standardized classic of this sort, Alice would need to divide it into passages herself.
 
 At this point Alice could let nature take its course and trust her coreligionists to correctly populate the work. This might just be possible with a devoted community and a standardized text. But let's say she takes a more hands-on approach. Nabu isn't opinionated about this part of the picture, but we could imagine Alice building a SQL database of passages in the Great Book and an API to serve that data to a web UI, where users could click a few buttons to select a passage to commit to the chain and perform the call to the Nabu smart contract.
 

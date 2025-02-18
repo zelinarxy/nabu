@@ -15,6 +15,7 @@ contract NabuTest is Test {
     address bob = makeAddr("Bob");
     address charlie = makeAddr("Charlie");
     address dave = makeAddr("Dave");
+    address frank = makeAddr("Frank");
     address mallory = makeAddr("Mallory");
 
     modifier prank(address addr) {
@@ -172,7 +173,11 @@ contract NabuTest is Test {
         assertEq(passage.byZero, bob, "Passage.byZero mismatch");
         assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
+            keccak256(passageOne),
+            "Passage.content mismatch"
+        );
     }
 
     function testWritePassageInvalidPassageId() public {
@@ -181,6 +186,17 @@ contract NabuTest is Test {
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(InvalidPassageId.selector));
         nabu.assignPassageContent(workId, 1_000_001, passageOneCompressed);
+    }
+
+    function testWritePassageBlacklisted() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(alice);
+        nabu.updateBlacklist(workId, bob, true);
+
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(Blacklisted.selector));
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
     }
 
     function testConfirmPassageNoPass() public {
@@ -219,7 +235,11 @@ contract NabuTest is Test {
         assertEq(passage.byZero, bob, "Passage.byZero mismatch");
         assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
+            keccak256(passageOne),
+            "Passage.content mismatch"
+        );
     }
 
     function testManuallyConfirmPassageTwice() public {
@@ -241,7 +261,11 @@ contract NabuTest is Test {
         assertEq(passage.byZero, bob, "Passage.byZero mismatch");
         assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
         assertEq(passage.byTwo, dave, "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
+            keccak256(passageOne),
+            "Passage.content mismatch"
+        );
     }
 
     // TODO: this but for second confirmation
@@ -256,8 +280,8 @@ contract NabuTest is Test {
         nabu.confirmPassageContent(workId, 1);
 
         vm.roll(ONE_DAY + SEVEN_DAYS);
-        vm.expectRevert(abi.encodeWithSelector(CannotDoubleConfirmPassage.selector));
         vm.prank(charlie);
+        vm.expectRevert(abi.encodeWithSelector(CannotDoubleConfirmPassage.selector));
         nabu.confirmPassageContent(workId, 1);
     }
 
@@ -273,8 +297,8 @@ contract NabuTest is Test {
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
 
         vm.roll(ONE_DAY + SEVEN_DAYS);
-        vm.expectRevert(abi.encodeWithSelector(CannotDoubleConfirmPassage.selector));
         vm.prank(charlie);
+        vm.expectRevert(abi.encodeWithSelector(CannotDoubleConfirmPassage.selector));
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
     }
 
@@ -312,7 +336,11 @@ contract NabuTest is Test {
         assertEq(passage.byZero, bob, "Passage.byZero mismatch");
         assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
+            keccak256(passageOne),
+            "Passage.content mismatch"
+        );
     }
 
     function testConfirmPassageTwice() public {
@@ -334,7 +362,11 @@ contract NabuTest is Test {
         assertEq(passage.byZero, bob, "Passage.byZero mismatch");
         assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
         assertEq(passage.byTwo, dave, "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
+            keccak256(passageOne),
+            "Passage.content mismatch"
+        );
     }
 
     function testConfirmPassageAlreadyFinalized() public {
@@ -353,6 +385,21 @@ contract NabuTest is Test {
 
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(PassageAlreadyFinalized.selector));
+        nabu.confirmPassageContent(workId, 1);
+    }
+
+    function testConfirmPassageBlacklisted() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(alice);
+        nabu.updateBlacklist(workId, charlie, true);
+
+        vm.prank(bob);
+        nabu.assignPassageContent(workId, 1, passageOneCompressed);
+
+        vm.roll(ONE_DAY);
+        vm.prank(charlie);
+        vm.expectRevert(abi.encodeWithSelector(Blacklisted.selector));
         nabu.confirmPassageContent(workId, 1);
     }
 
@@ -392,7 +439,11 @@ contract NabuTest is Test {
         assertEq(passage.byZero, alice, "Passage.byZero mismatch");
         assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
+            keccak256(passageOne),
+            "Passage.content mismatch"
+        );
     }
 
     function testOverwritePassageTwice() public {
@@ -409,7 +460,11 @@ contract NabuTest is Test {
         assertEq(passage.byZero, alice, "Passage.byZero mismatch");
         assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))), keccak256(passageOne), "Passage.content mismatch");
+        assertEq(
+            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
+            keccak256(passageOne),
+            "Passage.content mismatch"
+        );
 
         vm.roll(ONE_DAY);
         vm.prank(mallory);
@@ -446,7 +501,9 @@ contract NabuTest is Test {
         assertEq(restoredPassage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(restoredPassage.byTwo, address(0), "Passage.byOne mismatch");
         assertEq(
-            keccak256(LibZip.flzDecompress(SSTORE2.read(restoredPassage.content))), keccak256(passageOne), "Passage.content mismatch"
+            keccak256(LibZip.flzDecompress(SSTORE2.read(restoredPassage.content))),
+            keccak256(passageOne),
+            "Passage.content mismatch"
         );
     }
 
@@ -503,6 +560,33 @@ contract NabuTest is Test {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         nabu.updateWorkAuthor(workId, "Mickey C");
+    }
+
+    function testUpdateWorkBlacklist() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        assertFalse(nabu.getIsBlacklisted(workId, bob)); // TODO
+
+        vm.prank(alice);
+        nabu.updateBlacklist(workId, bob, true);
+        assertTrue(nabu.getIsBlacklisted(workId, bob)); // TODO
+
+        vm.prank(alice);
+        nabu.updateBlacklist(workId, bob, false);
+        assertFalse(nabu.getIsBlacklisted(workId, bob)); // TODO
+    }
+
+    function testUpdateWorkBlacklistNotAdmin() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, alice));
+        nabu.updateBlacklist(workId, charlie, true);
+    }
+
+    function testUpdateWorkBlacklistNeverTooLate() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        vm.roll(THIRTY_DAYS + 1);
+        vm.prank(alice);
+        nabu.updateBlacklist(workId, bob, true);
     }
 
     function testUpdateWorkMetadata() public {
@@ -710,7 +794,9 @@ contract NabuTest is Test {
         assertEq(passage.byZero, alice, "Passage.byZero mismatch");
         assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(keccak256(SSTORE2.read((passage.content))), keccak256(passageOneCompressed), "Passage.content mismatch");
+        assertEq(
+            keccak256(SSTORE2.read((passage.content))), keccak256(passageOneCompressed), "Passage.content mismatch"
+        );
     }
 
     function testAdminAssignContentInvalidPassageId() public {
@@ -772,5 +858,140 @@ contract NabuTest is Test {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(NotNabu.selector));
         ashurbanipal.mint(mallory, workId, 100, "https://yes.wowee/{id}.json");
+    }
+
+    function testAshurbanipalTransfer() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        assertEq(ashurbanipal.balanceOf(bob, workId), 1_000, "Bob pass balance before mismatch");
+        assertEq(ashurbanipal.balanceOf(charlie, workId), 2_000, "Charlie pass balance before mismatch");
+
+        vm.prank(bob);
+        ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
+
+        assertEq(ashurbanipal.balanceOf(bob, workId), 995, "Bob pass balance after mismatch");
+        assertEq(ashurbanipal.balanceOf(charlie, workId), 2_005, "Charlie pass balance after mismatch");
+    }
+
+    function testAshurbanipalBatchTransfer() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(bob);
+        uint256 workIdTwo = nabu.createWork(
+            "William Shakespeare", "Arbitrary informative metadata", "Hamlet", 20_000, "https://baz.qux/{id}.json", 50
+        );
+
+        assertEq(ashurbanipal.balanceOf(bob, workId), 1_000, "Bob work one pass balance before mismatch");
+        assertEq(ashurbanipal.balanceOf(bob, workIdTwo), 50, "Bob work two pass balance before mismatch");
+        assertEq(ashurbanipal.balanceOf(frank, workId), 0, "Frank work one pass balance before mismatch");
+        assertEq(ashurbanipal.balanceOf(frank, workIdTwo), 0, "Frank work two pass balance before mismatch");
+
+        uint256[] memory workIds = new uint256[](2);
+        workIds[0] = workId;
+        workIds[1] = workIdTwo;
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 1;
+        amounts[1] = 20;
+
+        vm.prank(bob);
+        ashurbanipal.safeBatchTransferFrom(bob, frank, workIds, amounts, "");
+
+        assertEq(ashurbanipal.balanceOf(bob, workId), 999, "Bob work one pass balance after mismatch");
+        assertEq(ashurbanipal.balanceOf(bob, workIdTwo), 30, "Bob work two pass balance after mismatch");
+        assertEq(ashurbanipal.balanceOf(frank, workId), 1, "Frank work one pass balance after mismatch");
+        assertEq(ashurbanipal.balanceOf(frank, workIdTwo), 20, "Frank work two pass balance after mismatch");
+    }
+
+    function testAshurbanipalTransferBlacklistedSender() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(alice);
+        nabu.updateBlacklist(workId, bob, true);
+
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(IsFrozen.selector));
+        ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
+    }
+
+    function testAshurbanipalTransferBlacklistedRecipient() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(alice);
+        nabu.updateBlacklist(workId, charlie, true);
+
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(IsFrozen.selector));
+        ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
+    }
+
+    function testAshurbanipalBatchTransferBlacklistedSender() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(bob);
+        uint256 workIdTwo = nabu.createWork(
+            "William Shakespeare", "Arbitrary informative metadata", "Hamlet", 20_000, "https://baz.qux/{id}.json", 50
+        );
+
+        uint256[] memory workIds = new uint256[](2);
+        workIds[0] = workId;
+        workIds[1] = workIdTwo;
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 1;
+        amounts[1] = 20;
+
+        vm.prank(alice);
+        nabu.updateBlacklist(workId, bob, true);
+
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(IsFrozen.selector));
+        ashurbanipal.safeBatchTransferFrom(bob, frank, workIds, amounts, "");
+    }
+
+    function testAshurbanipalBatchTransferBlacklistedRecipient() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(bob);
+        uint256 workIdTwo = nabu.createWork(
+            "William Shakespeare", "Arbitrary informative metadata", "Hamlet", 20_000, "https://baz.qux/{id}.json", 50
+        );
+
+        uint256[] memory workIds = new uint256[](2);
+        workIds[0] = workId;
+        workIds[1] = workIdTwo;
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 1;
+        amounts[1] = 20;
+
+        vm.prank(bob);
+        nabu.updateBlacklist(workIdTwo, frank, true);
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IsFrozen.selector));
+        ashurbanipal.safeBatchTransferFrom(alice, frank, workIds, amounts, "");
+    }
+
+    function testAshurbanipalTransferBanLifted() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(alice);
+        nabu.updateBlacklist(workId, bob, true);
+
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(IsFrozen.selector));
+        ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
+
+        vm.prank(alice);
+        nabu.updateBlacklist(workId, bob, false);
+
+        assertEq(ashurbanipal.balanceOf(bob, workId), 1_000, "Bob pass balance before mismatch");
+        assertEq(ashurbanipal.balanceOf(charlie, workId), 2_000, "Charlie pass balance before mismatch");
+
+        vm.prank(bob);
+        ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
+
+        assertEq(ashurbanipal.balanceOf(bob, workId), 995, "Bob pass balance after mismatch");
+        assertEq(ashurbanipal.balanceOf(charlie, workId), 2_005, "Charlie pass balance after mismatch");
     }
 }

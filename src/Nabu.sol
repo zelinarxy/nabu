@@ -9,6 +9,8 @@ uint256 constant ONE_DAY = 7_200;
 uint256 constant SEVEN_DAYS = 50_400;
 uint256 constant THIRTY_DAYS = 216_000;
 
+/// @dev User is blacklisted by the work's admin from assigning or confirming passage content for that work
+error Blacklisted();
 /// @dev A given user is limited to assigning a passage's content or confirming it once
 error CannotDoubleConfirmPassage();
 /// @dev SSTORE2 has a max length of 24576
@@ -17,7 +19,7 @@ error ContentTooLarge();
 error InvalidPassageId();
 /// @dev User must hold a "pass" (Ashurbanipal NFT) corresponding to the work in order to assign or confirm content
 error NoPass();
-/// @dev No confirming an empty passage 
+/// @dev No confirming an empty passage
 error NoPassageContent();
 /// @dev Function is restricted to the work's admin
 error NotWorkAdmin(address workAdmin);
@@ -96,8 +98,13 @@ contract Nabu is Ownable {
     /// @notice Address of the contract used to mint NFTs granting permission to write or confirm works' content
     address public ashurbanipalAddress;
 
+    /// @notice A work's admin can ban an address from assigning or confirming passage content for that work
+    /// @dev The first uint256 mapping corresponds to the work id
+    mapping(uint256 => mapping(address => bool)) private _blacklist;
+
     /// @dev The first uint256 mapping corresponds to the work id
     mapping(uint256 => mapping(uint256 => Passage)) private _passages;
+
     mapping(uint256 => Work) private _works;
     uint256 private _worksTip;
 
@@ -180,6 +187,11 @@ contract Nabu is Ownable {
             revert InvalidPassageId();
         }
 
+        // The user is blacklisted
+        if (_blacklist[workId][msg.sender]) {
+            revert Blacklisted();
+        }
+
         Passage memory passage = _passages[workId][passageId];
 
         // The passage has received two confirmations: it's finalized and only the work's admin can update it
@@ -256,6 +268,11 @@ contract Nabu is Ownable {
         // The passage doesn't exist
         if (passageId > work.totalPassagesCount) {
             revert InvalidPassageId();
+        }
+
+        // The user is blacklisted
+        if (_blacklist[workId][msg.sender]) {
+            revert Blacklisted();
         }
 
         Passage memory passage = _passages[workId][passageId];
@@ -337,12 +354,27 @@ contract Nabu is Ownable {
         newWorksTip = _worksTip;
     }
 
-    /// @notice Update the Ashurbanipal contract. Restricted to the Nabu contract owner
+    /// @notice Update the Ashurbanipal contract
+    /// @notice Restricted to the Nabu contract owner
     ///
     /// @param newAshurbanipalAddress The new Ashurbanipal contract address
     function updateAshurbanipalAddress(address newAshurbanipalAddress) public onlyOwner {
         ashurbanipalAddress = newAshurbanipalAddress;
         _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
+    }
+
+    /// @notice Update the blacklist for a work, either banning or un-banning an address
+    /// @notice Blacklisting also freezes users' Ashurbanipal "pass" NFTs: the user can neither send nor receive a pass
+    /// @notice Restricted to the work's current admin
+    ///
+    /// @param workId The id of the work
+    /// @param user The address of the user to be updated
+    /// @param shouldBan Should the user be banned or unbanned
+    function updateBlacklist(uint256 workId, address user, bool shouldBan) public onlyWorkAdmin(workId) {
+        _blacklist[workId][user] = shouldBan;
+
+        // Freeze the user's Ashurbanipal "pass" NFTs to prevent transfer to a sybil (or unfreeze)
+        _ashurbanipal.updateFreezelist(workId, user, shouldBan);
     }
 
     /// @notice Update the admin address for a work
@@ -448,5 +480,9 @@ contract Nabu is Ownable {
     /// @return work The work
     function getWork(uint256 workId) public view returns (Work memory work) {
         work = _works[workId];
+    }
+
+    function getIsBlacklisted(uint256 workId, address user) public view returns (bool isBlacklisted) {
+        isBlacklisted = _blacklist[workId][user];
     }
 }
