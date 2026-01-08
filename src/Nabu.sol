@@ -15,15 +15,17 @@ error Blacklisted();
 error CannotDoubleConfirmPassage();
 /// @dev SSTORE2 has a max length of 24576
 error ContentTooLarge();
+/// @dev Works require a title
+error EmptyTitle();
 /// @dev Passage doesn't exist
 error InvalidPassageId();
 /// @dev User must hold a "pass" (Ashurbanipal NFT) corresponding to the work in order to assign or confirm content
 error NoPass();
-/// @dev No confirming an empty passage
+/// @dev Can't confirm an empty passage
 error NoPassageContent();
 /// @dev Function is restricted to the work's admin
 error NotWorkAdmin(address workAdmin);
-/// @dev Can't assign or confirm a passage's content if it's already finalized
+/// @dev Can't assign or confirm a passage's content once it's finalized
 error PassageAlreadyFinalized();
 /// @dev Function can only be called within 30 days of a work's creation
 error TooLate(uint256 expiredAt);
@@ -31,22 +33,24 @@ error TooLate(uint256 expiredAt);
 error TooSoonToAssignContent(uint256 canAssignAfter);
 /// @dev There is a seven-day cooling-off period between first and second content confirmations
 error TooSoonToConfirmContent(uint256 canConfirmAfter);
+/// @dev A work's `totalPassagesCount` must be at least 1
+error ZeroPassagesCount();
 
 /**
- * @notice A work can be anything that can be expressed in text, but it's easiest to think of it as a book: it should
- * have a title, can have an author, can have arbitrary metadata, and must have a total passages count. When a user
- * creates a work by calling `createWork`, they must specify how many passages the work has (this can be updated, along
- * with author, title and metadata, for 30 days after creating the work). This user, who becomes the work's admin,
- * should specify ahead of time what each passage's content should be, and provide other users an interface where they
- * can populate each passage's content correctly. For the Bible, for example, passage 0 would probably be Genesis 1:1,
- * compressed to save gas. Works that aren't scripture or classics will need to be broken up into passages by admins.
+ * @notice A work is anything that can be expressed in text, but it's easiest to think of it as a book: it must have
+ * a title, can have an author, can have arbitrary metadata, and must have a total passages count. When a user creates
+ * a work by calling `createWork`, they must specify how many passages the work has (this can be updated, along with
+ * author, title and metadata, for 30 days after creating the work). This user, who becomes the work's admin, should
+ * decide ahead of time what each passage's content should be, and provide other users an interface where they can
+ * populate each passage's content correctly. For the Bible, for example, passage 0 would be Genesis 1:1, compressed
+ * to save gas. Works that aren't scripture or classics will need to be broken up into passages by admins.
  */
 struct Work {
-    /// @dev The real-world author of the work, e.g. Shakespeare
+    /// @dev The real-world author of the work, e.g. Homer or Shakespeare
     string author;
     /// @dev Arbitrary information the work's admin might like to add
     string metadata;
-    /// @dev The title of the work, e.g. The Odyssey
+    /// @dev The title of the work, e.g. The Odyssey or Hamlet
     string title;
     /// @dev The address of the user who initialized the work
     /// @dev The admin can update the work's metadata for a limited amount of time
@@ -55,7 +59,7 @@ struct Work {
     address admin;
     /// @dev The total number of passages in the work
     uint256 totalPassagesCount;
-    /// @dev The block at which the work was created
+    /// @dev The block at which the work was created (instantiated onchain using Nabu, not written in the real world)
     uint256 createdAt;
     /// @dev The metadata URI for the ERC-1155 token id associated with the work (see the Ashurbanipal contract)
     string uri;
@@ -66,17 +70,17 @@ struct Work {
  * networks. The fundamental unit of a text in Nabu is a passage, and the content of a passage is recorded via a three-
  * step process: first, a user assigns content to the empty passage; second, another user (the first user isn't able to
  * perform this step) confirms that the passage's content is correct, either by assigning it identical content or
- * calling a lighter confirm function; third, a third user (can't be either of the first two) performs a second
+ * calling a lighter confirm function; third, yet another user (who can't be either of the first two) performs a second
  * confirmation. At this point the passage's content is considered finalized. Only the work's admin (the user who
- * created the work or was assigned admin status by the creator) can overwrite a passage at this point. Then the
+ * created the work or has been assigned admin status by the creator) can overwrite a passage at this point. Then the
  * confirmation count is reset to zero and the process repeats. The goal is to prevent any given user or group of users
  * from vandalizing a work by assigning it incorret content, while providing a mechanism for honest users to record
  * their text permanently on the blockchain. Ideally, once every passage of a work is finalized with correct content,
  * the admin renounces their status and the text is set in stone.
  */
 struct Passage {
-    /// @dev The address pointer for the passage's content, which should be compressed to save gas
-    /// @dev Nothing necessarily dictates a particular compression algorithm, but Nabut has been tested with FastLZ
+    /// @dev The address pointer for the passage's content; this content should be compressed to save gas
+    /// @dev Nothing necessarily dictates a particular compression algorithm, but Nabu has been tested with FastLZ
     /// @dev See: https://github.com/ariya/FastLZ
     address content;
     /// @dev The address of the user who performed the initial content assignment (possibly an overwrite)
@@ -85,7 +89,7 @@ struct Passage {
     address byOne;
     /// @dev The address of the user who performed the second content confirmation (finalized the passage)
     address byTwo;
-    /// @dev The block at which the last content assignment or confirmation was performed
+    /// @dev The block at which the most recent content assignment or confirmation was performed
     uint256 at;
 }
 
@@ -123,15 +127,15 @@ contract Nabu is Ownable {
         _;
     }
 
-    /// @notice Initialize the contract with owner: only the owner can update the Ashurbanipal contract address
+    /// @notice Initialize the contract with an owner: only the owner can update the Ashurbanipal contract address
     constructor() {
         _initializeOwner(msg.sender);
     }
 
     /// @notice A work's admin can update the content of a passage even if that passage has been finalized
-    /// @notice Unlike other admin-only functions, this one has no time limitation (`notTooLate` modifier)
+    /// @notice Unlike other admin-only functions, this one has no time limitation (no `notTooLate` modifier)
     ///
-    /// @dev Content should be compressed to save gas; the contract has been tested with FastLZ compression
+    /// @dev Content should be compressed to save gas; this contract has been tested with FastLZ compression
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
@@ -182,6 +186,8 @@ contract Nabu is Ownable {
 
         Work storage work = _works[workId];
 
+        // if the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
+
         // The passage doesn't exist
         if (passageId > work.totalPassagesCount) {
             revert InvalidPassageId();
@@ -194,7 +200,8 @@ contract Nabu is Ownable {
 
         Passage memory passage = _passages[workId][passageId];
 
-        // The passage has received two confirmations: it's finalized and only the work's admin can update it
+        // The passage has received two confirmations: it's finalized and only the work's admin can update it by
+        // explicitly calling `adminAssignPassageContent`
         if (passage.byTwo != address(0)) {
             revert PassageAlreadyFinalized();
         }
@@ -258,12 +265,14 @@ contract Nabu is Ownable {
 
     /// @notice Anyone holding a work's Ashurbanipal NFT can confirm a passage's existing content
     /// @notice Two confirmations finalizes a passage's content; at that point only the work's admin can change it
-    /// @notice The passage must have assigned content (can't point to address(0)) or the call throws an error
+    /// @notice The passage must already have assigned content (can't point to address(0)) or the call throws an error
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
     function confirmPassageContent(uint256 workId, uint256 passageId) public {
         Work storage work = _works[workId];
+
+        // if the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
 
         // The passage doesn't exist
         if (passageId > work.totalPassagesCount) {
@@ -326,14 +335,15 @@ contract Nabu is Ownable {
     }
 
     /// @notice Create and configure a new work; the user who calls this function becomes the work's admin
-    /// @notice Admin receives the number of "pass" NFTs from the Ashurbanipal contract specified by the supply arg
+    /// @notice Absent `mintTo`, admin receives "pass" NFTs from the Ashurbanipal contract (count is equal to `supply`)
     ///
-    /// @param author The real-world author of the work, e.g. Shakespeare
+    /// @param author The real-world author of the work, e.g. Homer or Shakespeare
     /// @param metadata Arbitrary information the work's admin might like to add
-    /// @param title The title of the work, e.g. The Odyssey
+    /// @param title The title of the work, e.g. The Odyssey or Hamlet
     /// @param totalPassagesCount The total number of passages in the work
     /// @param uri The metadata uri for the ERC-1155 token id associated with the work (see the Ashurbanipal contract)
-    /// @param supply The total supply of "pass" NFTs the Ashurbanipal contract will mint to the admin for distribution
+    /// @param supply The total supply of "pass" NFTs the Ashurbanipal contract will mint for distribution (see mintTo)
+    /// @param mintTo The address the "pass" NFTs should be minted to (optional, falls back to msg.sender)
     ///
     /// @return newWorksTip The updated works tip
     function createWork(
@@ -342,15 +352,29 @@ contract Nabu is Ownable {
         string memory title,
         uint256 totalPassagesCount,
         string memory uri,
-        uint256 supply
+        uint256 supply,
+        address mintTo
     ) public returns (uint256 newWorksTip) {
+        if (totalPassagesCount == 0) {
+            revert ZeroPassagesCount();
+        }
+
+        if (bytes(title).length == 0) {
+            revert EmptyTitle();
+        }
+
+        address mintToOrAdmin = mintTo;
+        if (mintToOrAdmin == address(0)) {
+            mintToOrAdmin = msg.sender;
+        }
+
         _worksTip += 1;
         _works[_worksTip] = Work(author, metadata, title, msg.sender, totalPassagesCount, block.number, uri);
 
-        // Mint a quantity (specified by the `supply` parameter) of Ashurbanipal ERC-1155 NFTs to admin, who is
-        // responsible for distributing them. These NFTs serve as "passes," allowing holders to assign or confirm the
-        // content of passages in the corresponding work
-        _ashurbanipal.mint(msg.sender, _worksTip, supply, uri);
+        // Mint a quantity (specified by the `supply` parameter) of Ashurbanipal ERC-1155 NFTs to mintTo (which falls
+        // back to msg.sender, the work's admin). This recipient is responsible for distributing the NFTs, which serve
+        // as "passes" allowing holders to assign or confirm the content of passages in the corresponding work
+        _ashurbanipal.mint(mintToOrAdmin, _worksTip, supply, uri);
         newWorksTip = _worksTip;
     }
 
@@ -391,7 +415,7 @@ contract Nabu is Ownable {
     /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
     ///
     /// @param workId The id of the work
-    /// @param newAuthor The work's new author (the real-world author, e.g. Shakespeare)
+    /// @param newAuthor The work's new author (the real-world author, e.g. Homer or Shakespeare)
     function updateWorkAuthor(uint256 workId, string memory newAuthor)
         public
         notTooLate(workId)
@@ -417,8 +441,12 @@ contract Nabu is Ownable {
     /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
     ///
     /// @param workId The id of the work
-    /// @param newTitle The work's new title (e.g. The Odyssey)
+    /// @param newTitle The work's new title, e.g. The Odyssey or Hamlet
     function updateWorkTitle(uint256 workId, string memory newTitle) public notTooLate(workId) onlyWorkAdmin(workId) {
+        if (bytes(newTitle).length == 0) {
+            revert EmptyTitle();
+        }
+
         _works[workId].title = newTitle;
     }
 
@@ -428,12 +456,16 @@ contract Nabu is Ownable {
     /// @dev When creating a work, it's necessary to break it into a set number of passages ahead of time
     ///
     /// @param workId The id of the work
-    /// @param newTotalPassagesCount The work's new total passage count
+    /// @param newTotalPassagesCount The work's new total passage count: must be at least 1
     function updateWorkTotalPassagesCount(uint256 workId, uint256 newTotalPassagesCount)
         public
         notTooLate(workId)
         onlyWorkAdmin(workId)
     {
+        if (newTotalPassagesCount == 0) {
+            revert ZeroPassagesCount();
+        }
+
         _works[workId].totalPassagesCount = newTotalPassagesCount;
     }
 
@@ -451,7 +483,7 @@ contract Nabu is Ownable {
 
     /// @notice View a passage: content and confirmation metadata
     ///
-    /// @dev Conent is returned as written; if compressed (recommended) the consuming application needs to decompress
+    /// @dev Content is returned as written; if compressed (recommended), the consuming application needs to decompress
     ///
     /// @param workId The id of the work
     /// @param passageId The id of the passage
@@ -463,7 +495,7 @@ contract Nabu is Ownable {
 
     /// @notice View a passage's content only
     ///
-    /// @dev Conent is returned as written; if compressed (recommended) the consuming application needs to decompress
+    /// @dev Content is returned as written; if compressed (recommended), the consuming application needs to decompress
     ///
     /// @param workId The id of the work
     /// @param passageId The id of the passage
@@ -482,6 +514,12 @@ contract Nabu is Ownable {
         work = _works[workId];
     }
 
+    /// @notice Check whether a user is banned from writing or confirming passages in a certain work
+    ///
+    /// @param workId The id of the work
+    /// @param user The address of the user
+    ///
+    /// @return isBlacklisted The user's status
     function getIsBlacklisted(uint256 workId, address user) public view returns (bool isBlacklisted) {
         isBlacklisted = _blacklist[workId][user];
     }

@@ -2,14 +2,19 @@
 pragma solidity 0.8.28;
 
 import {Test, console2} from "forge-std/Test.sol";
+import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {LibZip} from "@solady/src/utils/LibZip.sol";
 import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "../src/Ashurbanipal.sol";
+import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
+import "./TestNft.sol";
 
-contract NabuTest is Test {
+contract NabuTest is Ownable, Test {
     Ashurbanipal public ashurbanipal;
+    Enkidu public enkidu;
     Nabu public nabu;
+    TestNft public testNft;
 
     address alice = makeAddr("Alice");
     address bob = makeAddr("Bob");
@@ -30,6 +35,7 @@ contract NabuTest is Test {
         address nabuAddress = address(nabu);
         ashurbanipal = new Ashurbanipal(nabuAddress);
         nabu.updateAshurbanipalAddress(address(ashurbanipal));
+        testNft = new TestNft();
     }
 
     bytes passageOne = bytes(
@@ -40,14 +46,15 @@ contract NabuTest is Test {
     bytes passageOneMalicious = bytes(unicode"¡Soy muy malo y quiero destruir el patrimonio literario de España!");
     bytes passageOneMaliciousCompressed = LibZip.flzCompress(passageOneMalicious);
 
-    function createWork() private returns (uint256) {
+    function createWork(address to) private returns (uint256) {
         uint256 workId = nabu.createWork(
             "Miguel de Cervantes",
             "Original title: El ingenioso hidalgo don Quijote de la Mancha",
             "Don Quijote",
             1_000_000,
             "https://foo.bar/{id}.json",
-            10_000
+            10_000,
+            to
         );
 
         return workId;
@@ -61,14 +68,22 @@ contract NabuTest is Test {
     }
 
     function createWorkAndDistributePassesAsAlice() private prank(alice) returns (uint256) {
-        uint256 workId = createWork();
+        uint256 workId = createWork(alice);
         distributePasses(workId);
+        return workId;
+    }
+
+    function createWorkWithEnkiduAsAlice() private prank(alice) returns (uint256) {
+        enkidu = new Enkidu(address(ashurbanipal), address(testNft));
+        uint256 workId = createWork(address(enkidu));
+        enkidu.updatePrice(workId, 0.05 ether);
+        enkidu.updateActive(workId, true);
         return workId;
     }
 
     function testCreateWork() public {
         vm.prank(alice);
-        uint256 workId = createWork();
+        uint256 workId = createWork(alice);
         assertEq(workId, 1, "Work ID mismatch");
 
         Work memory work = nabu.getWork(workId);
@@ -100,11 +115,17 @@ contract NabuTest is Test {
 
     function testCreateSecondWork() public {
         vm.prank(alice);
-        createWork();
+        createWork(alice);
 
         vm.prank(bob);
         uint256 workId = nabu.createWork(
-            "William Shakespeare", "Arbitrary informative metadata", "Hamlet", 20_000, "https://baz.qux/{id}.json", 50
+            "William Shakespeare",
+            "Arbitrary informative metadata",
+            "Hamlet",
+            20_000,
+            "https://baz.qux/{id}.json",
+            50,
+            bob
         );
         assertEq(workId, 2, "Work ID mismatch");
 
@@ -201,7 +222,7 @@ contract NabuTest is Test {
 
     function testConfirmPassageNoPass() public {
         vm.startPrank(alice, alice);
-        uint256 workId = createWork();
+        uint256 workId = createWork(alice);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
         vm.stopPrank();
 
@@ -213,7 +234,7 @@ contract NabuTest is Test {
 
     function testWritePassageNoPass() public {
         vm.prank(alice);
-        uint256 workId = createWork();
+        uint256 workId = createWork(alice);
 
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(NoPass.selector));
@@ -877,7 +898,13 @@ contract NabuTest is Test {
 
         vm.prank(bob);
         uint256 workIdTwo = nabu.createWork(
-            "William Shakespeare", "Arbitrary informative metadata", "Hamlet", 20_000, "https://baz.qux/{id}.json", 50
+            "William Shakespeare",
+            "Arbitrary informative metadata",
+            "Hamlet",
+            20_000,
+            "https://baz.qux/{id}.json",
+            50,
+            bob
         );
 
         assertEq(ashurbanipal.balanceOf(bob, workId), 1_000, "Bob work one pass balance before mismatch");
@@ -929,7 +956,13 @@ contract NabuTest is Test {
 
         vm.prank(bob);
         uint256 workIdTwo = nabu.createWork(
-            "William Shakespeare", "Arbitrary informative metadata", "Hamlet", 20_000, "https://baz.qux/{id}.json", 50
+            "William Shakespeare",
+            "Arbitrary informative metadata",
+            "Hamlet",
+            20_000,
+            "https://baz.qux/{id}.json",
+            50,
+            bob
         );
 
         uint256[] memory workIds = new uint256[](2);
@@ -953,7 +986,13 @@ contract NabuTest is Test {
 
         vm.prank(bob);
         uint256 workIdTwo = nabu.createWork(
-            "William Shakespeare", "Arbitrary informative metadata", "Hamlet", 20_000, "https://baz.qux/{id}.json", 50
+            "William Shakespeare",
+            "Arbitrary informative metadata",
+            "Hamlet",
+            20_000,
+            "https://baz.qux/{id}.json",
+            50,
+            bob
         );
 
         uint256[] memory workIds = new uint256[](2);
@@ -993,5 +1032,125 @@ contract NabuTest is Test {
 
         assertEq(ashurbanipal.balanceOf(bob, workId), 995, "Bob pass balance after mismatch");
         assertEq(ashurbanipal.balanceOf(charlie, workId), 2_005, "Charlie pass balance after mismatch");
+    }
+
+    function testEnkiduUpdateActive() public {
+        vm.startPrank(alice, alice);
+        enkidu = new Enkidu(address(ashurbanipal), address(testNft));
+        uint256 workId = createWork(address(enkidu));
+        assertFalse(enkidu.active(workId));
+        enkidu.updateActive(workId, true);
+        assertTrue(enkidu.active(workId));
+    }
+
+    function testEnkiduUpdateActivePause() public {
+        vm.startPrank(alice, alice);
+        enkidu = new Enkidu(address(ashurbanipal), address(testNft));
+        uint256 workId = createWork(address(enkidu));
+        enkidu.updateActive(workId, true);
+        assertTrue(enkidu.active(workId));
+        enkidu.updateActive(workId, false);
+        assertFalse(enkidu.active(workId));
+    }
+
+    function testEnkiduUpdateActiveNotOwner() public {
+        vm.startPrank(alice, alice);
+        enkidu = new Enkidu(address(ashurbanipal), address(testNft));
+        uint256 workId = createWork(address(enkidu));
+        vm.startPrank(mallory, mallory);
+        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
+        enkidu.updateActive(workId, true);
+    }
+
+    function testEnkiduUpdatePrice() public {
+        vm.startPrank(alice, alice);
+        enkidu = new Enkidu(address(ashurbanipal), address(testNft));
+        uint256 workId = createWork(address(enkidu));
+        assertEq(enkidu.prices(workId), 0);
+        enkidu.updatePrice(workId, 100 ether);
+        assertEq(enkidu.prices(workId), 100 ether);
+    }
+
+    function testEnkiduUpdatePriceNotOwner() public {
+        vm.startPrank(alice, alice);
+        enkidu = new Enkidu(address(ashurbanipal), address(testNft));
+        uint256 workId = createWork(address(enkidu));
+        vm.startPrank(mallory, mallory);
+        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
+        enkidu.updatePrice(workId, 100 ether);
+    }
+
+    function testEnkiduUpdateAshurbanipalAddress() public {
+        vm.startPrank(alice, alice);
+        enkidu = new Enkidu(address(ashurbanipal), address(testNft));
+        uint256 workId = createWork(address(enkidu));
+        assertEq(enkidu.ashurbanipalAddress(), address(ashurbanipal));
+        enkidu.updateAshurbanipalAddress(address(69));
+        assertEq(enkidu.ashurbanipalAddress(), address(69));
+    }
+
+    function testEnkiduUpdateAshurbanipalAddressNotOwner() public {
+        vm.startPrank(alice, alice);
+        enkidu = new Enkidu(address(ashurbanipal), address(testNft));
+        uint256 workId = createWork(address(enkidu));
+        vm.startPrank(mallory, mallory);
+        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
+        enkidu.updateAshurbanipalAddress(address(69));
+    }
+
+    function testEnkiduAdminMint() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduAdminMintNotOwner() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduAdminMintZeroCount() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduMint() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduMintWhitelistedNFT() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduMintWhitelistedFungible() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduMintWhitelistedExtraMints() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduMintOverLimit() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduMintZeroCount() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduMintNotActive() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduMintInsufficientFunds() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduWithdrawSome() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduWithdrawAll() public {
+        assertEq(address(0), address(1));
+    }
+
+    function testEnkiduWithdrawNotOwner() public {
+        assertEq(address(0), address(1));
     }
 }
