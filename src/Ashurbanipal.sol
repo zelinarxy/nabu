@@ -9,7 +9,7 @@ error IsFrozen();
 /// @dev Only the Nabu contract can call the function
 error NotNabu();
 
-/// @title NFT passes for writing content to Nabu works 
+/// @title NFT passes for writing content to Nabu works
 ///
 /// @author Zelinar XY
 contract Ashurbanipal is ERC1155, Ownable {
