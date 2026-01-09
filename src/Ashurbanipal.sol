@@ -50,7 +50,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     }
 
     /// @notice Get the Nabu contract address
-    function nabuAddress() public returns (address) {
+    function nabuAddress() public view returns (address) {
         return _nabuAddress;
     }
 
@@ -66,7 +66,6 @@ contract Ashurbanipal is ERC1155, Ownable {
         _freezelist[workId][user] = shouldFreeze;
     }
 
-    // TODO: test
     /// @notice Update the Nabu contract address
     ///
     /// @dev Only the contract owner can call this function

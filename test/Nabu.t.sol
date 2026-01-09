@@ -289,7 +289,6 @@ contract NabuTest is Ownable, Test {
         );
     }
 
-    // TODO: this but for second confirmation
     function testConfirmPassageCannotDoubleConfirm() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
@@ -306,7 +305,6 @@ contract NabuTest is Ownable, Test {
         nabu.confirmPassageContent(workId, 1);
     }
 
-    // TODO: this but for second confirmation
     function testManuallyConfirmPassageCannotDoubleConfirm() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
@@ -404,7 +402,7 @@ contract NabuTest is Ownable, Test {
         vm.prank(dave);
         nabu.confirmPassageContent(workId, 1);
 
-        vm.prank(mallory);
+        vm.prank(mallory); // not that this is really malicious
         vm.expectRevert(abi.encodeWithSelector(PassageAlreadyFinalized.selector));
         nabu.confirmPassageContent(workId, 1);
     }
@@ -585,15 +583,15 @@ contract NabuTest is Ownable, Test {
 
     function testUpdateWorkBlacklist() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
-        assertFalse(nabu.getIsBlacklisted(workId, bob)); // TODO
+        assertFalse(nabu.getIsBlacklisted(workId, mallory));
 
         vm.prank(alice);
-        nabu.updateBlacklist(workId, bob, true);
-        assertTrue(nabu.getIsBlacklisted(workId, bob)); // TODO
+        nabu.updateBlacklist(workId, mallory, true);
+        assertTrue(nabu.getIsBlacklisted(workId, mallory));
 
         vm.prank(alice);
-        nabu.updateBlacklist(workId, bob, false);
-        assertFalse(nabu.getIsBlacklisted(workId, bob)); // TODO
+        nabu.updateBlacklist(workId, mallory, false);
+        assertFalse(nabu.getIsBlacklisted(workId, mallory));
     }
 
     function testUpdateWorkBlacklistNotAdmin() public {
@@ -674,11 +672,10 @@ contract NabuTest is Ownable, Test {
         nabu.updateWorkUri(workId, "https://lol.lmao/{id}.json");
     }
 
-    function testUpdateWorkUriTooLate() public {
+    function testUpdateWorkUriNeverTooLate() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         vm.roll(THIRTY_DAYS + 1);
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         nabu.updateWorkUri(workId, "https://lol.lmao/{id}.json");
     }
 
@@ -730,6 +727,7 @@ contract NabuTest is Ownable, Test {
         nabu.updateWorkTotalPassagesCount(workId, 69_000);
     }
 
+    // hereherehere
     function testConfirmPassageTooSoonToConfirmContent() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
@@ -1032,6 +1030,17 @@ contract NabuTest is Ownable, Test {
 
         assertEq(ashurbanipal.balanceOf(bob, workId), 995, "Bob pass balance after mismatch");
         assertEq(ashurbanipal.balanceOf(charlie, workId), 2_005, "Charlie pass balance after mismatch");
+    }
+
+    function testAshurbanipalUpdateNabuAddress() public {
+        assertEq(ashurbanipal.nabuAddress(), address(nabu), "Nabu address mismatch");
+
+        ashurbanipal.updateNabuAddress(address(420));
+        assertEq(ashurbanipal.nabuAddress(), address(420), "Nabu address mismatch");
+    }
+
+    function testFailAshurbanipalUpdateNabuAddressNotOwner() public prank(mallory) {
+        ashurbanipal.updateNabuAddress(address(420));
     }
 
     function testEnkiduUpdateActive() public {

@@ -77,8 +77,6 @@ contract Enkidu is Ownable, Receiver {
     }
 
     function adminMint(uint256 id, uint256 count, address to) public onlyOwner {
-        // TODO: no zero count check?
-
         _mint(id, count, to);
     }
 

@@ -40,7 +40,7 @@ error ZeroPassagesCount();
  * @notice A work is anything that can be expressed in text, but it's easiest to think of it as a book: it must have
  * a title, can have an author, can have arbitrary metadata, and must have a total passages count. When a user creates
  * a work by calling `createWork`, they must specify how many passages the work has (this can be updated, along with
- * author, title and metadata, for 30 days after creating the work). This user, who becomes the work's admin, should
+ * author and title, for 30 days after creating the work). This user, who becomes the work's admin, should
  * decide ahead of time what each passage's content should be, and provide other users an interface where they can
  * populate each passage's content correctly. For the Bible, for example, passage 0 would be Genesis 1:1, compressed
  * to save gas. Works that aren't scripture or classics will need to be broken up into passages by admins.
@@ -470,13 +470,13 @@ contract Nabu is Ownable {
     }
 
     /// @notice Update the metadata URI of the ERC-1155 id associated with the work
-    /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
+    /// @notice Restricted to the work's admin; no time restriction
     ///
     /// @dev See the Ashurbanipal contract, which defines NFT "passes" that grant permission to assign a work's content
     ///
     /// @param workId The id of the work
     /// @param newUri The work's new metadata URI
-    function updateWorkUri(uint256 workId, string memory newUri) public notTooLate(workId) onlyWorkAdmin(workId) {
+    function updateWorkUri(uint256 workId, string memory newUri) public onlyWorkAdmin(workId) {
         _ashurbanipal.updateUri(workId, newUri);
         _works[workId].uri = newUri;
     }
