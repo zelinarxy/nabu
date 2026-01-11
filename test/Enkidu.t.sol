@@ -52,19 +52,6 @@ contract NabuTest is Ownable, Test {
         return workId;
     }
 
-    function distributePasses(uint256 workId) private {
-        ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
-        ashurbanipal.safeTransferFrom(alice, charlie, workId, 2_000, "");
-        ashurbanipal.safeTransferFrom(alice, dave, workId, 500, "");
-        ashurbanipal.safeTransferFrom(alice, mallory, workId, 666, "");
-    }
-
-    function createWorkAndDistributePassesAsAlice() private prank(alice) returns (uint256) {
-        uint256 workId = createWork(alice);
-        distributePasses(workId);
-        return workId;
-    }
-
     function createWorkWithEnkiduAsAlice() private prank(alice) returns (uint256) {
         enkidu = new Enkidu(address(ashurbanipal), address(testNft));
         uint256 workId = createWork(address(enkidu));
@@ -73,20 +60,22 @@ contract NabuTest is Ownable, Test {
         return workId;
     }
 
-    // function testUpdateActive() public {
-    //     uint256 workId = createWorkWithEnkiduAsAlice();
-    //     assertFalse(enkidu.active(workId));
-    //     enkidu.updateActive(workId, true);
-    //     assertTrue(enkidu.active(workId));
-    // }
+    function testUpdateActive() public {
+        vm.startPrank(alice, alice);
+        enkidu = new Enkidu(address(ashurbanipal), address(testNft));
+        uint256 workId = createWork(address(enkidu));        
+        assertFalse(enkidu.active(workId));
 
-    // function testUpdateActivePause() public {
-    //     uint256 workId = createWorkWithEnkiduAsAlice();
-    //     enkidu.updateActive(workId, true);
-    //     assertTrue(enkidu.active(workId));
-    //     enkidu.updateActive(workId, false);
-    //     assertFalse(enkidu.active(workId));
-    // }
+        enkidu.updateActive(workId, true);
+        assertTrue(enkidu.active(workId));
+    }
+
+    function testUpdateActivePause() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        vm.prank(alice);
+        enkidu.updateActive(workId, false);
+        assertFalse(enkidu.active(workId));
+    }
 
     function testUpdateActiveNotOwner() public {
         uint256 workId = createWorkWithEnkiduAsAlice();
@@ -95,12 +84,14 @@ contract NabuTest is Ownable, Test {
         enkidu.updateActive(workId, true);
     }
 
-    // function testUpdatePrice() public {
-    //     uint256 workId = createWorkWithEnkiduAsAlice();
-    //     assertEq(enkidu.prices(workId), 0);
-    //     enkidu.updatePrice(workId, 100 ether);
-    //     assertEq(enkidu.prices(workId), 100 ether);
-    // }
+    function testUpdatePrice() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        assertEq(enkidu.prices(workId), 0.05 ether);
+
+        vm.prank(alice);
+        enkidu.updatePrice(workId, 100 ether);
+        assertEq(enkidu.prices(workId), 100 ether);
+    }
 
     function testUpdatePriceNotOwner() public {
         uint256 workId = createWorkWithEnkiduAsAlice();
@@ -109,12 +100,14 @@ contract NabuTest is Ownable, Test {
         enkidu.updatePrice(workId, 100 ether);
     }
 
-    // function testUpdateAshurbanipalAddress() public {
-    //     uint256 workId = createWorkWithEnkiduAsAlice();
-    //     assertEq(enkidu.ashurbanipalAddress(), address(ashurbanipal));
-    //     enkidu.updateAshurbanipalAddress(address(69));
-    //     assertEq(enkidu.ashurbanipalAddress(), address(69));
-    // }
+    function testUpdateAshurbanipalAddress() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        assertEq(enkidu.ashurbanipalAddress(), address(ashurbanipal));
+
+        vm.prank(alice);
+        enkidu.updateAshurbanipalAddress(address(69));
+        assertEq(enkidu.ashurbanipalAddress(), address(69));
+    }
 
     function testUpdateAshurbanipalAddressNotOwner() public {
         uint256 workId = createWorkWithEnkiduAsAlice();
