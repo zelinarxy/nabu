@@ -125,7 +125,7 @@ contract Enkidu is Ownable, Receiver {
         }
 
         bool isWhitelisted;
-        
+
         if (whitelistedToken == WhitelistedToken.Cult) {
             isWhitelisted = cult.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Aura) {

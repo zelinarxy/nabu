@@ -8,7 +8,7 @@ import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "../src/Ashurbanipal.sol";
 import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
-import "./TestNft.sol";
+import "../src/TestNft.sol";
 
 contract NabuTest is Ownable, Test {
     Ashurbanipal public ashurbanipal;
