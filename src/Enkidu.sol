@@ -13,6 +13,20 @@ error InsufficientFunds();
 error OverLimit();
 error ZeroCount();
 
+enum WhitelistedToken {
+    Any,
+    None,
+    Cult,
+    Aura,
+    Cigawrette,
+    Milady,
+    Pixelady,
+    Radbro,
+    Remilio,
+    Schizoposter,
+    TestNft
+}
+
 // Whitelisted fungible token
 address constant CULT = 0x0000000000c5dc95539589fbD24BE07c6C14eCa4;
 
@@ -46,10 +60,14 @@ contract Enkidu is Ownable, Receiver {
 
     Ashurbanipal private _ashurbanipal;
     address public ashurbanipalAddress;
+
     // maps id to price
     mapping(uint256 => uint256) public prices;
     // id
     mapping(uint256 => bool) public active;
+
+    // how many free mints has a user used for an id
+    mapping(uint256 => mapping(address => uint256)) public freeMints;
 
     constructor(address initialAshurbanipalAddress, address testNftAddress) {
         _initializeOwner(msg.sender);
@@ -80,19 +98,55 @@ contract Enkidu is Ownable, Receiver {
         _mint(id, count, to);
     }
 
-    function mint(uint256 id, uint256 count, address to, bool skipWhitelistCheck) public payable {
+    // To save gas, the consuming application should check the user's token balances before calling
+    // this function and pass an appropriate value for `whitelistedToken`. For example, if the user
+    // has already minted 7 free tokens, we know they're not eligible to mint any more for free, and
+    // we can pass `WhitelistedToken.None` to skip the check. If we know they have a Milady, we can
+    // pass `WhitelistedToken.Milady` rather than looping through every collection. If we're not sure,
+    // we can pass `WhitelistedToken.Any` to run the exhaustive check.
+    function mint(uint256 id, uint256 count, address to, WhitelistedToken whitelistedToken) public payable {
         if (!active[id]) {
             revert Inactive();
         }
 
-        // TODO: doesn't check existing balance
-        if (count > MINT_LIMIT) {
+        uint256 existingBalance = _ashurbanipal.balanceOf(to, id);
+
+        if (count + existingBalance > MINT_LIMIT) {
             revert OverLimit();
         }
 
-        bool isWhitelisted;
+        uint256 usedFreeMints = freeMints[id][to];
+        uint256 remainingFreeMints;
 
-        if (!skipWhitelistCheck) {
+        if (usedFreeMints > FREE_MINTS) {
+            remainingFreeMints = 0;
+        } else {
+            remainingFreeMints = FREE_MINTS - usedFreeMints;
+        }
+
+        bool isWhitelisted;
+        
+        if (whitelistedToken == WhitelistedToken.Cult) {
+            isWhitelisted = cult.balanceOf(to) > 0;
+        } else if (whitelistedToken == WhitelistedToken.Aura) {
+            isWhitelisted = aura.balanceOf(to) > 0;
+        } else if (whitelistedToken == WhitelistedToken.Cigawrette) {
+            isWhitelisted = cigawrette.balanceOf(to) > 0;
+        } else if (whitelistedToken == WhitelistedToken.Milady) {
+            isWhitelisted = milady.balanceOf(to) > 0;
+        } else if (whitelistedToken == WhitelistedToken.Pixelady) {
+            isWhitelisted = milady.balanceOf(to) > 0;
+        } else if (whitelistedToken == WhitelistedToken.Radbro) {
+            isWhitelisted = radbro.balanceOf(to) > 0;
+        } else if (whitelistedToken == WhitelistedToken.Remilio) {
+            isWhitelisted = remilio.balanceOf(to) > 0;
+        } else if (whitelistedToken == WhitelistedToken.Schizoposter) {
+            isWhitelisted = schizoposter.balanceOf(to) > 0;
+        } else if (whitelistedToken == WhitelistedToken.TestNft) {
+            isWhitelisted = testNft.balanceOf(to) > 0;
+        }
+
+        if (whitelistedToken == WhitelistedToken.Any || (!isWhitelisted && whitelistedToken != WhitelistedToken.None)) {
             isWhitelisted = cult.balanceOf(to) > 0 || aura.balanceOf(to) > 0 || cigawrette.balanceOf(to) > 0
                 || milady.balanceOf(to) > 0 || pixelady.balanceOf(to) > 0 || radbro.balanceOf(to) > 0
                 || remilio.balanceOf(to) > 0 || schizoposter.balanceOf(to) > 0 || testNft.balanceOf(to) > 0;
@@ -101,10 +155,10 @@ contract Enkidu is Ownable, Receiver {
         uint256 countForPrice = count;
 
         if (isWhitelisted) {
-            if (countForPrice < 7) {
+            if (countForPrice < remainingFreeMints) {
                 countForPrice = 0;
             } else {
-                countForPrice -= 7;
+                countForPrice -= remainingFreeMints;
             }
         }
 
@@ -116,6 +170,10 @@ contract Enkidu is Ownable, Receiver {
         }
 
         _mint(id, count, to);
+
+        if (countForPrice < count) {
+            freeMints[id][to] = freeMints[id][to] + countForPrice - count;
+        }
     }
 
     function updateActive(uint256 id, bool isActive) public onlyOwner {
