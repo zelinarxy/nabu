@@ -10,7 +10,7 @@ import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
 import "../src/TestNft.sol";
 
-contract NabuTest is Ownable, Test {
+contract EnkiduTest is Ownable, Test {
     Ashurbanipal public ashurbanipal;
     Enkidu public enkidu;
     Nabu public nabu;
@@ -63,7 +63,7 @@ contract NabuTest is Ownable, Test {
     function testUpdateActive() public {
         vm.startPrank(alice, alice);
         enkidu = new Enkidu(address(ashurbanipal), address(testNft));
-        uint256 workId = createWork(address(enkidu));        
+        uint256 workId = createWork(address(enkidu));
         assertFalse(enkidu.active(workId));
 
         enkidu.updateActive(workId, true);
@@ -116,49 +116,105 @@ contract NabuTest is Ownable, Test {
         enkidu.updateAshurbanipalAddress(address(69));
     }
 
-    // function testAdminMint() public {
-    //     assertEq(address(0), address(1));
-    // }
+    function testAdminMint() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        assertEq(ashurbanipal.balanceOf(address(bob), workId), 0);
 
-    // function testAdminMintNotOwner() public {
-    //     assertEq(address(0), address(1));
-    // }
+        vm.prank(alice);
+        enkidu.adminMint(workId, 20, address(bob));
+        assertEq(ashurbanipal.balanceOf(address(bob), workId), 20);
+    }
 
-    // function testAdminMintZeroCount() public {
-    //     assertEq(address(0), address(1));
-    // }
+    function testAdminMintNotOwner() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        vm.prank(mallory);
+        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
+        enkidu.adminMint(workId, 20, address(bob));
+    }
 
-    // function testMint() public {
-    //     assertEq(address(0), address(1));
-    // }
+    function testAdminMintZeroCount() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(ZeroCount.selector));
+        enkidu.adminMint(workId, 0, address(bob));
+    }
 
-    // function testMintWhitelistedNFT() public {
-    //     assertEq(address(0), address(1));
-    // }
+    function testMint() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 0);
 
-    // function testMintWhitelistedFungible() public {
-    //     assertEq(address(0), address(1));
-    // }
+        vm.deal(address(bob), 20 * 0.05 ether);
+        vm.prank(bob);
 
-    // function testMintWhitelistedExtraMints() public {
-    //     assertEq(address(0), address(1));
-    // }
+        enkidu.mint{value: 20 * 0.05 ether}(workId, 20, address(bob), WhitelistedToken.None);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 20);
+    }
 
-    // function testMintOverLimit() public {
-    //     assertEq(address(0), address(1));
-    // }
+    function testMintWhitelisted() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        testNft.mintTo(address(bob));
 
-    // function testMintZeroCount() public {
-    //     assertEq(address(0), address(1));
-    // }
+        vm.startPrank(bob, bob);
+        enkidu.mint(workId, 7, address(bob), WhitelistedToken.TestNft);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+    }
 
-    // function testMintNotActive() public {
-    //     assertEq(address(0), address(1));
-    // }
+    function testMintWhitelistedTwoBatches() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        testNft.mintTo(address(bob));
 
-    // function testMintInsufficientFunds() public {
-    //     assertEq(address(0), address(1));
-    // }
+        vm.startPrank(bob, bob);
+        enkidu.mint(workId, 2, address(bob), WhitelistedToken.TestNft);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 2);
+
+        enkidu.mint(workId, 5, address(bob), WhitelistedToken.TestNft);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+    }
+
+    function testMintWhitelistedExtraMints() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        testNft.mintTo(address(bob));
+
+        vm.deal(address(bob), 10 * 0.05 ether);
+        vm.startPrank(bob, bob);
+
+        enkidu.mint{value: 10 * 0.05 ether}(workId, 17, address(bob), WhitelistedToken.TestNft);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 17);
+    }
+
+    function testMintOverLimit() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        vm.deal(address(bob), 70 *  0.05 ether);
+        vm.expectRevert(abi.encodeWithSelector(OverLimit.selector));
+        vm.prank(bob);
+        enkidu.mint{value: 69 * 0.05 ether}(workId, 70, address(bob), WhitelistedToken.None);
+    }
+
+    function testMintInsufficientFunds() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        vm.deal(address(bob), 0.04 ether);
+        vm.expectRevert(abi.encodeWithSelector(InsufficientFunds.selector));
+        vm.prank(bob);
+        enkidu.mint{value: 0.04 ether}(workId, 1, address(bob), WhitelistedToken.None);
+    }
+
+    function testMintZeroCount() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        vm.expectRevert(abi.encodeWithSelector(ZeroCount.selector));
+        vm.prank(bob);
+        enkidu.mint(workId, 0, address(bob), WhitelistedToken.None);
+    }
+
+    function testMintInactive() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        vm.prank(alice);
+        enkidu.updateActive(workId, false);
+
+        vm.deal(address(bob), 0.05 ether);
+        vm.expectRevert(abi.encodeWithSelector(Inactive.selector));
+        vm.prank(bob);
+        enkidu.mint{ value: 0.05 ether}(workId, 1, address(bob), WhitelistedToken.None);
+    }
 
     // function testWithdrawSome() public {
     //     assertEq(address(0), address(1));
@@ -171,4 +227,8 @@ contract NabuTest is Ownable, Test {
     // function testWithdrawNotOwner() public {
     //     assertEq(address(0), address(1));
     // }
+
+    // TODO: test updateTestNft
+
+    // TODO: one enkidu deployment holding multiple ids
 }

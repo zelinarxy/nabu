@@ -14,17 +14,17 @@ error OverLimit();
 error ZeroCount();
 
 enum WhitelistedToken {
-    Any,
-    None,
-    Cult,
-    Aura,
-    Cigawrette,
-    Milady,
-    Pixelady,
-    Radbro,
-    Remilio,
-    Schizoposter,
-    TestNft
+    Any, // 0
+    None, // 1
+    Cult, // 2
+    Aura, // 3
+    Cigawrette, // 4
+    Milady, // 5
+    Pixelady, // 6
+    Radbro, // 7
+    Remilio, // 8
+    Schizoposter, // 9
+    TestNft // 10
 }
 
 // Whitelisted fungible token
@@ -84,6 +84,10 @@ contract Enkidu is Ownable, Receiver {
         remilio = ERC721(REMILIO);
         schizoposter = ERC721(SCHIZOPOSTER);
         testNft = ERC721(testNftAddress);
+    }
+
+    function updateTestNft(address newTestNftAddress) public onlyOwner {
+        testNft = ERC721(newTestNftAddress);
     }
 
     function _mint(uint256 id, uint256 count, address to) private {
@@ -172,7 +176,7 @@ contract Enkidu is Ownable, Receiver {
         _mint(id, count, to);
 
         if (countForPrice < count) {
-            freeMints[id][to] = freeMints[id][to] + countForPrice - count;
+            freeMints[id][to] = freeMints[id][to] + count - countForPrice;
         }
     }
 

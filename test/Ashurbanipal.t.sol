@@ -10,7 +10,7 @@ import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
 import "../src/TestNft.sol";
 
-contract NabuTest is Ownable, Test {
+contract AshurbanipalTest is Ownable, Test {
     Ashurbanipal public ashurbanipal;
     Enkidu public enkidu;
     Nabu public nabu;
