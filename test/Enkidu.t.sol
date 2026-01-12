@@ -47,7 +47,7 @@ contract EnkiduTest is Ownable, Test {
         vm.stopPrank();
     }
 
-    function testUpdateActive() public {        
+    function testUpdateActive() public {
         vm.startPrank(alice, alice);
         enkidu.updateActive(1, false);
         assertFalse(enkidu.active(1));
@@ -57,13 +57,13 @@ contract EnkiduTest is Ownable, Test {
         vm.stopPrank();
     }
 
-    function testUpdateActiveNotOwner() public {        
+    function testUpdateActiveNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         enkidu.updateActive(1, true);
     }
 
-    function testUpdatePrice() public {        
+    function testUpdatePrice() public {
         assertEq(enkidu.prices(1), 0.05 ether);
 
         vm.prank(alice);
@@ -71,13 +71,13 @@ contract EnkiduTest is Ownable, Test {
         assertEq(enkidu.prices(1), 100 ether);
     }
 
-    function testUpdatePriceNotOwner() public {        
+    function testUpdatePriceNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         enkidu.updatePrice(1, 100 ether);
     }
 
-    function testUpdateAshurbanipalAddress() public {        
+    function testUpdateAshurbanipalAddress() public {
         assertEq(enkidu.ashurbanipalAddress(), address(ashurbanipal));
 
         vm.prank(alice);
@@ -85,13 +85,13 @@ contract EnkiduTest is Ownable, Test {
         assertEq(enkidu.ashurbanipalAddress(), address(69));
     }
 
-    function testUpdateAshurbanipalAddressNotOwner() public {        
+    function testUpdateAshurbanipalAddressNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         enkidu.updateAshurbanipalAddress(address(69));
     }
 
-    function testAdminMint() public {        
+    function testAdminMint() public {
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 0);
 
         vm.prank(alice);
@@ -99,19 +99,19 @@ contract EnkiduTest is Ownable, Test {
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 20);
     }
 
-    function testAdminMintNotOwner() public {        
+    function testAdminMintNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         enkidu.adminMint(1, 20, address(bob));
     }
 
-    function testAdminMintZeroCount() public {        
+    function testAdminMintZeroCount() public {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(ZeroCount.selector));
         enkidu.adminMint(1, 0, address(bob));
     }
 
-    function testMint() public {        
+    function testMint() public {
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 0);
 
         vm.deal(address(bob), 20 * 0.05 ether);
@@ -121,7 +121,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 20);
     }
 
-    function testMintWhitelisted() public {        
+    function testMintWhitelisted() public {
         testNft.mintTo(address(bob));
 
         vm.prank(bob);
@@ -129,7 +129,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
-    function testMintWhitelistedTwoBatches() public {        
+    function testMintWhitelistedTwoBatches() public {
         testNft.mintTo(address(bob));
 
         vm.startPrank(bob, bob);
@@ -141,7 +141,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
-    function testMintWhitelistedExtraMints() public {        
+    function testMintWhitelistedExtraMints() public {
         testNft.mintTo(address(bob));
 
         vm.deal(address(bob), 10 * 0.05 ether);
@@ -151,7 +151,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 17);
     }
 
-    function testMintWhitelistedComplexBatches() public {        
+    function testMintWhitelistedComplexBatches() public {
         testNft.mintTo(address(bob));
         vm.deal(address(bob), 2 * 0.05 ether);
 
@@ -167,27 +167,27 @@ contract EnkiduTest is Ownable, Test {
         vm.stopPrank();
     }
 
-    function testMintOverLimit() public {        
+    function testMintOverLimit() public {
         vm.deal(address(bob), 70 * 0.05 ether);
         vm.expectRevert(abi.encodeWithSelector(OverLimit.selector));
         vm.prank(bob);
         enkidu.mint{value: 69 * 0.05 ether}(1, 70, address(bob), WhitelistedToken.None);
     }
 
-    function testMintInsufficientFunds() public {        
+    function testMintInsufficientFunds() public {
         vm.deal(address(bob), 0.04 ether);
         vm.expectRevert(abi.encodeWithSelector(InsufficientFunds.selector));
         vm.prank(bob);
         enkidu.mint{value: 0.04 ether}(1, 1, address(bob), WhitelistedToken.None);
     }
 
-    function testMintZeroCount() public {        
+    function testMintZeroCount() public {
         vm.expectRevert(abi.encodeWithSelector(ZeroCount.selector));
         vm.prank(bob);
         enkidu.mint(1, 0, address(bob), WhitelistedToken.None);
     }
 
-    function testMintInactive() public {        
+    function testMintInactive() public {
         vm.prank(alice);
         enkidu.updateActive(1, false);
 
@@ -197,7 +197,7 @@ contract EnkiduTest is Ownable, Test {
         enkidu.mint{value: 0.05 ether}(1, 1, address(bob), WhitelistedToken.None);
     }
 
-    function testWithdrawSome() public {        
+    function testWithdrawSome() public {
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
         enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
@@ -209,7 +209,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(address(enkidu).balance, 9 * 0.05 ether);
     }
 
-    function testWithdrawAll() public {        
+    function testWithdrawAll() public {
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
         enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
@@ -220,7 +220,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(address(enkidu).balance, 0);
     }
 
-    function testWithdrawNotOwner() public {        
+    function testWithdrawNotOwner() public {
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
         enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
@@ -230,7 +230,7 @@ contract EnkiduTest is Ownable, Test {
         enkidu.withdraw(10 * 0.05 ether);
     }
 
-    function testUpdateTestNft() public {        
+    function testUpdateTestNft() public {
         assertEq(enkidu.testNftAddress(), address(testNft));
 
         vm.prank(alice);
@@ -238,7 +238,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(enkidu.testNftAddress(), address(123));
     }
 
-    function testUpdateTestNftNotOwner() public {        
+    function testUpdateTestNftNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         enkidu.updateTestNft(address(666));
