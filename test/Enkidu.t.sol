@@ -184,7 +184,7 @@ contract EnkiduTest is Ownable, Test {
 
     function testMintOverLimit() public {
         uint256 workId = createWorkWithEnkiduAsAlice();
-        vm.deal(address(bob), 70 *  0.05 ether);
+        vm.deal(address(bob), 70 * 0.05 ether);
         vm.expectRevert(abi.encodeWithSelector(OverLimit.selector));
         vm.prank(bob);
         enkidu.mint{value: 69 * 0.05 ether}(workId, 70, address(bob), WhitelistedToken.None);
@@ -213,7 +213,7 @@ contract EnkiduTest is Ownable, Test {
         vm.deal(address(bob), 0.05 ether);
         vm.expectRevert(abi.encodeWithSelector(Inactive.selector));
         vm.prank(bob);
-        enkidu.mint{ value: 0.05 ether}(workId, 1, address(bob), WhitelistedToken.None);
+        enkidu.mint{value: 0.05 ether}(workId, 1, address(bob), WhitelistedToken.None);
     }
 
     function testWithdrawSome() public {

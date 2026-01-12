@@ -25,6 +25,7 @@ enum WhitelistedToken {
     Remilio, // 8
     Schizoposter, // 9
     TestNft // 10
+
 }
 
 // Whitelisted fungible token
@@ -56,7 +57,7 @@ contract Enkidu is Ownable, Receiver {
     ERC721 private radbro;
     ERC721 private remilio;
     ERC721 private schizoposter;
-    
+
     address public testNftAddress;
     ERC721 private testNft;
 
