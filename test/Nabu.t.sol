@@ -315,7 +315,7 @@ contract NabuTest is Ownable, Test {
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
     }
 
-    function testWritePassageAlreadyFinalized() public {
+    function testWritePassageTooLong() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -323,7 +323,15 @@ contract NabuTest is Ownable, Test {
         nabu.assignPassageContent(workId, 1, passageTooLong);
     }
 
-    function testWritePassageTooLong() public {
+    function testAdminWritePassageTooLong() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(ContentTooLarge.selector));
+        nabu.adminAssignPassageContent(workId, 1, passageTooLong);
+    }
+
+    function testWritePassageAlreadyFinalized() public {
                 uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
