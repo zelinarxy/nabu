@@ -128,7 +128,7 @@ contract Enkidu is Ownable, Receiver {
         uint256 usedFreeMints = freeMints[id][to];
         uint256 remainingFreeMints;
 
-        if (usedFreeMints > FREE_MINTS) {
+        if (usedFreeMints >= FREE_MINTS) {
             remainingFreeMints = 0;
         } else {
             remainingFreeMints = FREE_MINTS - usedFreeMints;

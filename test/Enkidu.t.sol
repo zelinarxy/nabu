@@ -132,7 +132,8 @@ contract EnkiduTest is Ownable, Test {
     function testMintWhitelistedTwoBatches() public {        
         testNft.mintTo(address(bob));
 
-        vm.prank(bob);
+        vm.startPrank(bob, bob);
+
         enkidu.mint(1, 2, address(bob), WhitelistedToken.TestNft);
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 2);
 
@@ -148,6 +149,22 @@ contract EnkiduTest is Ownable, Test {
 
         enkidu.mint{value: 10 * 0.05 ether}(1, 17, address(bob), WhitelistedToken.TestNft);
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 17);
+    }
+
+    function testMintWhitelistedComplexBatches() public {        
+        testNft.mintTo(address(bob));
+        vm.deal(address(bob), 2 * 0.05 ether);
+
+        vm.startPrank(bob, bob);
+        enkidu.mint(1, 2, address(bob), WhitelistedToken.TestNft);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 2);
+
+        enkidu.mint{value: 0.05 ether}(1, 6, address(bob), WhitelistedToken.TestNft);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 8);
+
+        enkidu.mint{value: 0.05 ether}(1, 1, address(bob), WhitelistedToken.TestNft);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 9);
+        vm.stopPrank();
     }
 
     function testMintOverLimit() public {        
@@ -198,7 +215,7 @@ contract EnkiduTest is Ownable, Test {
         enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
 
         vm.prank(alice);
-        enkidu.withdraw(10 * 0.05 ether);
+        enkidu.withdraw(0);
         assertEq(address(alice).balance, 10 * 0.05 ether);
         assertEq(address(enkidu).balance, 0);
     }
