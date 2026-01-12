@@ -331,8 +331,31 @@ contract NabuTest is Ownable, Test {
         nabu.adminAssignPassageContent(workId, 1, passageTooLong);
     }
 
+    function testConfirmPassageNoContent() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(NoPassageContent.selector));
+        nabu.confirmPassageContent(workId, 1);
+    }
+
+    function testCreateWorkNoPassages() public {
+        vm.prank(charlie);
+        vm.expectRevert(abi.encodeWithSelector(ZeroPassagesCount.selector));
+
+        nabu.createWork(
+            "Nemo",
+            "Metadata?",
+            "Nada",
+            0,
+            "https://noth.ing/{id}.json",
+            1,
+            alice
+        );
+    }
+
     function testWritePassageAlreadyFinalized() public {
-                uint256 workId = createWorkAndDistributePassesAsAlice();
+        uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
         nabu.assignPassageContent(workId, 1, passageOneCompressed);
