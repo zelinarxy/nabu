@@ -56,7 +56,9 @@ contract Enkidu is Ownable, Receiver {
     ERC721 private radbro;
     ERC721 private remilio;
     ERC721 private schizoposter;
-    ERC721 private testNft; // TODO
+    
+    address public testNftAddress;
+    ERC721 private testNft;
 
     Ashurbanipal private _ashurbanipal;
     address public ashurbanipalAddress;
@@ -69,7 +71,7 @@ contract Enkidu is Ownable, Receiver {
     // how many free mints has a user used for an id
     mapping(uint256 => mapping(address => uint256)) public freeMints;
 
-    constructor(address initialAshurbanipalAddress, address testNftAddress) {
+    constructor(address initialAshurbanipalAddress, address _testNftAddress) {
         _initializeOwner(msg.sender);
         ashurbanipalAddress = initialAshurbanipalAddress;
         _ashurbanipal = Ashurbanipal(initialAshurbanipalAddress);
@@ -83,10 +85,13 @@ contract Enkidu is Ownable, Receiver {
         radbro = ERC721(RADBRO);
         remilio = ERC721(REMILIO);
         schizoposter = ERC721(SCHIZOPOSTER);
-        testNft = ERC721(testNftAddress);
+
+        testNftAddress = _testNftAddress;
+        testNft = ERC721(_testNftAddress);
     }
 
     function updateTestNft(address newTestNftAddress) public onlyOwner {
+        testNftAddress = newTestNftAddress;
         testNft = ERC721(newTestNftAddress);
     }
 

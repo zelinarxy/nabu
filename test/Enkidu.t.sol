@@ -176,7 +176,7 @@ contract EnkiduTest is Ownable, Test {
         testNft.mintTo(address(bob));
 
         vm.deal(address(bob), 10 * 0.05 ether);
-        vm.startPrank(bob, bob);
+        vm.prank(bob);
 
         enkidu.mint{value: 10 * 0.05 ether}(workId, 17, address(bob), WhitelistedToken.TestNft);
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 17);
@@ -216,19 +216,57 @@ contract EnkiduTest is Ownable, Test {
         enkidu.mint{ value: 0.05 ether}(workId, 1, address(bob), WhitelistedToken.None);
     }
 
-    // function testWithdrawSome() public {
-    //     assertEq(address(0), address(1));
-    // }
+    function testWithdrawSome() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        vm.deal(address(bob), 10 * 0.05 ether);
+        vm.prank(bob);
+        enkidu.mint{value: 10 * 0.05 ether}(workId, 10, address(bob), WhitelistedToken.None);
+        assertEq(address(enkidu).balance, 10 * 0.05 ether);
 
-    // function testWithdrawAll() public {
-    //     assertEq(address(0), address(1));
-    // }
+        vm.prank(alice);
+        enkidu.withdraw(0.05 ether);
+        assertEq(address(alice).balance, 0.05 ether);
+        assertEq(address(enkidu).balance, 9 * 0.05 ether);
+    }
 
-    // function testWithdrawNotOwner() public {
-    //     assertEq(address(0), address(1));
-    // }
+    function testWithdrawAll() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        vm.deal(address(bob), 10 * 0.05 ether);
+        vm.prank(bob);
+        enkidu.mint{value: 10 * 0.05 ether}(workId, 10, address(bob), WhitelistedToken.None);
 
-    // TODO: test updateTestNft
+        vm.prank(alice);
+        enkidu.withdraw(10 * 0.05 ether);
+        assertEq(address(alice).balance, 10 * 0.05 ether);
+        assertEq(address(enkidu).balance, 0);
+    }
+
+    function testWithdrawNotOwner() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        vm.deal(address(bob), 10 * 0.05 ether);
+        vm.prank(bob);
+        enkidu.mint{value: 10 * 0.05 ether}(workId, 10, address(bob), WhitelistedToken.None);
+
+        vm.prank(mallory);
+        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
+        enkidu.withdraw(10 * 0.05 ether);
+    }
+
+    function testUpdateTestNft() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        assertEq(enkidu.testNftAddress(), address(testNft));
+
+        vm.prank(alice);
+        enkidu.updateTestNft(address(123));
+        assertEq(enkidu.testNftAddress(), address(123));
+    }
+
+    function testUpdateTestNftNotOwner() public {
+        uint256 workId = createWorkWithEnkiduAsAlice();
+        vm.prank(mallory);
+        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
+        enkidu.updateTestNft(address(666));
+    }
 
     // TODO: one enkidu deployment holding multiple ids
 }
