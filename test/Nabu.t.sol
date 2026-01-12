@@ -340,7 +340,7 @@ contract NabuTest is Ownable, Test {
     }
 
     function testCreateWorkNoPassages() public {
-        vm.prank(charlie);
+        vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(ZeroPassagesCount.selector));
 
         nabu.createWork(
@@ -352,6 +352,37 @@ contract NabuTest is Ownable, Test {
             1,
             alice
         );
+    }
+
+    function testCreateWorkEmptyTitle() public {
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(EmptyTitle.selector));
+
+        nabu.createWork(
+            "Nemo",
+            "Metadata?",
+            "",
+            10_000,
+            "https://noth.ing/{id}.json",
+            1,
+            alice
+        );
+    }
+
+    function testCreateWorkNoMintTo() public {
+        vm.prank(charlie);
+
+        uint256 workId = nabu.createWork(
+            "Nemo",
+            "Metadata?",
+            "Nada",
+            10_000,
+            "https://noth.ing/{id}.json",
+            69_420,
+            address(0)
+        );
+
+        assertEq(ashurbanipal.balanceOf(address(charlie), workId), 69_420);
     }
 
     function testWritePassageAlreadyFinalized() public {
@@ -721,6 +752,14 @@ contract NabuTest is Ownable, Test {
         assertEq(keccak256(bytes(nabu.getWork(workId).title)), keccak256(bytes("Donny Q")), "Work title mismatch");
     }
 
+    function testUpdateWorkTitleEmpty() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(EmptyTitle.selector));
+        nabu.updateWorkTitle(workId, "");
+    }
+
     function testUpdateWorkTitleNotAdmin() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         vm.prank(bob);
@@ -758,6 +797,13 @@ contract NabuTest is Ownable, Test {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         nabu.updateWorkTotalPassagesCount(workId, 69_000);
+    }
+
+    function testUpdateWorkTotalPassagesCountZeroCount() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(ZeroPassagesCount.selector));
+        nabu.updateWorkTotalPassagesCount(workId, 0);
     }
 
     function testConfirmPassageTooSoonToConfirmContent() public {
