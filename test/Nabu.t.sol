@@ -361,7 +361,7 @@ contract NabuTest is Ownable, Test {
         uint256 workId =
             nabu.createWork("Nemo", "Metadata?", "Nada", 10_000, "https://noth.ing/{id}.json", 69_420, address(0));
 
-        assertEq(ashurbanipal.balanceOf(address(charlie), workId), 69_420);
+        assertEq(ashurbanipal.balanceOf(address(charlie), workId), 69_420, "Balance mismatch");
     }
 
     function testWritePassageAlreadyFinalized() public {

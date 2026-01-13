@@ -8,6 +8,8 @@ import {Receiver} from "@solady/src/accounts/Receiver.sol";
 import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "./Ashurbanipal.sol";
 
+// TODO: notices etc
+
 error Inactive();
 error InsufficientFunds();
 error OverLimit();
@@ -145,7 +147,7 @@ contract Enkidu is Ownable, Receiver {
         } else if (whitelistedToken == WhitelistedToken.Milady) {
             isWhitelisted = milady.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Pixelady) {
-            isWhitelisted = milady.balanceOf(to) > 0;
+            isWhitelisted = pixelady.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Radbro) {
             isWhitelisted = radbro.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Remilio) {

@@ -10,11 +10,21 @@ import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
 import "../src/TestNft.sol";
 
+// TODO: finish coverage
+// TODO: mismatch messages on assertEq
 contract EnkiduTest is Ownable, Test {
     Ashurbanipal public ashurbanipal;
     Enkidu public enkidu;
     Nabu public nabu;
     TestNft public testNft;
+
+    TestNft public aura;
+    TestNft public cigawrette;
+    TestNft public milady;
+    TestNft public pixelady;
+    TestNft public radbro;
+    TestNft public remilio;
+    TestNft public schizoposter;
 
     address alice = makeAddr("Alice");
     address bob = makeAddr("Bob");
@@ -27,9 +37,9 @@ contract EnkiduTest is Ownable, Test {
 
         ashurbanipal = new Ashurbanipal(nabuAddress);
         nabu.updateAshurbanipalAddress(address(ashurbanipal));
-        testNft = new TestNft();
 
         vm.startPrank(alice, alice);
+        testNft = new TestNft();
         enkidu = new Enkidu(address(ashurbanipal), address(testNft));
 
         uint256 workId = nabu.createWork(
@@ -44,6 +54,30 @@ contract EnkiduTest is Ownable, Test {
 
         enkidu.updatePrice(workId, 0.05 ether);
         enkidu.updateActive(workId, true);
+
+        bytes memory testNftBytecode = type(TestNft).runtimeCode;
+
+        aura = TestNft(AURA);
+        vm.etch(AURA, testNftBytecode);
+
+        cigawrette = TestNft(CIGAWRETTE);
+        vm.etch(CIGAWRETTE, testNftBytecode);
+
+        milady = TestNft(MILADY);
+        vm.etch(MILADY, testNftBytecode);
+
+        pixelady = TestNft(PIXELADY);
+        vm.etch(PIXELADY, testNftBytecode);
+
+        radbro = TestNft(RADBRO);
+        vm.etch(RADBRO, testNftBytecode);
+
+        remilio = TestNft(REMILIO);
+        vm.etch(REMILIO, testNftBytecode);
+
+        schizoposter = TestNft(SCHIZOPOSTER);
+        vm.etch(SCHIZOPOSTER, testNftBytecode);
+
         vm.stopPrank();
     }
 
@@ -121,13 +155,81 @@ contract EnkiduTest is Ownable, Test {
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 20);
     }
 
-    function testMintWhitelisted() public {
+    function testMintWhitelistedTestNft() public {
+        vm.prank(alice);
         testNft.mintTo(address(bob));
 
         vm.prank(bob);
         enkidu.mint(1, 7, address(bob), WhitelistedToken.TestNft);
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
     }
+
+    function testMintWhitelistedAura() public {
+        vm.prank(alice);
+        aura.mintTo(address(bob));
+
+        vm.prank(bob);
+        enkidu.mint(1, 7, address(bob), WhitelistedToken.Aura);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+    }
+
+    function testMintWhitelistedCigawrette() public {
+        vm.prank(alice);
+        cigawrette.mintTo(address(bob));
+
+        vm.prank(bob);
+        enkidu.mint(1, 7, address(bob), WhitelistedToken.Cigawrette);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+    }
+
+    function testMintWhitelistedMilady() public {
+        vm.prank(alice);
+        milady.mintTo(address(bob));
+
+        vm.prank(bob);
+        enkidu.mint(1, 7, address(bob), WhitelistedToken.Milady);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+    }
+
+    function testMintWhitelistedPixelady() public {
+        vm.prank(alice);
+        pixelady.mintTo(address(bob));
+
+        vm.prank(bob);
+        enkidu.mint(1, 7, address(bob), WhitelistedToken.Pixelady);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+    }
+
+    function testMintWhitelistedRadbro() public {
+        vm.prank(alice);
+        radbro.mintTo(address(bob));
+
+        vm.prank(bob);
+        enkidu.mint(1, 7, address(bob), WhitelistedToken.Radbro);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+    }
+
+    function testMintWhitelistedRemilio() public {
+        vm.prank(alice);
+        remilio.mintTo(address(bob));
+
+        vm.prank(bob);
+        enkidu.mint(1, 7, address(bob), WhitelistedToken.Remilio);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+    }
+
+    function testMintWhitelistedSchizoposter() public {
+        vm.prank(alice);
+        schizoposter.mintTo(address(bob));
+
+        vm.prank(bob);
+        enkidu.mint(1, 7, address(bob), WhitelistedToken.Schizoposter);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+    }
+
+    // TODO: $cult
+
+    // TODO: any whitelisted token
 
     function testMintWhitelistedTwoBatches() public {
         testNft.mintTo(address(bob));

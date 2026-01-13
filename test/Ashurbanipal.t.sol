@@ -10,6 +10,7 @@ import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
 import "../src/TestNft.sol";
 
+// TODO: mismatch messages on assertEq
 contract AshurbanipalTest is Ownable, Test {
     Ashurbanipal public ashurbanipal;
     Enkidu public enkidu;

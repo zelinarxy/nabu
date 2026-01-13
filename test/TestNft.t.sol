@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import {Test} from "forge-std/Test.sol";
 import "../src/TestNft.sol";
 
+// TODO: mismatch messages on assertEq
 contract TestNftTest is Test {
     TestNft public testNft;
     address alice = makeAddr("Alice");
