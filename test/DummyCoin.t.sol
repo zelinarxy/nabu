@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import "../src/DummyCoin.sol";
+import "../src/dummy/DummyCoin.sol";
 
 // TODO: mismatch messages on assertEq
 contract DummyCoinTest is Test {

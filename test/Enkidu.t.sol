@@ -8,8 +8,8 @@ import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "../src/Ashurbanipal.sol";
 import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
-import "../src/DummyCoin.sol";
-import "../src/DummyNft.sol";
+import "../src/dummy/DummyCoin.sol";
+import "../src/dummy/DummyNft.sol";
 import "../src/Humbaba.sol";
 
 
