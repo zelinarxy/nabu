@@ -94,7 +94,7 @@ contract Ashurbanipal is ERC1155, Ownable {
         return true;
     }
 
-    // TODO: notice etc
+    /// @notice Prevent the transfer of frozen passes
     function _beforeTokenTransfer(
         address from,
         address to,

@@ -60,11 +60,13 @@ contract Enkidu is Ownable, Receiver {
     ERC721 private remilio;
     ERC721 private schizoposter;
 
+    // TODO: implement getter
     address public humbabaAddress;
-    ERC721 private humbaba;
+    ERC721 private _humbaba;
 
-    Ashurbanipal private _ashurbanipal;
+    // TODO: implement getter
     address public ashurbanipalAddress;
+    Ashurbanipal private _ashurbanipal;
 
     // maps id to price
     mapping(uint256 => uint256) public prices;
@@ -74,10 +76,10 @@ contract Enkidu is Ownable, Receiver {
     // how many free mints has a user used for an id
     mapping(uint256 => mapping(address => uint256)) public freeMints;
 
-    constructor(address initialAshurbanipalAddress, address _humbabaAddress) {
+    constructor(address _ashurbanipalAddress, address _humbabaAddress) {
         _initializeOwner(msg.sender);
-        ashurbanipalAddress = initialAshurbanipalAddress;
-        _ashurbanipal = Ashurbanipal(initialAshurbanipalAddress);
+        ashurbanipalAddress = _ashurbanipalAddress;
+        _ashurbanipal = Ashurbanipal(_ashurbanipalAddress);
 
         cult = ERC20(CULT);
 
@@ -90,12 +92,12 @@ contract Enkidu is Ownable, Receiver {
         schizoposter = ERC721(SCHIZOPOSTER);
 
         humbabaAddress = _humbabaAddress;
-        humbaba = ERC721(_humbabaAddress);
+        _humbaba = ERC721(_humbabaAddress);
     }
 
     function updateHumbaba(address newHumbabaAddress) public onlyOwner {
         humbabaAddress = newHumbabaAddress;
-        humbaba = ERC721(newHumbabaAddress);
+        _humbaba = ERC721(newHumbabaAddress);
     }
 
     function _mint(uint256 id, uint256 count, address to) private {
@@ -155,13 +157,13 @@ contract Enkidu is Ownable, Receiver {
         } else if (whitelistedToken == WhitelistedToken.Schizoposter) {
             isWhitelisted = schizoposter.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Humbaba) {
-            isWhitelisted = humbaba.balanceOf(to) > 0;
+            isWhitelisted = _humbaba.balanceOf(to) > 0;
         }
 
         if (whitelistedToken == WhitelistedToken.Any || (!isWhitelisted && whitelistedToken != WhitelistedToken.None)) {
             isWhitelisted = cult.balanceOf(to) > 0 || aura.balanceOf(to) > 0 || cigawrette.balanceOf(to) > 0
                 || milady.balanceOf(to) > 0 || pixelady.balanceOf(to) > 0 || radbro.balanceOf(to) > 0
-                || remilio.balanceOf(to) > 0 || schizoposter.balanceOf(to) > 0 || humbaba.balanceOf(to) > 0;
+                || remilio.balanceOf(to) > 0 || schizoposter.balanceOf(to) > 0 || _humbaba.balanceOf(to) > 0;
         }
 
         uint256 countForPrice = count;

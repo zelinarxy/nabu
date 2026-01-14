@@ -361,6 +361,18 @@ contract NabuTest is Ownable, Test {
         assertEq(ashurbanipal.balanceOf(address(charlie), workId), 69_420, "Balance mismatch");
     }
 
+    function testGetPassageInvalidId() public {
+        uint256 workId = createWork(alice);
+        vm.expectRevert(abi.encodeWithSelector(InvalidPassageId.selector));
+        nabu.getPassage(workId, 1_000_001);
+    }
+
+    function testGetPassageContentInvalidId() public {
+        uint256 workId = createWork(alice);
+        vm.expectRevert(abi.encodeWithSelector(InvalidPassageId.selector));
+        nabu.getPassageContent(workId, 1_000_001);
+    }
+
     function testWritePassageAlreadyFinalized() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 

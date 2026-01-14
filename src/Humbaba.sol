@@ -5,8 +5,12 @@ import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {ERC721} from "@solady/src/tokens/ERC721.sol";
 import {LibString} from "@solady/src/utils/LibString.sol";
 
+/// @dev The token doesn't exist
 error NonExistentToken();
 
+/// @title An NFT serving as a whitelist pass for Enkidu minters
+///
+/// @author Zelinar XY
 contract Humbaba is ERC721, Ownable {
     string public baseURI;
     uint256 private nextTokenId = 1;
@@ -24,6 +28,8 @@ contract Humbaba is ERC721, Ownable {
         return "HUMB";
     }
 
+    /// @notice Mint an NFT to the specified recipient
+    /// @dev Restricted to owner, who should be owner of the corresponding Enkidu deployment
     function adminMintTo(address to) public onlyOwner {
         uint256 tokenId = nextTokenId;
         nextTokenId = tokenId + 1;

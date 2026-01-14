@@ -490,6 +490,13 @@ contract Nabu is Ownable {
     ///
     /// @return passage The passage
     function getPassage(uint256 workId, uint256 passageId) public view returns (Passage memory passage) {
+        Work storage work = _works[workId];
+
+        // The passage doesn't exist
+        if (passageId > work.totalPassagesCount) {
+            revert InvalidPassageId();
+        }
+
         passage = _passages[workId][passageId];
     }
 
@@ -502,6 +509,13 @@ contract Nabu is Ownable {
     ///
     /// @return passageContent The passage's content
     function getPassageContent(uint256 workId, uint256 passageId) public view returns (bytes memory passageContent) {
+        Work storage work = _works[workId];
+
+        // The passage doesn't exist
+        if (passageId > work.totalPassagesCount) {
+            revert InvalidPassageId();
+        }
+
         passageContent = SSTORE2.read(_passages[workId][passageId].content);
     }
 
