@@ -8,13 +8,11 @@ import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "../src/Ashurbanipal.sol";
 import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
-import "../src/TestNft.sol";
 
 contract NabuTest is Ownable, Test {
     Ashurbanipal public ashurbanipal;
     Enkidu public enkidu;
     Nabu public nabu;
-    TestNft public testNft;
 
     address alice = makeAddr("Alice");
     address bob = makeAddr("Bob");
@@ -35,7 +33,6 @@ contract NabuTest is Ownable, Test {
         address nabuAddress = address(nabu);
         ashurbanipal = new Ashurbanipal(nabuAddress);
         nabu.updateAshurbanipalAddress(address(ashurbanipal));
-        testNft = new TestNft();
     }
 
     bytes passageOne = bytes(

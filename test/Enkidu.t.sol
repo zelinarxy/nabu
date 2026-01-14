@@ -8,7 +8,9 @@ import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "../src/Ashurbanipal.sol";
 import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
-import "../src/TestNft.sol";
+import "../src/DummyNft.sol";
+import "../src/Humbaba.sol";
+
 
 // TODO: finish coverage
 // TODO: mismatch messages on assertEq
@@ -16,15 +18,15 @@ contract EnkiduTest is Ownable, Test {
     Ashurbanipal public ashurbanipal;
     Enkidu public enkidu;
     Nabu public nabu;
-    TestNft public testNft;
+    Humbaba public humbaba;
 
-    TestNft public aura;
-    TestNft public cigawrette;
-    TestNft public milady;
-    TestNft public pixelady;
-    TestNft public radbro;
-    TestNft public remilio;
-    TestNft public schizoposter;
+    DummyNft public aura;
+    DummyNft public cigawrette;
+    DummyNft public milady;
+    DummyNft public pixelady;
+    DummyNft public radbro;
+    DummyNft public remilio;
+    DummyNft public schizoposter;
 
     address alice = makeAddr("Alice");
     address bob = makeAddr("Bob");
@@ -39,8 +41,8 @@ contract EnkiduTest is Ownable, Test {
         nabu.updateAshurbanipalAddress(address(ashurbanipal));
 
         vm.startPrank(alice, alice);
-        testNft = new TestNft();
-        enkidu = new Enkidu(address(ashurbanipal), address(testNft));
+        humbaba = new Humbaba("https://foo.bar/");
+        enkidu = new Enkidu(address(ashurbanipal), address(humbaba));
 
         uint256 workId = nabu.createWork(
             "Miguel de Cervantes",
@@ -55,28 +57,28 @@ contract EnkiduTest is Ownable, Test {
         enkidu.updatePrice(workId, 0.05 ether);
         enkidu.updateActive(workId, true);
 
-        bytes memory testNftBytecode = type(TestNft).runtimeCode;
+        bytes memory dummyNftBytecode = type(DummyNft).runtimeCode;
 
-        aura = TestNft(AURA);
-        vm.etch(AURA, testNftBytecode);
+        aura = DummyNft(AURA);
+        vm.etch(AURA, dummyNftBytecode);
 
-        cigawrette = TestNft(CIGAWRETTE);
-        vm.etch(CIGAWRETTE, testNftBytecode);
+        cigawrette = DummyNft(CIGAWRETTE);
+        vm.etch(CIGAWRETTE, dummyNftBytecode);
 
-        milady = TestNft(MILADY);
-        vm.etch(MILADY, testNftBytecode);
+        milady = DummyNft(MILADY);
+        vm.etch(MILADY, dummyNftBytecode);
 
-        pixelady = TestNft(PIXELADY);
-        vm.etch(PIXELADY, testNftBytecode);
+        pixelady = DummyNft(PIXELADY);
+        vm.etch(PIXELADY, dummyNftBytecode);
 
-        radbro = TestNft(RADBRO);
-        vm.etch(RADBRO, testNftBytecode);
+        radbro = DummyNft(RADBRO);
+        vm.etch(RADBRO, dummyNftBytecode);
 
-        remilio = TestNft(REMILIO);
-        vm.etch(REMILIO, testNftBytecode);
+        remilio = DummyNft(REMILIO);
+        vm.etch(REMILIO, dummyNftBytecode);
 
-        schizoposter = TestNft(SCHIZOPOSTER);
-        vm.etch(SCHIZOPOSTER, testNftBytecode);
+        schizoposter = DummyNft(SCHIZOPOSTER);
+        vm.etch(SCHIZOPOSTER, dummyNftBytecode);
 
         vm.stopPrank();
     }
@@ -155,12 +157,12 @@ contract EnkiduTest is Ownable, Test {
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 20);
     }
 
-    function testMintWhitelistedTestNft() public {
+    function testMintWhitelistedHumbaba() public {
         vm.prank(alice);
-        testNft.mintTo(address(bob));
+        humbaba.adminMintTo(address(bob));
 
         vm.prank(bob);
-        enkidu.mint(1, 7, address(bob), WhitelistedToken.TestNft);
+        enkidu.mint(1, 7, address(bob), WhitelistedToken.Humbaba);
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
@@ -229,42 +231,45 @@ contract EnkiduTest is Ownable, Test {
 
     // TODO: $cult
 
-    // TODO: any whitelisted token
+    // TODO: any whitelisted
 
     function testMintWhitelistedTwoBatches() public {
-        testNft.mintTo(address(bob));
+        vm.prank(alice);
+        humbaba.adminMintTo(address(bob));
 
         vm.startPrank(bob, bob);
 
-        enkidu.mint(1, 2, address(bob), WhitelistedToken.TestNft);
+        enkidu.mint(1, 2, address(bob), WhitelistedToken.Humbaba);
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 2);
 
-        enkidu.mint(1, 5, address(bob), WhitelistedToken.TestNft);
+        enkidu.mint(1, 5, address(bob), WhitelistedToken.Humbaba);
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMintWhitelistedExtraMints() public {
-        testNft.mintTo(address(bob));
+        vm.prank(alice);
+        humbaba.adminMintTo(address(bob));
 
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
 
-        enkidu.mint{value: 10 * 0.05 ether}(1, 17, address(bob), WhitelistedToken.TestNft);
+        enkidu.mint{value: 10 * 0.05 ether}(1, 17, address(bob), WhitelistedToken.Humbaba);
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 17);
     }
 
     function testMintWhitelistedComplexBatches() public {
-        testNft.mintTo(address(bob));
+        vm.prank(alice);
+        humbaba.adminMintTo(address(bob));
         vm.deal(address(bob), 2 * 0.05 ether);
 
         vm.startPrank(bob, bob);
-        enkidu.mint(1, 2, address(bob), WhitelistedToken.TestNft);
+        enkidu.mint(1, 2, address(bob), WhitelistedToken.Humbaba);
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 2);
 
-        enkidu.mint{value: 0.05 ether}(1, 6, address(bob), WhitelistedToken.TestNft);
+        enkidu.mint{value: 0.05 ether}(1, 6, address(bob), WhitelistedToken.Humbaba);
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 8);
 
-        enkidu.mint{value: 0.05 ether}(1, 1, address(bob), WhitelistedToken.TestNft);
+        enkidu.mint{value: 0.05 ether}(1, 1, address(bob), WhitelistedToken.Humbaba);
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 9);
         vm.stopPrank();
     }
@@ -332,18 +337,18 @@ contract EnkiduTest is Ownable, Test {
         enkidu.withdraw(10 * 0.05 ether);
     }
 
-    function testUpdateTestNft() public {
-        assertEq(enkidu.testNftAddress(), address(testNft));
+    function testUpdateHumbaba() public {
+        assertEq(enkidu.humbabaAddress(), address(humbaba));
 
         vm.prank(alice);
-        enkidu.updateTestNft(address(123));
-        assertEq(enkidu.testNftAddress(), address(123));
+        enkidu.updateHumbaba(address(123));
+        assertEq(enkidu.humbabaAddress(), address(123));
     }
 
-    function testUpdateTestNftNotOwner() public {
+    function testUpdateHumbabaNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
-        enkidu.updateTestNft(address(666));
+        enkidu.updateHumbaba(address(666));
     }
 
     function testSecondWork() public {

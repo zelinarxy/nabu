@@ -26,7 +26,7 @@ enum WhitelistedToken {
     Radbro, // 7
     Remilio, // 8
     Schizoposter, // 9
-    TestNft // 10
+    Humbaba // 10
 
 }
 
@@ -60,8 +60,8 @@ contract Enkidu is Ownable, Receiver {
     ERC721 private remilio;
     ERC721 private schizoposter;
 
-    address public testNftAddress;
-    ERC721 private testNft;
+    address public humbabaAddress;
+    ERC721 private humbaba;
 
     Ashurbanipal private _ashurbanipal;
     address public ashurbanipalAddress;
@@ -74,7 +74,7 @@ contract Enkidu is Ownable, Receiver {
     // how many free mints has a user used for an id
     mapping(uint256 => mapping(address => uint256)) public freeMints;
 
-    constructor(address initialAshurbanipalAddress, address _testNftAddress) {
+    constructor(address initialAshurbanipalAddress, address _humbabaAddress) {
         _initializeOwner(msg.sender);
         ashurbanipalAddress = initialAshurbanipalAddress;
         _ashurbanipal = Ashurbanipal(initialAshurbanipalAddress);
@@ -89,13 +89,13 @@ contract Enkidu is Ownable, Receiver {
         remilio = ERC721(REMILIO);
         schizoposter = ERC721(SCHIZOPOSTER);
 
-        testNftAddress = _testNftAddress;
-        testNft = ERC721(_testNftAddress);
+        humbabaAddress = _humbabaAddress;
+        humbaba = ERC721(_humbabaAddress);
     }
 
-    function updateTestNft(address newTestNftAddress) public onlyOwner {
-        testNftAddress = newTestNftAddress;
-        testNft = ERC721(newTestNftAddress);
+    function updateHumbaba(address newHumbabaAddress) public onlyOwner {
+        humbabaAddress = newHumbabaAddress;
+        humbaba = ERC721(newHumbabaAddress);
     }
 
     function _mint(uint256 id, uint256 count, address to) private {
@@ -154,14 +154,14 @@ contract Enkidu is Ownable, Receiver {
             isWhitelisted = remilio.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Schizoposter) {
             isWhitelisted = schizoposter.balanceOf(to) > 0;
-        } else if (whitelistedToken == WhitelistedToken.TestNft) {
-            isWhitelisted = testNft.balanceOf(to) > 0;
+        } else if (whitelistedToken == WhitelistedToken.Humbaba) {
+            isWhitelisted = humbaba.balanceOf(to) > 0;
         }
 
         if (whitelistedToken == WhitelistedToken.Any || (!isWhitelisted && whitelistedToken != WhitelistedToken.None)) {
             isWhitelisted = cult.balanceOf(to) > 0 || aura.balanceOf(to) > 0 || cigawrette.balanceOf(to) > 0
                 || milady.balanceOf(to) > 0 || pixelady.balanceOf(to) > 0 || radbro.balanceOf(to) > 0
-                || remilio.balanceOf(to) > 0 || schizoposter.balanceOf(to) > 0 || testNft.balanceOf(to) > 0;
+                || remilio.balanceOf(to) > 0 || schizoposter.balanceOf(to) > 0 || humbaba.balanceOf(to) > 0;
         }
 
         uint256 countForPrice = count;

@@ -3,15 +3,15 @@ pragma solidity 0.8.28;
 
 import {ERC721} from "@solady/src/tokens/ERC721.sol";
 
-contract TestNft is ERC721 {
+contract DummyNft is ERC721 {
     uint256 private nextTokenId = 1;
 
     function name() public pure override returns (string memory) {
-        return "TestNft";
+        return "DummyNft";
     }
 
     function symbol() public pure override returns (string memory) {
-        return "TEST";
+        return "DUMMY";
     }
 
     function mintTo(address to) public {

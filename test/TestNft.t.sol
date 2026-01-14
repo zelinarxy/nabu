@@ -2,32 +2,32 @@
 pragma solidity 0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import "../src/TestNft.sol";
+import "../src/DummyNft.sol";
 
 // TODO: mismatch messages on assertEq
-contract TestNftTest is Test {
-    TestNft public testNft;
+contract DummyNftTest is Test {
+    DummyNft public dummyNft;
     address alice = makeAddr("Alice");
 
     function setUp() public {
-        testNft = new TestNft();
+        dummyNft = new DummyNft();
     }
 
     function testName() public {
-        assertEq(testNft.name(), "TestNft");
+        assertEq(dummyNft.name(), "DummyNft");
     }
 
     function testSymbol() public {
-        assertEq(testNft.symbol(), "TEST");
+        assertEq(dummyNft.symbol(), "DUMMY");
     }
 
     function testMintTo() public {
-        testNft.mintTo(address(alice));
-        assertEq(testNft.balanceOf(address(alice)), 1);
+        dummyNft.mintTo(address(alice));
+        assertEq(dummyNft.balanceOf(address(alice)), 1);
     }
 
     function testTokenURI() public {
-        testNft.mintTo(address(alice));
-        assertEq(testNft.tokenURI(1), "");
+        dummyNft.mintTo(address(alice));
+        assertEq(dummyNft.tokenURI(1), "");
     }
 }
