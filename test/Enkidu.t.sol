@@ -8,6 +8,7 @@ import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "../src/Ashurbanipal.sol";
 import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
+import "../src/DummyCoin.sol";
 import "../src/DummyNft.sol";
 import "../src/Humbaba.sol";
 
@@ -19,6 +20,8 @@ contract EnkiduTest is Ownable, Test {
     Enkidu public enkidu;
     Nabu public nabu;
     Humbaba public humbaba;
+
+    DummyCoin public cult;
 
     DummyNft public aura;
     DummyNft public cigawrette;
@@ -56,6 +59,11 @@ contract EnkiduTest is Ownable, Test {
 
         enkidu.updatePrice(workId, 0.05 ether);
         enkidu.updateActive(workId, true);
+
+        bytes memory dummyCoinBytecode = type(DummyCoin).runtimeCode;
+
+        cult = DummyCoin(CULT);
+        vm.etch(CULT, dummyCoinBytecode);
 
         bytes memory dummyNftBytecode = type(DummyNft).runtimeCode;
 
@@ -166,6 +174,15 @@ contract EnkiduTest is Ownable, Test {
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
+    function testMinWhitelistedCult() public {
+        vm.prank(alice);
+        cult.mintTo(address(bob));
+
+        vm.prank(bob);
+        enkidu.mint(1, 7, address(bob), WhitelistedToken.Cult);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+    }
+
     function testMintWhitelistedAura() public {
         vm.prank(alice);
         aura.mintTo(address(bob));
@@ -229,9 +246,14 @@ contract EnkiduTest is Ownable, Test {
         assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
-    // TODO: $cult
+    function testMintWhitelistedAny() public {
+        vm.prank(alice);
+        schizoposter.mintTo(address(bob));
 
-    // TODO: any whitelisted
+        vm.prank(bob);
+        enkidu.mint(1, 7, address(bob), WhitelistedToken.Any);
+        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+    }
 
     function testMintWhitelistedTwoBatches() public {
         vm.prank(alice);
