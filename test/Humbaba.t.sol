@@ -42,4 +42,22 @@ contract HumbabaTest is Ownable, Test {
         humbaba.adminMintTo(address(bob));
         assertEq(humbaba.tokenURI(1), "https://foo.bar/1");
     }
+
+    function testTokenURINonExistent() public {
+        vm.expectRevert(abi.encodeWithSelector(NonExistentToken.selector));
+        humbaba.tokenURI(2);
+    }
+
+    function testUpdateBaseURI() public {
+        assertEq(humbaba.baseURI(), "https://foo.bar/");
+        vm.prank(alice);
+        humbaba.updateBaseURI("https://baz.qux/");
+        assertEq(humbaba.baseURI(), "https://baz.qux/");
+    }
+
+    function testUpdateBaseURINotOwner() public {
+        vm.prank(mallory);
+        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
+        humbaba.updateBaseURI("https://baz.qux/");
+    }
 }

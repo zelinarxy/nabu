@@ -5,11 +5,11 @@ import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {ERC721} from "@solady/src/tokens/ERC721.sol";
 import {LibString} from "@solady/src/utils/LibString.sol";
 
+error NonExistentToken();
+
 contract Humbaba is ERC721, Ownable {
     string public baseURI;
     uint256 private nextTokenId = 1;
-
-    error NonExistentToken();
 
     constructor(string memory _baseURI) {
         _initializeOwner(msg.sender);
