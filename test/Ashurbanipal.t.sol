@@ -8,7 +8,6 @@ import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "../src/Ashurbanipal.sol";
 import "../src/Nabu.sol";
 
-// TODO: mismatch messages on assertEq
 contract AshurbanipalTest is Ownable, Test {
     Ashurbanipal private _ashurbanipal;
     Nabu private _nabu;
