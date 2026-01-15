@@ -40,7 +40,7 @@ contract Humbaba is ERC721, Ownable {
         if (!_exists(id)) {
             revert NonExistentToken();
         }
-    
+
         return string.concat(baseURI, LibString.toString(id));
     }
 

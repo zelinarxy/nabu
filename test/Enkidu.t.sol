@@ -12,7 +12,6 @@ import "../src/dummy/DummyCoin.sol";
 import "../src/dummy/DummyNft.sol";
 import "../src/Humbaba.sol";
 
-
 // TODO: mismatch messages on assertEq
 contract EnkiduTest is Ownable, Test {
     Ashurbanipal private _ashurbanipal;

@@ -53,7 +53,6 @@ contract Enkidu is Ownable, Receiver {
     address private _ashurbanipalAddress;
     Ashurbanipal private _ashurbanipal;
 
-
     ERC721 private _aura;
     ERC721 private _cigawrette;
     ERC20 private _cult;
