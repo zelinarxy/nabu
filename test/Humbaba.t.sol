@@ -5,7 +5,6 @@ import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {Test} from "forge-std/Test.sol";
 import "../src/Humbaba.sol";
 
-// TODO: mismatch messages on assertEq
 contract HumbabaTest is Ownable, Test {
     Humbaba private _humbaba;
     address alice = makeAddr("Alice");

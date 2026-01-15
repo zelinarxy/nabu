@@ -12,7 +12,6 @@ import "../src/dummy/DummyCoin.sol";
 import "../src/dummy/DummyNft.sol";
 import "../src/Humbaba.sol";
 
-// TODO: mismatch messages on assertEq
 contract EnkiduTest is Ownable, Test {
     Ashurbanipal private _ashurbanipal;
     Enkidu private _enkidu;
@@ -106,11 +105,11 @@ contract EnkiduTest is Ownable, Test {
     }
 
     function testUpdatePrice() public {
-        assertEq(_enkidu.prices(1), 0.05 ether);
+        assertEq(_enkidu.prices(1), 0.05 ether, "Before price mismatch");
 
         vm.prank(alice);
         _enkidu.updatePrice(1, 100 ether);
-        assertEq(_enkidu.prices(1), 100 ether);
+        assertEq(_enkidu.prices(1), 100 ether, "After price mismatch");
     }
 
     function testUpdatePriceNotOwner() public {
@@ -120,11 +119,11 @@ contract EnkiduTest is Ownable, Test {
     }
 
     function testUpdateAshurbanipalAddress() public {
-        assertEq(_enkidu.ashurbanipalAddress(), address(_ashurbanipal));
+        assertEq(_enkidu.ashurbanipalAddress(), address(_ashurbanipal), "Before address mismatch");
 
         vm.prank(alice);
         _enkidu.updateAshurbanipalAddress(address(69));
-        assertEq(_enkidu.ashurbanipalAddress(), address(69));
+        assertEq(_enkidu.ashurbanipalAddress(), address(69), "After address mismatch");
     }
 
     function testUpdateAshurbanipalAddressNotOwner() public {
@@ -134,11 +133,11 @@ contract EnkiduTest is Ownable, Test {
     }
 
     function testAdminMint() public {
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 0);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 0, "Before balance mismatch");
 
         vm.prank(alice);
         _enkidu.adminMint(1, 20, address(bob));
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 20);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 20, "After balance mismatch");
     }
 
     function testAdminMintNotOwner() public {
@@ -154,13 +153,13 @@ contract EnkiduTest is Ownable, Test {
     }
 
     function testMint() public {
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 0);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 0, "Before balance mismatch");
 
         vm.deal(address(bob), 20 * 0.05 ether);
         vm.prank(bob);
 
         _enkidu.mint{value: 20 * 0.05 ether}(1, 20, address(bob), WhitelistedToken.None);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 20);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 20, "After balance mismatch");
     }
 
     function testMintWhitelistedHumbaba() public {
@@ -169,7 +168,7 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(bob);
         _enkidu.mint(1, 7, address(bob), WhitelistedToken.Humbaba);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
     function testMinWhitelistedCult() public {
@@ -178,7 +177,7 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(bob);
         _enkidu.mint(1, 7, address(bob), WhitelistedToken.Cult);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
     function testMintWhitelistedAura() public {
@@ -187,7 +186,7 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(bob);
         _enkidu.mint(1, 7, address(bob), WhitelistedToken.Aura);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
     function testMintWhitelistedCigawrette() public {
@@ -196,7 +195,7 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(bob);
         _enkidu.mint(1, 7, address(bob), WhitelistedToken.Cigawrette);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
     function testMintWhitelistedMilady() public {
@@ -205,7 +204,7 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(bob);
         _enkidu.mint(1, 7, address(bob), WhitelistedToken.Milady);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
     function testMintWhitelistedPixelady() public {
@@ -214,7 +213,7 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(bob);
         _enkidu.mint(1, 7, address(bob), WhitelistedToken.Pixelady);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
     function testMintWhitelistedRadbro() public {
@@ -223,7 +222,7 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(bob);
         _enkidu.mint(1, 7, address(bob), WhitelistedToken.Radbro);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
     function testMintWhitelistedRemilio() public {
@@ -232,7 +231,7 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(bob);
         _enkidu.mint(1, 7, address(bob), WhitelistedToken.Remilio);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
     function testMintWhitelistedSchizoposter() public {
@@ -241,7 +240,7 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(bob);
         _enkidu.mint(1, 7, address(bob), WhitelistedToken.Schizoposter);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
     function testMintWhitelistedAny() public {
@@ -250,7 +249,7 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(bob);
         _enkidu.mint(1, 7, address(bob), WhitelistedToken.Any);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
     function testMintWhitelistedTwoBatches() public {
@@ -260,10 +259,10 @@ contract EnkiduTest is Ownable, Test {
         vm.startPrank(bob, bob);
 
         _enkidu.mint(1, 2, address(bob), WhitelistedToken.Humbaba);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 2);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 2, "First batch balance mismatch");
 
         _enkidu.mint(1, 5, address(bob), WhitelistedToken.Humbaba);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Second batch balance mismatch");
     }
 
     function testMintWhitelistedExtraMints() public {
@@ -274,7 +273,7 @@ contract EnkiduTest is Ownable, Test {
         vm.prank(bob);
 
         _enkidu.mint{value: 10 * 0.05 ether}(1, 17, address(bob), WhitelistedToken.Humbaba);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 17);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 17, "Balance mismatch");
     }
 
     function testMintWhitelistedComplexBatches() public {
@@ -284,13 +283,13 @@ contract EnkiduTest is Ownable, Test {
 
         vm.startPrank(bob, bob);
         _enkidu.mint(1, 2, address(bob), WhitelistedToken.Humbaba);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 2);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 2, "First batch balance mismatch");
 
         _enkidu.mint{value: 0.05 ether}(1, 6, address(bob), WhitelistedToken.Humbaba);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 8);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 8, "Second batch balance mismatch");
 
         _enkidu.mint{value: 0.05 ether}(1, 1, address(bob), WhitelistedToken.Humbaba);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 9);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 9, "Third batch balance mismatch");
         vm.stopPrank();
     }
 
@@ -328,12 +327,12 @@ contract EnkiduTest is Ownable, Test {
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
         _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
-        assertEq(address(_enkidu).balance, 10 * 0.05 ether);
+        assertEq(address(_enkidu).balance, 10 * 0.05 ether, "Before contract balance mismatch");
 
         vm.prank(alice);
         _enkidu.withdraw(0.05 ether);
-        assertEq(address(alice).balance, 0.05 ether);
-        assertEq(address(_enkidu).balance, 9 * 0.05 ether);
+        assertEq(address(alice).balance, 0.05 ether, "After Alice balance mismatch");
+        assertEq(address(_enkidu).balance, 9 * 0.05 ether, "After contract balance mismatch");
     }
 
     function testWithdrawAll() public {
@@ -343,8 +342,8 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(alice);
         _enkidu.withdraw(0);
-        assertEq(address(alice).balance, 10 * 0.05 ether);
-        assertEq(address(_enkidu).balance, 0);
+        assertEq(address(alice).balance, 10 * 0.05 ether, "Alice balance mismatch");
+        assertEq(address(_enkidu).balance, 0, "Contract balance mismatch");
     }
 
     function testWithdrawNotOwner() public {
@@ -358,11 +357,11 @@ contract EnkiduTest is Ownable, Test {
     }
 
     function testUpdateHumbaba() public {
-        assertEq(_enkidu.humbabaAddress(), address(_humbaba));
+        assertEq(_enkidu.humbabaAddress(), address(_humbaba), "Before address mismatch");
 
         vm.prank(alice);
         _enkidu.updateHumbaba(address(123));
-        assertEq(_enkidu.humbabaAddress(), address(123));
+        assertEq(_enkidu.humbabaAddress(), address(123), "After address mismatch");
     }
 
     function testUpdateHumbabaNotOwner() public {
@@ -387,15 +386,15 @@ contract EnkiduTest is Ownable, Test {
         _enkidu.updatePrice(workId, 0.1 ether);
         vm.stopPrank();
 
-        assertEq(_ashurbanipal.balanceOf(address(_enkidu), workId), 50);
+        assertEq(_ashurbanipal.balanceOf(address(_enkidu), workId), 50, "Second work Enkidu balance mismatch");
 
         vm.deal(address(bob), 20 * 0.05 ether);
         vm.startPrank(bob, bob);
 
         _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
-        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 10);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 10, "First work Bob balance mismatch");
 
         _enkidu.mint{value: 5 * 0.1 ether}(workId, 5, address(bob), WhitelistedToken.None);
-        assertEq(_ashurbanipal.balanceOf(address(bob), workId), 5);
+        assertEq(_ashurbanipal.balanceOf(address(bob), workId), 5, "Second work Bob balance mismatch");
     }
 }
