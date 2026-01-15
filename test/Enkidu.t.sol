@@ -330,7 +330,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(address(_enkidu).balance, 10 * 0.05 ether, "Before contract balance mismatch");
 
         vm.prank(alice);
-        _enkidu.withdraw(0.05 ether);
+        _enkidu.withdraw(0.05 ether, address(0));
         assertEq(address(alice).balance, 0.05 ether, "After Alice balance mismatch");
         assertEq(address(_enkidu).balance, 9 * 0.05 ether, "After contract balance mismatch");
     }
@@ -341,7 +341,7 @@ contract EnkiduTest is Ownable, Test {
         _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
 
         vm.prank(alice);
-        _enkidu.withdraw(0);
+        _enkidu.withdraw(0, address(0));
         assertEq(address(alice).balance, 10 * 0.05 ether, "Alice balance mismatch");
         assertEq(address(_enkidu).balance, 0, "Contract balance mismatch");
     }
@@ -353,7 +353,18 @@ contract EnkiduTest is Ownable, Test {
 
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
-        _enkidu.withdraw(10 * 0.05 ether);
+        _enkidu.withdraw(10 * 0.05 ether, address(0));
+    }
+
+    function testWithdrawToSpecifiedAddress() public {
+        vm.deal(address(bob), 10 * 0.05 ether);
+        vm.prank(bob);
+        _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
+
+        vm.prank(alice);
+        _enkidu.withdraw(10 * 0.05 ether, address(bob));
+        assertEq(address(bob).balance, 10 * 0.05 ether, "Bob balance mismatch");
+        assertEq(address(_enkidu).balance, 0, "Contract balance mismatch");
     }
 
     function testUpdateHumbaba() public {

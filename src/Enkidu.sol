@@ -10,11 +10,25 @@ import "./Ashurbanipal.sol";
 
 // TODO: notices etc
 
+/// @dev The id the user is trying to mint is inactive
 error Inactive();
+/// @dev The value of the transaction is too low to successfully mint
 error InsufficientFunds();
+/// @dev The attempted mint puts the user over the per-address limit on total mints per id
 error OverLimit();
+/// @dev Can't mint zero passes
 error ZeroCount();
 
+/**
+ * @dev Owners of a number of Remilia assets are whitelisted: they can mint up to a certain number of passes per id
+ * for free. The same is the case for owners of Humbaba NFTs, assuming a Humbaba contract has been deployed and
+ * associated with this Enkidu instance. To save gas, it's the responsibility of the caller of the `mint` function to
+ * be aware of the user's portfolio and specify the asset, if any, that grants them whitelisted status. If none, the
+ * caller can specify `None` and avoid a series of balance checks. If the caller is uncertain, `Any` will check all
+ * eligible assets. If an asset is specified but the balance check comes back negative, the function will check all
+ * other assets, on the assumption that the user expects to be whitelisted, but supplied the wrong argument for some
+ * reason.
+ */
 enum WhitelistedToken {
     Any, // 0
     None, // 1
@@ -30,40 +44,53 @@ enum WhitelistedToken {
 
 }
 
-// Whitelisted fungible token
+/// @dev Whitelisted token: Cult
 address constant CULT = 0x0000000000c5dc95539589fbD24BE07c6C14eCa4;
 
-// Whitelisted NFTs
+/// @dev Whitelisted NFT: MiladyAura
 address constant AURA = 0x2fC722C1c77170A61F17962CC4D039692f033b43;
+/// @dev Whitelisted NFT: Cigawrettes
 address constant CIGAWRETTE = 0xEEd41d06AE195CA8f5CaCACE4cd691EE75F0683f;
+/// @dev Whitelisted NFT: Milady
 address constant MILADY = 0x5Af0D9827E0c53E4799BB226655A1de152A425a5;
+/// @dev Whitelisted NFT: Pixelady
 address constant PIXELADY = 0x8Fc0D90f2C45a5e7f94904075c952e0943CFCCfd;
+/// @dev Whitelisted NFT: Radbro
 address constant RADBRO = 0xABCDB5710B88f456fED1e99025379e2969F29610;
+/// @dev Whitelisted NFT: Remilio
 address constant REMILIO = 0xD3D9ddd0CF0A5F0BFB8f7fcEAe075DF687eAEBaB;
+/// @dev Whitelisted NFT: SchizoPosters
 address constant SCHIZOPOSTER = 0xBfE47D6D4090940D1c7a0066B63d23875E3e2Ac5;
 
-// Free mints per whitelisted user (user who holds one or more whitelisted assets)
+/// @dev Maximum free mints per id per whitelisted user
 uint256 constant FREE_MINTS = 7;
+
+/// @dev Maximum mints per id per user
 uint256 constant MINT_LIMIT = 69;
 
 /// @title A mint contract for distributing Ashurbanipal passes
 ///
 /// @author Zelinar XY
 contract Enkidu is Ownable, Receiver {
-    address private _ashurbanipalAddress;
     Ashurbanipal private _ashurbanipal;
+
+    /// @notice Address of the contract used to mint NFTs granting permission to write or confirm Nabu works' content
+    address private _ashurbanipalAddress;
+
+    ERC20 private _cult;
 
     ERC721 private _aura;
     ERC721 private _cigawrette;
-    ERC20 private _cult;
     ERC721 private _milady;
     ERC721 private _pixelady;
     ERC721 private _radbro;
     ERC721 private _remilio;
     ERC721 private _schizoposter;
 
-    address private _humbabaAddress;
     ERC721 private _humbaba;
+
+    /// @notice Address of the contract used to grant free mints to users who don't own any of the whitelisted assets
+    address private _humbabaAddress;
 
     // maps id to price
     mapping(uint256 => uint256) public prices;
@@ -210,13 +237,24 @@ contract Enkidu is Ownable, Receiver {
         _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
     }
 
-    function withdraw(uint256 amount) public onlyOwner {
+    /// @notice Withdraw mint proceeds
+    /// @notice Restricted to the contract owner
+    ///
+    /// @param amount The amount to withdraw; if zero, falls back to the entire balance
+    /// @param _to The recipient of the withdrawn funds; falls back to msg.sender
+    function withdraw(uint256 amount, address _to) public onlyOwner {
         uint256 amountToWithdraw = amount;
 
         if (amountToWithdraw == 0) {
             amountToWithdraw = address(this).balance;
         }
 
-        payable(msg.sender).transfer(amountToWithdraw);
+        address to = _to;
+
+        if (_to == address(0)) {
+            to = msg.sender;
+        }
+
+        payable(to).transfer(amountToWithdraw);
     }
 }
