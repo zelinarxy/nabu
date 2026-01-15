@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {ERC721} from "@solady/src/tokens/ERC721.sol";
 import {LibString} from "@solady/src/utils/LibString.sol";
 
-contract DummyNft is ERC721 {
+contract MockERC721 is ERC721 {
     uint256 private nextTokenId = 1;
 
     function name() public pure override returns (string memory) {

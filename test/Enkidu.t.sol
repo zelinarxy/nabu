@@ -8,8 +8,8 @@ import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "../src/Ashurbanipal.sol";
 import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
-import "../src/dummy/DummyCoin.sol";
-import "../src/dummy/DummyNft.sol";
+import "./mocks/MockERC20.sol";
+import "./mocks/MockERC721.sol";
 import "../src/Humbaba.sol";
 
 contract EnkiduTest is Ownable, Test {
@@ -18,15 +18,15 @@ contract EnkiduTest is Ownable, Test {
     Nabu private _nabu;
     Humbaba private _humbaba;
 
-    DummyCoin private _cult;
+    MockERC20 private _cult;
 
-    DummyNft private _aura;
-    DummyNft private _cigawrette;
-    DummyNft private _milady;
-    DummyNft private _pixelady;
-    DummyNft private _radbro;
-    DummyNft private _remilio;
-    DummyNft private _schizoposter;
+    MockERC721 private _aura;
+    MockERC721 private _cigawrette;
+    MockERC721 private _milady;
+    MockERC721 private _pixelady;
+    MockERC721 private _radbro;
+    MockERC721 private _remilio;
+    MockERC721 private _schizoposter;
 
     address alice = makeAddr("Alice");
     address bob = makeAddr("Bob");
@@ -57,33 +57,33 @@ contract EnkiduTest is Ownable, Test {
         _enkidu.updatePrice(workId, 0.05 ether);
         _enkidu.updateActive(workId, true);
 
-        bytes memory dummyCoinBytecode = type(DummyCoin).runtimeCode;
+        bytes memory mockERC20Bytecode = type(MockERC20).runtimeCode;
 
-        _cult = DummyCoin(CULT);
-        vm.etch(CULT, dummyCoinBytecode);
+        _cult = MockERC20(CULT);
+        vm.etch(CULT, mockERC20Bytecode);
 
-        bytes memory dummyNftBytecode = type(DummyNft).runtimeCode;
+        bytes memory mockERC721Bytecode = type(MockERC721).runtimeCode;
 
-        _aura = DummyNft(AURA);
-        vm.etch(AURA, dummyNftBytecode);
+        _aura = MockERC721(AURA);
+        vm.etch(AURA, mockERC721Bytecode);
 
-        _cigawrette = DummyNft(CIGAWRETTE);
-        vm.etch(CIGAWRETTE, dummyNftBytecode);
+        _cigawrette = MockERC721(CIGAWRETTE);
+        vm.etch(CIGAWRETTE, mockERC721Bytecode);
 
-        _milady = DummyNft(MILADY);
-        vm.etch(MILADY, dummyNftBytecode);
+        _milady = MockERC721(MILADY);
+        vm.etch(MILADY, mockERC721Bytecode);
 
-        _pixelady = DummyNft(PIXELADY);
-        vm.etch(PIXELADY, dummyNftBytecode);
+        _pixelady = MockERC721(PIXELADY);
+        vm.etch(PIXELADY, mockERC721Bytecode);
 
-        _radbro = DummyNft(RADBRO);
-        vm.etch(RADBRO, dummyNftBytecode);
+        _radbro = MockERC721(RADBRO);
+        vm.etch(RADBRO, mockERC721Bytecode);
 
-        _remilio = DummyNft(REMILIO);
-        vm.etch(REMILIO, dummyNftBytecode);
+        _remilio = MockERC721(REMILIO);
+        vm.etch(REMILIO, mockERC721Bytecode);
 
-        _schizoposter = DummyNft(SCHIZOPOSTER);
-        vm.etch(SCHIZOPOSTER, dummyNftBytecode);
+        _schizoposter = MockERC721(SCHIZOPOSTER);
+        vm.etch(SCHIZOPOSTER, mockERC721Bytecode);
 
         vm.stopPrank();
     }
