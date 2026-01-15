@@ -18,17 +18,17 @@ contract HumbabaTest is Ownable, Test {
     }
 
     function testName() public {
-        assertEq(humbaba.name(), "Humbaba");
+        assertEq(humbaba.name(), "Humbaba", "Name mismatch");
     }
 
     function testSymbol() public {
-        assertEq(humbaba.symbol(), "HUMB");
+        assertEq(humbaba.symbol(), "HUMB", "Symbol mismatch");
     }
 
     function testAdminMintTo() public {
         vm.prank(alice);
         humbaba.adminMintTo(address(bob));
-        assertEq(humbaba.balanceOf(address(bob)), 1);
+        assertEq(humbaba.balanceOf(address(bob)), 1, "Bob balance mismatch");
     }
 
     function testAdminMintToNotOwner() public {
@@ -40,7 +40,7 @@ contract HumbabaTest is Ownable, Test {
     function testTokenURI() public {
         vm.prank(alice);
         humbaba.adminMintTo(address(bob));
-        assertEq(humbaba.tokenURI(1), "https://foo.bar/1");
+        assertEq(humbaba.tokenURI(1), "https://foo.bar/1", "URI mismatch");
     }
 
     function testTokenURINonExistent() public {
@@ -49,10 +49,10 @@ contract HumbabaTest is Ownable, Test {
     }
 
     function testUpdateBaseURI() public {
-        assertEq(humbaba.baseURI(), "https://foo.bar/");
+        assertEq(humbaba.baseURI(), "https://foo.bar/", "Before URI mismatch");
         vm.prank(alice);
         humbaba.updateBaseURI("https://baz.qux/");
-        assertEq(humbaba.baseURI(), "https://baz.qux/");
+        assertEq(humbaba.baseURI(), "https://baz.qux/", "After URI mismatch");
     }
 
     function testUpdateBaseURINotOwner() public {

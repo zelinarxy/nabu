@@ -50,23 +50,21 @@ uint256 constant MINT_LIMIT = 69;
 ///
 /// @author Zelinar XY
 contract Enkidu is Ownable, Receiver {
-    ERC20 private cult;
-
-    ERC721 private aura;
-    ERC721 private cigawrette;
-    ERC721 private milady;
-    ERC721 private pixelady;
-    ERC721 private radbro;
-    ERC721 private remilio;
-    ERC721 private schizoposter;
-
-    // TODO: implement getter
-    address public humbabaAddress;
-    ERC721 private _humbaba;
-
-    // TODO: implement getter
-    address public ashurbanipalAddress;
+    address private _ashurbanipalAddress;
     Ashurbanipal private _ashurbanipal;
+
+
+    ERC721 private _aura;
+    ERC721 private _cigawrette;
+    ERC20 private _cult;
+    ERC721 private _milady;
+    ERC721 private _pixelady;
+    ERC721 private _radbro;
+    ERC721 private _remilio;
+    ERC721 private _schizoposter;
+
+    address private _humbabaAddress;
+    ERC721 private _humbaba;
 
     // maps id to price
     mapping(uint256 => uint256) public prices;
@@ -76,27 +74,37 @@ contract Enkidu is Ownable, Receiver {
     // how many free mints has a user used for an id
     mapping(uint256 => mapping(address => uint256)) public freeMints;
 
-    constructor(address _ashurbanipalAddress, address _humbabaAddress) {
+    constructor(address initialAshurbanipalAddress, address initialHumbabaAddress) {
         _initializeOwner(msg.sender);
-        ashurbanipalAddress = _ashurbanipalAddress;
-        _ashurbanipal = Ashurbanipal(_ashurbanipalAddress);
 
-        cult = ERC20(CULT);
+        _ashurbanipalAddress = initialAshurbanipalAddress;
+        _ashurbanipal = Ashurbanipal(initialAshurbanipalAddress);
 
-        aura = ERC721(AURA);
-        cigawrette = ERC721(CIGAWRETTE);
-        milady = ERC721(MILADY);
-        pixelady = ERC721(PIXELADY);
-        radbro = ERC721(RADBRO);
-        remilio = ERC721(REMILIO);
-        schizoposter = ERC721(SCHIZOPOSTER);
+        _humbabaAddress = initialHumbabaAddress;
+        _humbaba = ERC721(initialHumbabaAddress);
 
-        humbabaAddress = _humbabaAddress;
-        _humbaba = ERC721(_humbabaAddress);
+        _aura = ERC721(AURA);
+        _cigawrette = ERC721(CIGAWRETTE);
+        _cult = ERC20(CULT);
+        _milady = ERC721(MILADY);
+        _pixelady = ERC721(PIXELADY);
+        _radbro = ERC721(RADBRO);
+        _remilio = ERC721(REMILIO);
+        _schizoposter = ERC721(SCHIZOPOSTER);
+    }
+
+    /// @notice Get the Ashurbanipal contract address
+    function ashurbanipalAddress() public view returns (address) {
+        return _ashurbanipalAddress;
+    }
+
+    /// @notice Get the Humbaba contract address
+    function humbabaAddress() public view returns (address) {
+        return _humbabaAddress;
     }
 
     function updateHumbaba(address newHumbabaAddress) public onlyOwner {
-        humbabaAddress = newHumbabaAddress;
+        _humbabaAddress = newHumbabaAddress;
         _humbaba = ERC721(newHumbabaAddress);
     }
 
@@ -141,29 +149,29 @@ contract Enkidu is Ownable, Receiver {
         bool isWhitelisted;
 
         if (whitelistedToken == WhitelistedToken.Cult) {
-            isWhitelisted = cult.balanceOf(to) > 0;
+            isWhitelisted = _cult.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Aura) {
-            isWhitelisted = aura.balanceOf(to) > 0;
+            isWhitelisted = _aura.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Cigawrette) {
-            isWhitelisted = cigawrette.balanceOf(to) > 0;
+            isWhitelisted = _cigawrette.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Milady) {
-            isWhitelisted = milady.balanceOf(to) > 0;
+            isWhitelisted = _milady.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Pixelady) {
-            isWhitelisted = pixelady.balanceOf(to) > 0;
+            isWhitelisted = _pixelady.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Radbro) {
-            isWhitelisted = radbro.balanceOf(to) > 0;
+            isWhitelisted = _radbro.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Remilio) {
-            isWhitelisted = remilio.balanceOf(to) > 0;
+            isWhitelisted = _remilio.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Schizoposter) {
-            isWhitelisted = schizoposter.balanceOf(to) > 0;
+            isWhitelisted = _schizoposter.balanceOf(to) > 0;
         } else if (whitelistedToken == WhitelistedToken.Humbaba) {
             isWhitelisted = _humbaba.balanceOf(to) > 0;
         }
 
         if (whitelistedToken == WhitelistedToken.Any || (!isWhitelisted && whitelistedToken != WhitelistedToken.None)) {
-            isWhitelisted = cult.balanceOf(to) > 0 || aura.balanceOf(to) > 0 || cigawrette.balanceOf(to) > 0
-                || milady.balanceOf(to) > 0 || pixelady.balanceOf(to) > 0 || radbro.balanceOf(to) > 0
-                || remilio.balanceOf(to) > 0 || schizoposter.balanceOf(to) > 0 || _humbaba.balanceOf(to) > 0;
+            isWhitelisted = _cult.balanceOf(to) > 0 || _aura.balanceOf(to) > 0 || _cigawrette.balanceOf(to) > 0
+                || _milady.balanceOf(to) > 0 || _pixelady.balanceOf(to) > 0 || _radbro.balanceOf(to) > 0
+                || _remilio.balanceOf(to) > 0 || _schizoposter.balanceOf(to) > 0 || _humbaba.balanceOf(to) > 0;
         }
 
         uint256 countForPrice = count;
@@ -199,7 +207,7 @@ contract Enkidu is Ownable, Receiver {
     }
 
     function updateAshurbanipalAddress(address newAshurbanipalAddress) public onlyOwner {
-        ashurbanipalAddress = newAshurbanipalAddress;
+        _ashurbanipalAddress = newAshurbanipalAddress;
         _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
     }
 

@@ -102,13 +102,16 @@ contract Ashurbanipal is ERC1155, Ownable {
         uint256[] memory amounts,
         bytes memory data
     ) internal override {
-        // TODO: gas gimmicks
-        for (uint256 i = 0; i < ids.length; i++) {
+        uint256 len = ids.length;
+
+        for (uint256 i = 0; i < len; ) {
             uint256 id = ids[i];
 
             if (_freezelist[id][from] || _freezelist[id][to]) {
                 revert IsFrozen();
             }
+
+            unchecked { ++i; }
         }
     }
 }

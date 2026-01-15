@@ -13,23 +13,22 @@ import "../src/dummy/DummyNft.sol";
 import "../src/Humbaba.sol";
 
 
-// TODO: finish coverage
 // TODO: mismatch messages on assertEq
 contract EnkiduTest is Ownable, Test {
-    Ashurbanipal public ashurbanipal;
-    Enkidu public enkidu;
-    Nabu public nabu;
-    Humbaba public humbaba;
+    Ashurbanipal private _ashurbanipal;
+    Enkidu private _enkidu;
+    Nabu private _nabu;
+    Humbaba private _humbaba;
 
-    DummyCoin public cult;
+    DummyCoin private _cult;
 
-    DummyNft public aura;
-    DummyNft public cigawrette;
-    DummyNft public milady;
-    DummyNft public pixelady;
-    DummyNft public radbro;
-    DummyNft public remilio;
-    DummyNft public schizoposter;
+    DummyNft private _aura;
+    DummyNft private _cigawrette;
+    DummyNft private _milady;
+    DummyNft private _pixelady;
+    DummyNft private _radbro;
+    DummyNft private _remilio;
+    DummyNft private _schizoposter;
 
     address alice = makeAddr("Alice");
     address bob = makeAddr("Bob");
@@ -37,55 +36,55 @@ contract EnkiduTest is Ownable, Test {
 
     function setUp() public {
         vm.roll(0);
-        nabu = new Nabu();
-        address nabuAddress = address(nabu);
+        _nabu = new Nabu();
+        address nabuAddress = address(_nabu);
 
-        ashurbanipal = new Ashurbanipal(nabuAddress);
-        nabu.updateAshurbanipalAddress(address(ashurbanipal));
+        _ashurbanipal = new Ashurbanipal(nabuAddress);
+        _nabu.updateAshurbanipalAddress(address(_ashurbanipal));
 
         vm.startPrank(alice, alice);
-        humbaba = new Humbaba("https://foo.bar/");
-        enkidu = new Enkidu(address(ashurbanipal), address(humbaba));
+        _humbaba = new Humbaba("https://foo.bar/");
+        _enkidu = new Enkidu(address(_ashurbanipal), address(_humbaba));
 
-        uint256 workId = nabu.createWork(
+        uint256 workId = _nabu.createWork(
             "Miguel de Cervantes",
             "Original title: El ingenioso hidalgo don Quijote de la Mancha",
             "Don Quijote",
             1_000_000,
             "https://foo.bar/{id}.json",
             10_000,
-            address(enkidu)
+            address(_enkidu)
         );
 
-        enkidu.updatePrice(workId, 0.05 ether);
-        enkidu.updateActive(workId, true);
+        _enkidu.updatePrice(workId, 0.05 ether);
+        _enkidu.updateActive(workId, true);
 
         bytes memory dummyCoinBytecode = type(DummyCoin).runtimeCode;
 
-        cult = DummyCoin(CULT);
+        _cult = DummyCoin(CULT);
         vm.etch(CULT, dummyCoinBytecode);
 
         bytes memory dummyNftBytecode = type(DummyNft).runtimeCode;
 
-        aura = DummyNft(AURA);
+        _aura = DummyNft(AURA);
         vm.etch(AURA, dummyNftBytecode);
 
-        cigawrette = DummyNft(CIGAWRETTE);
+        _cigawrette = DummyNft(CIGAWRETTE);
         vm.etch(CIGAWRETTE, dummyNftBytecode);
 
-        milady = DummyNft(MILADY);
+        _milady = DummyNft(MILADY);
         vm.etch(MILADY, dummyNftBytecode);
 
-        pixelady = DummyNft(PIXELADY);
+        _pixelady = DummyNft(PIXELADY);
         vm.etch(PIXELADY, dummyNftBytecode);
 
-        radbro = DummyNft(RADBRO);
+        _radbro = DummyNft(RADBRO);
         vm.etch(RADBRO, dummyNftBytecode);
 
-        remilio = DummyNft(REMILIO);
+        _remilio = DummyNft(REMILIO);
         vm.etch(REMILIO, dummyNftBytecode);
 
-        schizoposter = DummyNft(SCHIZOPOSTER);
+        _schizoposter = DummyNft(SCHIZOPOSTER);
         vm.etch(SCHIZOPOSTER, dummyNftBytecode);
 
         vm.stopPrank();
@@ -93,206 +92,206 @@ contract EnkiduTest is Ownable, Test {
 
     function testUpdateActive() public {
         vm.startPrank(alice, alice);
-        enkidu.updateActive(1, false);
-        assertFalse(enkidu.active(1));
+        _enkidu.updateActive(1, false);
+        assertFalse(_enkidu.active(1));
 
-        enkidu.updateActive(1, true);
-        assertTrue(enkidu.active(1));
+        _enkidu.updateActive(1, true);
+        assertTrue(_enkidu.active(1));
         vm.stopPrank();
     }
 
     function testUpdateActiveNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
-        enkidu.updateActive(1, true);
+        _enkidu.updateActive(1, true);
     }
 
     function testUpdatePrice() public {
-        assertEq(enkidu.prices(1), 0.05 ether);
+        assertEq(_enkidu.prices(1), 0.05 ether);
 
         vm.prank(alice);
-        enkidu.updatePrice(1, 100 ether);
-        assertEq(enkidu.prices(1), 100 ether);
+        _enkidu.updatePrice(1, 100 ether);
+        assertEq(_enkidu.prices(1), 100 ether);
     }
 
     function testUpdatePriceNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
-        enkidu.updatePrice(1, 100 ether);
+        _enkidu.updatePrice(1, 100 ether);
     }
 
     function testUpdateAshurbanipalAddress() public {
-        assertEq(enkidu.ashurbanipalAddress(), address(ashurbanipal));
+        assertEq(_enkidu.ashurbanipalAddress(), address(_ashurbanipal));
 
         vm.prank(alice);
-        enkidu.updateAshurbanipalAddress(address(69));
-        assertEq(enkidu.ashurbanipalAddress(), address(69));
+        _enkidu.updateAshurbanipalAddress(address(69));
+        assertEq(_enkidu.ashurbanipalAddress(), address(69));
     }
 
     function testUpdateAshurbanipalAddressNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
-        enkidu.updateAshurbanipalAddress(address(69));
+        _enkidu.updateAshurbanipalAddress(address(69));
     }
 
     function testAdminMint() public {
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 0);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 0);
 
         vm.prank(alice);
-        enkidu.adminMint(1, 20, address(bob));
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 20);
+        _enkidu.adminMint(1, 20, address(bob));
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 20);
     }
 
     function testAdminMintNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
-        enkidu.adminMint(1, 20, address(bob));
+        _enkidu.adminMint(1, 20, address(bob));
     }
 
     function testAdminMintZeroCount() public {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(ZeroCount.selector));
-        enkidu.adminMint(1, 0, address(bob));
+        _enkidu.adminMint(1, 0, address(bob));
     }
 
     function testMint() public {
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 0);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 0);
 
         vm.deal(address(bob), 20 * 0.05 ether);
         vm.prank(bob);
 
-        enkidu.mint{value: 20 * 0.05 ether}(1, 20, address(bob), WhitelistedToken.None);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 20);
+        _enkidu.mint{value: 20 * 0.05 ether}(1, 20, address(bob), WhitelistedToken.None);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 20);
     }
 
     function testMintWhitelistedHumbaba() public {
         vm.prank(alice);
-        humbaba.adminMintTo(address(bob));
+        _humbaba.adminMintTo(address(bob));
 
         vm.prank(bob);
-        enkidu.mint(1, 7, address(bob), WhitelistedToken.Humbaba);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Humbaba);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMinWhitelistedCult() public {
         vm.prank(alice);
-        cult.mintTo(address(bob));
+        _cult.mintTo(address(bob));
 
         vm.prank(bob);
-        enkidu.mint(1, 7, address(bob), WhitelistedToken.Cult);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Cult);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMintWhitelistedAura() public {
         vm.prank(alice);
-        aura.mintTo(address(bob));
+        _aura.mintTo(address(bob));
 
         vm.prank(bob);
-        enkidu.mint(1, 7, address(bob), WhitelistedToken.Aura);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Aura);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMintWhitelistedCigawrette() public {
         vm.prank(alice);
-        cigawrette.mintTo(address(bob));
+        _cigawrette.mintTo(address(bob));
 
         vm.prank(bob);
-        enkidu.mint(1, 7, address(bob), WhitelistedToken.Cigawrette);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Cigawrette);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMintWhitelistedMilady() public {
         vm.prank(alice);
-        milady.mintTo(address(bob));
+        _milady.mintTo(address(bob));
 
         vm.prank(bob);
-        enkidu.mint(1, 7, address(bob), WhitelistedToken.Milady);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Milady);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMintWhitelistedPixelady() public {
         vm.prank(alice);
-        pixelady.mintTo(address(bob));
+        _pixelady.mintTo(address(bob));
 
         vm.prank(bob);
-        enkidu.mint(1, 7, address(bob), WhitelistedToken.Pixelady);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Pixelady);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMintWhitelistedRadbro() public {
         vm.prank(alice);
-        radbro.mintTo(address(bob));
+        _radbro.mintTo(address(bob));
 
         vm.prank(bob);
-        enkidu.mint(1, 7, address(bob), WhitelistedToken.Radbro);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Radbro);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMintWhitelistedRemilio() public {
         vm.prank(alice);
-        remilio.mintTo(address(bob));
+        _remilio.mintTo(address(bob));
 
         vm.prank(bob);
-        enkidu.mint(1, 7, address(bob), WhitelistedToken.Remilio);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Remilio);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMintWhitelistedSchizoposter() public {
         vm.prank(alice);
-        schizoposter.mintTo(address(bob));
+        _schizoposter.mintTo(address(bob));
 
         vm.prank(bob);
-        enkidu.mint(1, 7, address(bob), WhitelistedToken.Schizoposter);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Schizoposter);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMintWhitelistedAny() public {
         vm.prank(alice);
-        schizoposter.mintTo(address(bob));
+        _schizoposter.mintTo(address(bob));
 
         vm.prank(bob);
-        enkidu.mint(1, 7, address(bob), WhitelistedToken.Any);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Any);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMintWhitelistedTwoBatches() public {
         vm.prank(alice);
-        humbaba.adminMintTo(address(bob));
+        _humbaba.adminMintTo(address(bob));
 
         vm.startPrank(bob, bob);
 
-        enkidu.mint(1, 2, address(bob), WhitelistedToken.Humbaba);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 2);
+        _enkidu.mint(1, 2, address(bob), WhitelistedToken.Humbaba);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 2);
 
-        enkidu.mint(1, 5, address(bob), WhitelistedToken.Humbaba);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 7);
+        _enkidu.mint(1, 5, address(bob), WhitelistedToken.Humbaba);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7);
     }
 
     function testMintWhitelistedExtraMints() public {
         vm.prank(alice);
-        humbaba.adminMintTo(address(bob));
+        _humbaba.adminMintTo(address(bob));
 
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
 
-        enkidu.mint{value: 10 * 0.05 ether}(1, 17, address(bob), WhitelistedToken.Humbaba);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 17);
+        _enkidu.mint{value: 10 * 0.05 ether}(1, 17, address(bob), WhitelistedToken.Humbaba);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 17);
     }
 
     function testMintWhitelistedComplexBatches() public {
         vm.prank(alice);
-        humbaba.adminMintTo(address(bob));
+        _humbaba.adminMintTo(address(bob));
         vm.deal(address(bob), 2 * 0.05 ether);
 
         vm.startPrank(bob, bob);
-        enkidu.mint(1, 2, address(bob), WhitelistedToken.Humbaba);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 2);
+        _enkidu.mint(1, 2, address(bob), WhitelistedToken.Humbaba);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 2);
 
-        enkidu.mint{value: 0.05 ether}(1, 6, address(bob), WhitelistedToken.Humbaba);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 8);
+        _enkidu.mint{value: 0.05 ether}(1, 6, address(bob), WhitelistedToken.Humbaba);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 8);
 
-        enkidu.mint{value: 0.05 ether}(1, 1, address(bob), WhitelistedToken.Humbaba);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 9);
+        _enkidu.mint{value: 0.05 ether}(1, 1, address(bob), WhitelistedToken.Humbaba);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 9);
         vm.stopPrank();
     }
 
@@ -300,104 +299,104 @@ contract EnkiduTest is Ownable, Test {
         vm.deal(address(bob), 70 * 0.05 ether);
         vm.expectRevert(abi.encodeWithSelector(OverLimit.selector));
         vm.prank(bob);
-        enkidu.mint{value: 69 * 0.05 ether}(1, 70, address(bob), WhitelistedToken.None);
+        _enkidu.mint{value: 69 * 0.05 ether}(1, 70, address(bob), WhitelistedToken.None);
     }
 
     function testMintInsufficientFunds() public {
         vm.deal(address(bob), 0.04 ether);
         vm.expectRevert(abi.encodeWithSelector(InsufficientFunds.selector));
         vm.prank(bob);
-        enkidu.mint{value: 0.04 ether}(1, 1, address(bob), WhitelistedToken.None);
+        _enkidu.mint{value: 0.04 ether}(1, 1, address(bob), WhitelistedToken.None);
     }
 
     function testMintZeroCount() public {
         vm.expectRevert(abi.encodeWithSelector(ZeroCount.selector));
         vm.prank(bob);
-        enkidu.mint(1, 0, address(bob), WhitelistedToken.None);
+        _enkidu.mint(1, 0, address(bob), WhitelistedToken.None);
     }
 
     function testMintInactive() public {
         vm.prank(alice);
-        enkidu.updateActive(1, false);
+        _enkidu.updateActive(1, false);
 
         vm.deal(address(bob), 0.05 ether);
         vm.expectRevert(abi.encodeWithSelector(Inactive.selector));
         vm.prank(bob);
-        enkidu.mint{value: 0.05 ether}(1, 1, address(bob), WhitelistedToken.None);
+        _enkidu.mint{value: 0.05 ether}(1, 1, address(bob), WhitelistedToken.None);
     }
 
     function testWithdrawSome() public {
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
-        enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
-        assertEq(address(enkidu).balance, 10 * 0.05 ether);
+        _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
+        assertEq(address(_enkidu).balance, 10 * 0.05 ether);
 
         vm.prank(alice);
-        enkidu.withdraw(0.05 ether);
+        _enkidu.withdraw(0.05 ether);
         assertEq(address(alice).balance, 0.05 ether);
-        assertEq(address(enkidu).balance, 9 * 0.05 ether);
+        assertEq(address(_enkidu).balance, 9 * 0.05 ether);
     }
 
     function testWithdrawAll() public {
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
-        enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
+        _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
 
         vm.prank(alice);
-        enkidu.withdraw(0);
+        _enkidu.withdraw(0);
         assertEq(address(alice).balance, 10 * 0.05 ether);
-        assertEq(address(enkidu).balance, 0);
+        assertEq(address(_enkidu).balance, 0);
     }
 
     function testWithdrawNotOwner() public {
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
-        enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
+        _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
 
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
-        enkidu.withdraw(10 * 0.05 ether);
+        _enkidu.withdraw(10 * 0.05 ether);
     }
 
     function testUpdateHumbaba() public {
-        assertEq(enkidu.humbabaAddress(), address(humbaba));
+        assertEq(_enkidu.humbabaAddress(), address(_humbaba));
 
         vm.prank(alice);
-        enkidu.updateHumbaba(address(123));
-        assertEq(enkidu.humbabaAddress(), address(123));
+        _enkidu.updateHumbaba(address(123));
+        assertEq(_enkidu.humbabaAddress(), address(123));
     }
 
     function testUpdateHumbabaNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
-        enkidu.updateHumbaba(address(666));
+        _enkidu.updateHumbaba(address(666));
     }
 
     function testSecondWork() public {
         vm.startPrank(alice, alice);
-        uint256 workId = nabu.createWork(
+        uint256 workId = _nabu.createWork(
             "William Shakespeare",
             "Arbitrary informative metadata",
             "Hamlet",
             20_000,
             "https://baz.qux/{id}.json",
             50,
-            address(enkidu)
+            address(_enkidu)
         );
 
-        enkidu.updateActive(workId, true);
-        enkidu.updatePrice(workId, 0.1 ether);
+        _enkidu.updateActive(workId, true);
+        _enkidu.updatePrice(workId, 0.1 ether);
         vm.stopPrank();
 
-        assertEq(ashurbanipal.balanceOf(address(enkidu), workId), 50);
+        assertEq(_ashurbanipal.balanceOf(address(_enkidu), workId), 50);
 
         vm.deal(address(bob), 20 * 0.05 ether);
         vm.startPrank(bob, bob);
 
-        enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
-        assertEq(ashurbanipal.balanceOf(address(bob), 1), 10);
+        _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 10);
 
-        enkidu.mint{value: 5 * 0.1 ether}(workId, 5, address(bob), WhitelistedToken.None);
-        assertEq(ashurbanipal.balanceOf(address(bob), workId), 5);
+        _enkidu.mint{value: 5 * 0.1 ether}(workId, 5, address(bob), WhitelistedToken.None);
+        assertEq(_ashurbanipal.balanceOf(address(bob), workId), 5);
     }
 }

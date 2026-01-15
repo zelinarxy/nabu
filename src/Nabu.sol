@@ -100,7 +100,7 @@ contract Nabu is Ownable {
     Ashurbanipal private _ashurbanipal;
 
     /// @notice Address of the contract used to mint NFTs granting permission to write or confirm works' content
-    address public ashurbanipalAddress;
+    address private _ashurbanipalAddress;
 
     /// @notice A work's admin can ban an address from assigning or confirming passage content for that work
     /// @dev The first uint256 mapping corresponds to the work id
@@ -378,12 +378,17 @@ contract Nabu is Ownable {
         newWorksTip = _worksTip;
     }
 
+    /// @notice Get the Ashurbanipal contract address
+    function ashurbanipalAddress() public view returns (address) {
+        return _ashurbanipalAddress;
+    }
+
     /// @notice Update the Ashurbanipal contract
     /// @notice Restricted to the Nabu contract owner
     ///
     /// @param newAshurbanipalAddress The new Ashurbanipal contract address
     function updateAshurbanipalAddress(address newAshurbanipalAddress) public onlyOwner {
-        ashurbanipalAddress = newAshurbanipalAddress;
+        _ashurbanipalAddress = newAshurbanipalAddress;
         _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
     }
 
