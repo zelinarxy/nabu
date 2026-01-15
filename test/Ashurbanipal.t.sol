@@ -11,9 +11,8 @@ import "../src/Nabu.sol";
 
 // TODO: mismatch messages on assertEq
 contract AshurbanipalTest is Ownable, Test {
-    Ashurbanipal public ashurbanipal;
-    Enkidu public enkidu;
-    Nabu public nabu;
+    Ashurbanipal private _ashurbanipal;
+    Nabu private _nabu;
 
     address alice = makeAddr("Alice");
     address bob = makeAddr("Bob");
@@ -30,10 +29,10 @@ contract AshurbanipalTest is Ownable, Test {
 
     function setUp() public {
         vm.roll(0);
-        nabu = new Nabu();
-        address nabuAddress = address(nabu);
-        ashurbanipal = new Ashurbanipal(nabuAddress);
-        nabu.updateAshurbanipalAddress(address(ashurbanipal));
+        _nabu = new Nabu();
+        address nabuAddress = address(_nabu);
+        _ashurbanipal = new Ashurbanipal(nabuAddress);
+        _nabu.updateAshurbanipalAddress(address(_ashurbanipal));
     }
 
     bytes passageOne = bytes(
@@ -45,7 +44,7 @@ contract AshurbanipalTest is Ownable, Test {
     bytes passageOneMaliciousCompressed = LibZip.flzCompress(passageOneMalicious);
 
     function createWork(address to) private returns (uint256) {
-        uint256 workId = nabu.createWork(
+        uint256 workId = _nabu.createWork(
             "Miguel de Cervantes",
             "Original title: El ingenioso hidalgo don Quijote de la Mancha",
             "Don Quijote",
@@ -59,10 +58,10 @@ contract AshurbanipalTest is Ownable, Test {
     }
 
     function distributePasses(uint256 workId) private {
-        ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
-        ashurbanipal.safeTransferFrom(alice, charlie, workId, 2_000, "");
-        ashurbanipal.safeTransferFrom(alice, dave, workId, 500, "");
-        ashurbanipal.safeTransferFrom(alice, mallory, workId, 666, "");
+        _ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
+        _ashurbanipal.safeTransferFrom(alice, charlie, workId, 2_000, "");
+        _ashurbanipal.safeTransferFrom(alice, dave, workId, 500, "");
+        _ashurbanipal.safeTransferFrom(alice, mallory, workId, 666, "");
     }
 
     function createWorkAndDistributePassesAsAlice() private prank(alice) returns (uint256) {
@@ -75,38 +74,38 @@ contract AshurbanipalTest is Ownable, Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(NotNabu.selector));
-        ashurbanipal.updateUri(workId, "https://hmmm.cool/{id}.json");
+        _ashurbanipal.updateUri(workId, "https://hmmm.cool/{id}.json");
     }
 
     function testGetNabuAddress() public {
-        address nabuAddress = ashurbanipal.nabuAddress();
-        assertEq(nabuAddress, address(nabu), "Nabu address mismatch");
+        address nabuAddress = _ashurbanipal.nabuAddress();
+        assertEq(nabuAddress, address(_nabu), "Nabu address mismatch");
     }
 
     function testMintNotNabu() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(NotNabu.selector));
-        ashurbanipal.mint(mallory, workId, 100, "https://yes.wowee/{id}.json");
+        _ashurbanipal.mint(mallory, workId, 100, "https://yes.wowee/{id}.json");
     }
 
     function testTransfer() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
-        assertEq(ashurbanipal.balanceOf(bob, workId), 1_000, "Bob pass balance before mismatch");
-        assertEq(ashurbanipal.balanceOf(charlie, workId), 2_000, "Charlie pass balance before mismatch");
+        assertEq(_ashurbanipal.balanceOf(bob, workId), 1_000, "Bob pass balance before mismatch");
+        assertEq(_ashurbanipal.balanceOf(charlie, workId), 2_000, "Charlie pass balance before mismatch");
 
         vm.prank(bob);
-        ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
+        _ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
 
-        assertEq(ashurbanipal.balanceOf(bob, workId), 995, "Bob pass balance after mismatch");
-        assertEq(ashurbanipal.balanceOf(charlie, workId), 2_005, "Charlie pass balance after mismatch");
+        assertEq(_ashurbanipal.balanceOf(bob, workId), 995, "Bob pass balance after mismatch");
+        assertEq(_ashurbanipal.balanceOf(charlie, workId), 2_005, "Charlie pass balance after mismatch");
     }
 
     function testBatchTransfer() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        uint256 workIdTwo = nabu.createWork(
+        uint256 workIdTwo = _nabu.createWork(
             "William Shakespeare",
             "Arbitrary informative metadata",
             "Hamlet",
@@ -116,10 +115,10 @@ contract AshurbanipalTest is Ownable, Test {
             bob
         );
 
-        assertEq(ashurbanipal.balanceOf(bob, workId), 1_000, "Bob work one pass balance before mismatch");
-        assertEq(ashurbanipal.balanceOf(bob, workIdTwo), 50, "Bob work two pass balance before mismatch");
-        assertEq(ashurbanipal.balanceOf(frank, workId), 0, "Frank work one pass balance before mismatch");
-        assertEq(ashurbanipal.balanceOf(frank, workIdTwo), 0, "Frank work two pass balance before mismatch");
+        assertEq(_ashurbanipal.balanceOf(bob, workId), 1_000, "Bob work one pass balance before mismatch");
+        assertEq(_ashurbanipal.balanceOf(bob, workIdTwo), 50, "Bob work two pass balance before mismatch");
+        assertEq(_ashurbanipal.balanceOf(frank, workId), 0, "Frank work one pass balance before mismatch");
+        assertEq(_ashurbanipal.balanceOf(frank, workIdTwo), 0, "Frank work two pass balance before mismatch");
 
         uint256[] memory workIds = new uint256[](2);
         workIds[0] = workId;
@@ -130,41 +129,41 @@ contract AshurbanipalTest is Ownable, Test {
         amounts[1] = 20;
 
         vm.prank(bob);
-        ashurbanipal.safeBatchTransferFrom(bob, frank, workIds, amounts, "");
+        _ashurbanipal.safeBatchTransferFrom(bob, frank, workIds, amounts, "");
 
-        assertEq(ashurbanipal.balanceOf(bob, workId), 999, "Bob work one pass balance after mismatch");
-        assertEq(ashurbanipal.balanceOf(bob, workIdTwo), 30, "Bob work two pass balance after mismatch");
-        assertEq(ashurbanipal.balanceOf(frank, workId), 1, "Frank work one pass balance after mismatch");
-        assertEq(ashurbanipal.balanceOf(frank, workIdTwo), 20, "Frank work two pass balance after mismatch");
+        assertEq(_ashurbanipal.balanceOf(bob, workId), 999, "Bob work one pass balance after mismatch");
+        assertEq(_ashurbanipal.balanceOf(bob, workIdTwo), 30, "Bob work two pass balance after mismatch");
+        assertEq(_ashurbanipal.balanceOf(frank, workId), 1, "Frank work one pass balance after mismatch");
+        assertEq(_ashurbanipal.balanceOf(frank, workIdTwo), 20, "Frank work two pass balance after mismatch");
     }
 
     function testTransferBlacklistedSender() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(alice);
-        nabu.updateBlacklist(workId, bob, true);
+        _nabu.updateBlacklist(workId, bob, true);
 
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(IsFrozen.selector));
-        ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
+        _ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
     }
 
     function testTransferBlacklistedRecipient() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(alice);
-        nabu.updateBlacklist(workId, charlie, true);
+        _nabu.updateBlacklist(workId, charlie, true);
 
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(IsFrozen.selector));
-        ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
+        _ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
     }
 
     function testBatchTransferBlacklistedSender() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        uint256 workIdTwo = nabu.createWork(
+        uint256 workIdTwo = _nabu.createWork(
             "William Shakespeare",
             "Arbitrary informative metadata",
             "Hamlet",
@@ -183,18 +182,18 @@ contract AshurbanipalTest is Ownable, Test {
         amounts[1] = 20;
 
         vm.prank(alice);
-        nabu.updateBlacklist(workId, bob, true);
+        _nabu.updateBlacklist(workId, bob, true);
 
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(IsFrozen.selector));
-        ashurbanipal.safeBatchTransferFrom(bob, frank, workIds, amounts, "");
+        _ashurbanipal.safeBatchTransferFrom(bob, frank, workIds, amounts, "");
     }
 
     function testBatchTransferBlacklistedRecipient() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        uint256 workIdTwo = nabu.createWork(
+        uint256 workIdTwo = _nabu.createWork(
             "William Shakespeare",
             "Arbitrary informative metadata",
             "Hamlet",
@@ -213,44 +212,44 @@ contract AshurbanipalTest is Ownable, Test {
         amounts[1] = 20;
 
         vm.prank(bob);
-        nabu.updateBlacklist(workIdTwo, frank, true);
+        _nabu.updateBlacklist(workIdTwo, frank, true);
 
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(IsFrozen.selector));
-        ashurbanipal.safeBatchTransferFrom(alice, frank, workIds, amounts, "");
+        _ashurbanipal.safeBatchTransferFrom(alice, frank, workIds, amounts, "");
     }
 
     function testTransferBanLifted() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(alice);
-        nabu.updateBlacklist(workId, bob, true);
+        _nabu.updateBlacklist(workId, bob, true);
 
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(IsFrozen.selector));
-        ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
+        _ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
 
         vm.prank(alice);
-        nabu.updateBlacklist(workId, bob, false);
+        _nabu.updateBlacklist(workId, bob, false);
 
-        assertEq(ashurbanipal.balanceOf(bob, workId), 1_000, "Bob pass balance before mismatch");
-        assertEq(ashurbanipal.balanceOf(charlie, workId), 2_000, "Charlie pass balance before mismatch");
+        assertEq(_ashurbanipal.balanceOf(bob, workId), 1_000, "Bob pass balance before mismatch");
+        assertEq(_ashurbanipal.balanceOf(charlie, workId), 2_000, "Charlie pass balance before mismatch");
 
         vm.prank(bob);
-        ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
+        _ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
 
-        assertEq(ashurbanipal.balanceOf(bob, workId), 995, "Bob pass balance after mismatch");
-        assertEq(ashurbanipal.balanceOf(charlie, workId), 2_005, "Charlie pass balance after mismatch");
+        assertEq(_ashurbanipal.balanceOf(bob, workId), 995, "Bob pass balance after mismatch");
+        assertEq(_ashurbanipal.balanceOf(charlie, workId), 2_005, "Charlie pass balance after mismatch");
     }
 
     function testUpdateNabuAddress() public {
-        assertEq(ashurbanipal.nabuAddress(), address(nabu), "Nabu address mismatch");
+        assertEq(_ashurbanipal.nabuAddress(), address(_nabu), "Nabu address mismatch");
 
-        ashurbanipal.updateNabuAddress(address(420));
-        assertEq(ashurbanipal.nabuAddress(), address(420), "Nabu address mismatch");
+        _ashurbanipal.updateNabuAddress(address(420));
+        assertEq(_ashurbanipal.nabuAddress(), address(420), "Nabu address mismatch");
     }
 
     function testFailUpdateNabuAddressNotOwner() public prank(mallory) {
-        ashurbanipal.updateNabuAddress(address(420));
+        _ashurbanipal.updateNabuAddress(address(420));
     }
 }
