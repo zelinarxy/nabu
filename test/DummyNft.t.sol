@@ -6,28 +6,28 @@ import "../src/dummy/DummyNft.sol";
 
 // TODO: mismatch messages on assertEq
 contract DummyNftTest is Test {
-    DummyNft public dummyNft;
+    DummyNft private _dummyNft;
     address alice = makeAddr("Alice");
 
     function setUp() public {
-        dummyNft = new DummyNft();
+        _dummyNft = new DummyNft();
     }
 
     function testName() public {
-        assertEq(dummyNft.name(), "DummyNft");
+        assertEq(_dummyNft.name(), "DummyNft");
     }
 
     function testSymbol() public {
-        assertEq(dummyNft.symbol(), "DUMMY");
+        assertEq(_dummyNft.symbol(), "DUMMY");
     }
 
     function testMintTo() public {
-        dummyNft.mintTo(address(alice));
-        assertEq(dummyNft.balanceOf(address(alice)), 1);
+        _dummyNft.mintTo(address(alice));
+        assertEq(_dummyNft.balanceOf(address(alice)), 1);
     }
 
     function testTokenURI() public {
-        dummyNft.mintTo(address(alice));
-        assertEq(dummyNft.tokenURI(1), "");
+        _dummyNft.mintTo(address(alice));
+        assertEq(_dummyNft.tokenURI(1), "");
     }
 }
