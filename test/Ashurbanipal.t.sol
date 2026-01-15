@@ -6,7 +6,6 @@ import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {LibZip} from "@solady/src/utils/LibZip.sol";
 import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
 import "../src/Ashurbanipal.sol";
-import "../src/Enkidu.sol";
 import "../src/Nabu.sol";
 
 // TODO: mismatch messages on assertEq
