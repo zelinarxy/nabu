@@ -4,25 +4,24 @@ pragma solidity 0.8.28;
 import {Test} from "forge-std/Test.sol";
 import "../src/dummy/DummyCoin.sol";
 
-// TODO: mismatch messages on assertEq
 contract DummyCoinTest is Test {
-    DummyCoin public dummyCoin;
+    DummyCoin private _dummyCoin;
     address alice = makeAddr("Alice");
 
     function setUp() public {
-        dummyCoin = new DummyCoin();
+        _dummyCoin = new DummyCoin();
     }
 
     function testName() public {
-        assertEq(dummyCoin.name(), "DummyCoin");
+        assertEq(_dummyCoin.name(), "DummyCoin", "Name mismatch");
     }
 
     function testSymbol() public {
-        assertEq(dummyCoin.symbol(), "COIN");
+        assertEq(_dummyCoin.symbol(), "COIN", "Symbol mismatch");
     }
 
     function testMintTo() public {
-        dummyCoin.mintTo(address(alice));
-        assertEq(dummyCoin.balanceOf(address(alice)), 1_000_000);
+        _dummyCoin.mintTo(address(alice));
+        assertEq(_dummyCoin.balanceOf(address(alice)), 1_000_000, "Balance mismatch");
     }
 }
