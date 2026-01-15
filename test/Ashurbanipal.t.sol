@@ -247,6 +247,7 @@ contract AshurbanipalTest is Ownable, Test {
         assertEq(_ashurbanipal.nabuAddress(), address(420), "Nabu address mismatch");
     }
 
+    // TODO: deprecated
     function testFailUpdateNabuAddressNotOwner() public prank(mallory) {
         _ashurbanipal.updateNabuAddress(address(420));
     }
