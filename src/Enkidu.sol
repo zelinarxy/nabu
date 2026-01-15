@@ -239,6 +239,7 @@ contract Enkidu is Ownable, Receiver {
 
     /// @notice Withdraw mint proceeds
     /// @notice Restricted to the contract owner
+    /// @notice This function has no reentrancy guard: do not withdraw to an unvetted address
     ///
     /// @param amount The amount to withdraw; if zero, falls back to the entire balance
     /// @param _to The recipient of the withdrawn funds; falls back to msg.sender
