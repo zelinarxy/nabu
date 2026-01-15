@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import {ERC721} from "@solady/src/tokens/ERC721.sol";
+import {LibString} from "@solady/src/utils/LibString.sol";
 
 contract DummyNft is ERC721 {
     uint256 private nextTokenId = 1;
@@ -21,6 +22,6 @@ contract DummyNft is ERC721 {
     }
 
     function tokenURI(uint256 id) public view virtual override returns (string memory) {
-        return "";
+        return string.concat("https://foo.bar/", LibString.toString(id));
     }
 }

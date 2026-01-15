@@ -27,6 +27,6 @@ contract DummyNftTest is Test {
 
     function testTokenURI() public {
         _dummyNft.mintTo(address(alice));
-        assertEq(_dummyNft.tokenURI(1), "", "URI mismatch");
+        assertEq(_dummyNft.tokenURI(1), "https://foo.bar/1", "URI mismatch");
     }
 }
