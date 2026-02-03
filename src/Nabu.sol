@@ -103,13 +103,11 @@ contract Nabu is Ownable {
     address private _ashurbanipalAddress;
 
     /// @notice A work's admin can ban an address from assigning or confirming passage content for that work
-    /// @dev The first uint256 mapping corresponds to the work id
-    mapping(uint256 => mapping(address => bool)) private _blacklist;
+    mapping(uint256 workId => mapping(address user => bool isBlacklisted)) private _blacklist;
 
-    /// @dev The first uint256 mapping corresponds to the work id
-    mapping(uint256 => mapping(uint256 => Passage)) private _passages;
+    mapping(uint256 workId => mapping(uint256 passageId => Passage)) private _passages;
+    mapping(uint256 workId => Work) private _works;
 
-    mapping(uint256 => Work) private _works;
     uint256 private _worksTip;
 
     /// @notice A work's admin has 30 days to make updates to the work's title, author, etc.
@@ -157,7 +155,7 @@ contract Nabu is Ownable {
         }
 
         // Assign the content
-        _passages[workId][passageId].content = SSTORE2.write(content);
+        _passages[workId][passageId].content = SSTORE2.write({data: content});
         // Mark admin as having performed the initial content assignment
         _passages[workId][passageId].byZero = msg.sender;
         // Clear the user who performed the first confirmation, if any
@@ -228,14 +226,14 @@ contract Nabu is Ownable {
         }
 
         // The user doesn't hold an NFT "pass" from the Ashurbanipal contract corresponding to this work
-        if (_ashurbanipal.balanceOf(msg.sender, workId) == 0) {
+        if (_ashurbanipal.balanceOf({owner: msg.sender, id: workId}) == 0) {
             revert NoPass();
         }
 
         // The passage already has content assigned to it
         if (passage.content != address(0)) {
             // The content being assigned is identical to the existing content (perform a confirmation)
-            if (keccak256(SSTORE2.read(passage.content)) == keccak256(content)) {
+            if (keccak256(SSTORE2.read({pointer: passage.content})) == keccak256(content)) {
                 // The passage already has one confirmation
                 if (passage.byOne != address(0)) {
                     // Finalize the passage
@@ -248,14 +246,14 @@ contract Nabu is Ownable {
                 // The content being assigned differs from the passage's existing content: overwrite the content,
                 // record this user as having performed the intial assignment, and clear the first confirmation (if
                 // there had been a second confirmation, the call would already have thrown an error)
-                _passages[workId][passageId].content = SSTORE2.write(content);
+                _passages[workId][passageId].content = SSTORE2.write({data: content});
                 _passages[workId][passageId].byZero = msg.sender;
                 _passages[workId][passageId].byOne = address(0);
             }
         } else {
             // The passage has not yet been assigned content: write the content and record this user as having
             // performed the initial assignement
-            _passages[workId][passageId].content = SSTORE2.write(content);
+            _passages[workId][passageId].content = SSTORE2.write({data: content});
             _passages[workId][passageId].byZero = msg.sender;
         }
 
@@ -318,7 +316,7 @@ contract Nabu is Ownable {
         }
 
         // The user doesn't hold an NFT "pass" from the Ashurbanipal contract corresponding to this work
-        if (_ashurbanipal.balanceOf(msg.sender, workId) == 0) {
+        if (_ashurbanipal.balanceOf({owner: msg.sender, id: workId}) == 0) {
             revert NoPass();
         }
 
@@ -374,13 +372,15 @@ contract Nabu is Ownable {
         // Mint a quantity (specified by the `supply` parameter) of Ashurbanipal ERC-1155 NFTs to mintTo (which falls
         // back to msg.sender, the work's admin). This recipient is responsible for distributing the NFTs, which serve
         // as "passes" allowing holders to assign or confirm the content of passages in the corresponding work
-        _ashurbanipal.mint(mintToOrAdmin, _worksTip, supply, uri);
+        _ashurbanipal.mint({account: mintToOrAdmin, workId: _worksTip, supply: supply, workUri: uri});
         newWorksTip = _worksTip;
     }
 
     /// @notice Get the Ashurbanipal contract address
-    function ashurbanipalAddress() public view returns (address) {
-        return _ashurbanipalAddress;
+    ///
+    /// @return ashurbanipalAddress The Ashurbanipal contract address
+    function ashurbanipalAddress() public view returns (address ashurbanipalAddress) {
+        ashurbanipalAddress = _ashurbanipalAddress;
     }
 
     /// @notice Update the Ashurbanipal contract
@@ -403,7 +403,7 @@ contract Nabu is Ownable {
         _blacklist[workId][user] = shouldBan;
 
         // Freeze the user's Ashurbanipal "pass" NFTs to prevent transfer to a sybil (or unfreeze)
-        _ashurbanipal.updateFreezelist(workId, user, shouldBan);
+        _ashurbanipal.updateFreezelist({workId: workId, user: user, shouldFreeze: shouldBan});
     }
 
     /// @notice Update the admin address for a work
@@ -482,7 +482,7 @@ contract Nabu is Ownable {
     /// @param workId The id of the work
     /// @param newUri The work's new metadata URI
     function updateWorkUri(uint256 workId, string memory newUri) public onlyWorkAdmin(workId) {
-        _ashurbanipal.updateUri(workId, newUri);
+        _ashurbanipal.updateUri({workId: workId, newUri: newUri});
         _works[workId].uri = newUri;
     }
 
@@ -521,7 +521,7 @@ contract Nabu is Ownable {
             revert InvalidPassageId();
         }
 
-        passageContent = SSTORE2.read(_passages[workId][passageId].content);
+        passageContent = SSTORE2.read({pointer: _passages[workId][passageId].content});
     }
 
     /// @notice View a work: author, title, admin, etc. (but no content)

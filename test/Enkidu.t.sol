@@ -119,11 +119,11 @@ contract EnkiduTest is Ownable, Test {
     }
 
     function testUpdateAshurbanipalAddress() public {
-        assertEq(_enkidu.ashurbanipalAddress(), address(_ashurbanipal), "Before address mismatch");
+        assertEq(_enkidu.getAshurbanipalAddress(), address(_ashurbanipal), "Before address mismatch");
 
         vm.prank(alice);
         _enkidu.updateAshurbanipalAddress(address(69));
-        assertEq(_enkidu.ashurbanipalAddress(), address(69), "After address mismatch");
+        assertEq(_enkidu.getAshurbanipalAddress(), address(69), "After address mismatch");
     }
 
     function testUpdateAshurbanipalAddressNotOwner() public {
@@ -368,11 +368,11 @@ contract EnkiduTest is Ownable, Test {
     }
 
     function testUpdateHumbaba() public {
-        assertEq(_enkidu.humbabaAddress(), address(_humbaba), "Before address mismatch");
+        assertEq(_enkidu.getHumbabaAddress(), address(_humbaba), "Before address mismatch");
 
         vm.prank(alice);
         _enkidu.updateHumbaba(address(123));
-        assertEq(_enkidu.humbabaAddress(), address(123), "After address mismatch");
+        assertEq(_enkidu.getHumbabaAddress(), address(123), "After address mismatch");
     }
 
     function testUpdateHumbabaNotOwner() public {

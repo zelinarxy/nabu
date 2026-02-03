@@ -76,7 +76,7 @@ contract AshurbanipalTest is Ownable, Test {
     }
 
     function testGetNabuAddress() public {
-        address nabuAddress = _ashurbanipal.nabuAddress();
+        address nabuAddress = _ashurbanipal.getNabuAddress();
         assertEq(nabuAddress, address(_nabu), "Nabu address mismatch");
     }
 
@@ -241,10 +241,10 @@ contract AshurbanipalTest is Ownable, Test {
     }
 
     function testUpdateNabuAddress() public {
-        assertEq(_ashurbanipal.nabuAddress(), address(_nabu), "Nabu address mismatch");
+        assertEq(_ashurbanipal.getNabuAddress(), address(_nabu), "Nabu address mismatch");
 
         _ashurbanipal.updateNabuAddress(address(420));
-        assertEq(_ashurbanipal.nabuAddress(), address(420), "Nabu address mismatch");
+        assertEq(_ashurbanipal.getNabuAddress(), address(420), "Nabu address mismatch");
     }
 
     function testUpdateNabuAddressNotOwner() public prank(mallory) {
