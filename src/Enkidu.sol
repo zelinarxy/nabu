@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {ERC20} from "@solady/src/tokens/ERC20.sol";
-import {ERC721} from "@solady/src/tokens/ERC721.sol";
-import {Ownable} from "@solady/src/auth/Ownable.sol";
-import {Receiver} from "@solady/src/accounts/Receiver.sol";
-import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
+import {ERC20} from "lib/solady/src/tokens/ERC20.sol";
+import {ERC721} from "lib/solady/src/tokens/ERC721.sol";
+import {Ownable} from "lib/solady/src/auth/Ownable.sol";
+import {Receiver} from "lib/solady/src/accounts/Receiver.sol";
+import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 
 import {Ashurbanipal} from "./Ashurbanipal.sol";
 
@@ -29,9 +29,12 @@ error ZeroCount();
  * reason.
  */
 enum WhitelistedToken {
+    /* Meta */
     Any, // 0
     None, // 1
+    /* Fungible  */
     Cult, // 2
+    /* Remilia NFTs  */
     Aura, // 3
     Cigawrette, // 4
     Milady, // 5
@@ -39,6 +42,7 @@ enum WhitelistedToken {
     Radbro, // 7
     Remilio, // 8
     Schizoposter, // 9
+    /* Admin NFT  */
     Humbaba // 10
 
 }

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {Ownable} from "@solady/src/auth/Ownable.sol";
-import {Test} from "forge-std/Test.sol";
+import {Ownable} from "lib/solady/src/auth/Ownable.sol";
+import {Test} from "lib/forge-std/src/Test.sol";
 
 import {Humbaba, NonExistentToken} from "../src/Humbaba.sol";
 

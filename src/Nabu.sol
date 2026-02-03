@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {Ownable} from "@solady/src/auth/Ownable.sol";
-import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
+import {Ownable} from "lib/solady/src/auth/Ownable.sol";
+import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 
 import {Ashurbanipal} from "./Ashurbanipal.sol";
 

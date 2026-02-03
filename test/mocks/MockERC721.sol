@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {ERC721} from "@solady/src/tokens/ERC721.sol";
-import {LibString} from "@solady/src/utils/LibString.sol";
+import {ERC721} from "lib/solady/src/tokens/ERC721.sol";
+import {LibString} from "lib/solady/src/utils/LibString.sol";
 
 contract MockERC721 is ERC721 {
     uint256 private nextTokenId = 1;

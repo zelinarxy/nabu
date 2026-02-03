@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {Test} from "forge-std/Test.sol";
+import {Test} from "lib/forge-std/src/Test.sol";
 
 import {MockERC721} from "./mocks/MockERC721.sol";
 
