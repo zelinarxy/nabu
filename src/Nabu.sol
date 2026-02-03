@@ -3,7 +3,8 @@ pragma solidity 0.8.28;
 
 import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
-import "./Ashurbanipal.sol";
+
+import {Ashurbanipal} from "./Ashurbanipal.sol";
 
 uint256 constant ONE_DAY = 7_200;
 uint256 constant SEVEN_DAYS = 50_400;
@@ -379,7 +380,7 @@ contract Nabu is Ownable {
     /// @notice Get the Ashurbanipal contract address
     ///
     /// @return ashurbanipalAddress The Ashurbanipal contract address
-    function ashurbanipalAddress() public view returns (address ashurbanipalAddress) {
+    function getAshurbanipalAddress() public view returns (address ashurbanipalAddress) {
         ashurbanipalAddress = _ashurbanipalAddress;
     }
 

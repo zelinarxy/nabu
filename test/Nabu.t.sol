@@ -1,12 +1,33 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {Test, console2} from "forge-std/Test.sol";
-import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {LibZip} from "@solady/src/utils/LibZip.sol";
+import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
-import "../src/Ashurbanipal.sol";
-import "../src/Nabu.sol";
+import {Test, console2} from "forge-std/Test.sol";
+
+import {Ashurbanipal} from "../src/Ashurbanipal.sol";
+import {
+    Blacklisted,
+    CannotDoubleConfirmPassage,
+    ContentTooLarge,
+    EmptyTitle,
+    InvalidPassageId,
+    Nabu,
+    NoPass,
+    NoPassageContent,
+    NotWorkAdmin,
+    ONE_DAY,
+    Passage,
+    PassageAlreadyFinalized,
+    SEVEN_DAYS,
+    THIRTY_DAYS,
+    TooLate,
+    TooSoonToAssignContent,
+    TooSoonToConfirmContent,
+    Work,
+    ZeroPassagesCount
+} from "../src/Nabu.sol";
 
 contract NabuTest is Ownable, Test {
     Ashurbanipal private _ashurbanipal;
@@ -577,10 +598,10 @@ contract NabuTest is Ownable, Test {
     }
 
     function testUpdateAshurbanipalAddress() public {
-        assertEq(_nabu.ashurbanipalAddress(), address(_ashurbanipal), "Ashurbanipal address mismatch");
+        assertEq(_nabu.getAshurbanipalAddress(), address(_ashurbanipal), "Ashurbanipal address mismatch");
 
         _nabu.updateAshurbanipalAddress(address(69));
-        assertEq(_nabu.ashurbanipalAddress(), address(69), "Ashurbanipal address mismatch");
+        assertEq(_nabu.getAshurbanipalAddress(), address(69), "Ashurbanipal address mismatch");
     }
 
     function testUpdateAshurbanipalAddressNotOwner() public prank(mallory) {

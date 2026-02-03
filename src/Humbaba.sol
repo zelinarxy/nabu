@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {ERC721} from "@solady/src/tokens/ERC721.sol";
 import {LibString} from "@solady/src/utils/LibString.sol";
+import {Ownable} from "@solady/src/auth/Ownable.sol";
 
 /// @dev The token doesn't exist
 error NonExistentToken();

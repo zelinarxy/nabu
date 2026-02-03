@@ -2,7 +2,8 @@
 pragma solidity 0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import "./mocks/MockERC721.sol";
+
+import {MockERC721} from "./mocks/MockERC721.sol";
 
 contract MockERC721Test is Test {
     MockERC721 private _mockERC721;

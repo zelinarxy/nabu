@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {ERC20} from "@solady/src/tokens/ERC20.sol";
 import {ERC721} from "@solady/src/tokens/ERC721.sol";
+import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {Receiver} from "@solady/src/accounts/Receiver.sol";
 import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
-import "./Ashurbanipal.sol";
+
+import {Ashurbanipal} from "./Ashurbanipal.sol";
 
 /// @dev Can't mint inactive ids
 error Inactive();

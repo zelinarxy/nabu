@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {Test, console2} from "forge-std/Test.sol";
-import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {LibZip} from "@solady/src/utils/LibZip.sol";
+import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
-import "../src/Ashurbanipal.sol";
-import "../src/Nabu.sol";
+import {Test, console2} from "forge-std/Test.sol";
+
+import {Ashurbanipal, IsFrozen, NotNabu} from "../src/Ashurbanipal.sol";
+import {Nabu} from "../src/Nabu.sol";
 
 contract AshurbanipalTest is Ownable, Test {
     Ashurbanipal private _ashurbanipal;

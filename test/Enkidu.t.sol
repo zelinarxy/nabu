@@ -1,16 +1,32 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {Test, console2} from "forge-std/Test.sol";
-import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {LibZip} from "@solady/src/utils/LibZip.sol";
+import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {SSTORE2} from "@solady/src/utils/SSTORE2.sol";
-import "../src/Ashurbanipal.sol";
-import "../src/Enkidu.sol";
-import "../src/Nabu.sol";
-import "./mocks/MockERC20.sol";
-import "./mocks/MockERC721.sol";
-import "../src/Humbaba.sol";
+import {Test, console2} from "forge-std/Test.sol";
+
+import {Ashurbanipal} from "../src/Ashurbanipal.sol";
+import {
+    AURA,
+    CIGAWRETTE,
+    CULT,
+    Enkidu,
+    Inactive,
+    InsufficientFunds,
+    MILADY,
+    OverLimit,
+    PIXELADY,
+    RADBRO,
+    REMILIO,
+    SCHIZOPOSTER,
+    WhitelistedToken,
+    ZeroCount
+} from "../src/Enkidu.sol";
+import {Humbaba, NonExistentToken} from "../src/Humbaba.sol";
+import {MockERC20} from "./mocks/MockERC20.sol";
+import {MockERC721} from "./mocks/MockERC721.sol";
+import {Nabu} from "../src/Nabu.sol";
 
 contract EnkiduTest is Ownable, Test {
     Ashurbanipal private _ashurbanipal;

@@ -3,7 +3,8 @@ pragma solidity 0.8.28;
 
 import {Ownable} from "@solady/src/auth/Ownable.sol";
 import {Test} from "forge-std/Test.sol";
-import "../src/Humbaba.sol";
+
+import {Humbaba, NonExistentToken} from "../src/Humbaba.sol";
 
 contract HumbabaTest is Ownable, Test {
     Humbaba private _humbaba;
