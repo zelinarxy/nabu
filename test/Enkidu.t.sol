@@ -281,7 +281,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Second batch balance mismatch");
     }
 
-    function testMintWhitelistedExtraMints() public {
+    function test_mint_mintsForCorrectPrice_whenWhitelistedCallerMintsOverLimit() public {
         vm.prank(alice);
         _humbaba.adminMintTo(address(bob));
 
@@ -292,7 +292,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 17, "Balance mismatch");
     }
 
-    function testMintWhitelistedComplexBatches() public {
+    function test_mint_mintsForCorrectPrices_whenWhitelistedCallerMintsComplexBatches() public {
         vm.prank(alice);
         _humbaba.adminMintTo(address(bob));
         vm.deal(address(bob), 2 * 0.05 ether);
@@ -309,27 +309,27 @@ contract EnkiduTest is Ownable, Test {
         vm.stopPrank();
     }
 
-    function testMintOverLimit() public {
+    function test_mint_reverts_whenAmountIsOverLimit() public {
         vm.deal(address(bob), 70 * 0.05 ether);
         vm.expectRevert(abi.encodeWithSelector(OverLimit.selector));
         vm.prank(bob);
-        _enkidu.mint{value: 69 * 0.05 ether}(1, 70, address(bob), WhitelistedToken.None);
+        _enkidu.mint{value: 70 * 0.05 ether}(1, 70, address(bob), WhitelistedToken.None);
     }
 
-    function testMintInsufficientFunds() public {
+    function test_mint_reverts_whenCalledWithInsufficientFunds() public {
         vm.deal(address(bob), 0.04 ether);
         vm.expectRevert(abi.encodeWithSelector(InsufficientFunds.selector));
         vm.prank(bob);
         _enkidu.mint{value: 0.04 ether}(1, 1, address(bob), WhitelistedToken.None);
     }
 
-    function testMintZeroCount() public {
+    function test_mint_reverts_whenCalledWithZeroCount() public {
         vm.expectRevert(abi.encodeWithSelector(ZeroCount.selector));
         vm.prank(bob);
         _enkidu.mint(1, 0, address(bob), WhitelistedToken.None);
     }
 
-    function testMintInactive() public {
+    function test_mint_reverts_whenIdIsInactive() public {
         vm.prank(alice);
         _enkidu.updateActive(1, false);
 
@@ -339,7 +339,7 @@ contract EnkiduTest is Ownable, Test {
         _enkidu.mint{value: 0.05 ether}(1, 1, address(bob), WhitelistedToken.None);
     }
 
-    function testWithdrawSome() public {
+    function test_withdraw_withdrawsSome() public {
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
         _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
@@ -351,7 +351,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(address(_enkidu).balance, 9 * 0.05 ether, "After contract balance mismatch");
     }
 
-    function testWithdrawAll() public {
+    function test_withdraw_withdrawsAll() public {
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
         _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
@@ -362,7 +362,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(address(_enkidu).balance, 0, "Contract balance mismatch");
     }
 
-    function testWithdrawNotOwner() public {
+    function test_withdraw_reverts_whenCallerIsNotOwner() public {
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
         _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
@@ -372,7 +372,7 @@ contract EnkiduTest is Ownable, Test {
         _enkidu.withdraw(10 * 0.05 ether, address(0));
     }
 
-    function testWithdrawToSpecifiedAddress() public {
+    function test_withdraw_withdrawsToSpecifiedAddress() public {
         vm.deal(address(bob), 10 * 0.05 ether);
         vm.prank(bob);
         _enkidu.mint{value: 10 * 0.05 ether}(1, 10, address(bob), WhitelistedToken.None);
@@ -383,7 +383,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(address(_enkidu).balance, 0, "Contract balance mismatch");
     }
 
-    function testUpdateHumbaba() public {
+    function test_updateHumbaba_updatesCorrectly() public {
         assertEq(_enkidu.getHumbabaAddress(), address(_humbaba), "Before address mismatch");
 
         vm.prank(alice);
@@ -391,13 +391,13 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_enkidu.getHumbabaAddress(), address(123), "After address mismatch");
     }
 
-    function testUpdateHumbabaNotOwner() public {
+    function test_updateHumbaba_reverts_whenCallerIsNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         _enkidu.updateHumbaba(address(666));
     }
 
-    function testSecondWork() public {
+    function test_mint_succeeds_whenCallerMintsSecondWork() public {
         vm.startPrank(alice, alice);
         uint256 workId = _nabu.createWork(
             "William Shakespeare",
