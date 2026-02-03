@@ -13,15 +13,15 @@ contract MockERC20Test is Test {
         _mockERC20 = new MockERC20();
     }
 
-    function testName() public {
+    function test_name_returnsName() public {
         assertEq(_mockERC20.name(), "DummyCoin", "Name mismatch");
     }
 
-    function testSymbol() public {
+    function test_symbol_returnsSymbol() public {
         assertEq(_mockERC20.symbol(), "COIN", "Symbol mismatch");
     }
 
-    function testMintTo() public {
+    function test_mintTo_succeeds() public {
         _mockERC20.mintTo(address(alice));
         assertEq(_mockERC20.balanceOf(address(alice)), 1_000_000, "Balance mismatch");
     }

@@ -13,20 +13,20 @@ contract MockERC721Test is Test {
         _mockERC721 = new MockERC721();
     }
 
-    function testName() public {
+    function test_name_returnsName() public {
         assertEq(_mockERC721.name(), "DummyNft", "Name mismatch");
     }
 
-    function testSymbol() public {
+    function test_symbol_returnsSymbol() public {
         assertEq(_mockERC721.symbol(), "DUMMY", "Symbol mismatch");
     }
 
-    function testMintTo() public {
+    function test_mintTo_succeeds() public {
         _mockERC721.mintTo(address(alice));
         assertEq(_mockERC721.balanceOf(address(alice)), 1, "Balance mismatch");
     }
 
-    function testTokenURI() public {
+    function test_tokenURI_returnsTokenURI() public {
         _mockERC721.mintTo(address(alice));
         assertEq(_mockERC721.tokenURI(1), "https://foo.bar/1", "URI mismatch");
     }
