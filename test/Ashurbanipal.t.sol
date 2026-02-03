@@ -69,26 +69,26 @@ contract AshurbanipalTest is Ownable, Test {
         return workId;
     }
 
-    function testUpdateUriNotNabu() public {
+    function test_updateUri_reverts_whenCallerIsNotNabu() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(NotNabu.selector));
         _ashurbanipal.updateUri(workId, "https://hmmm.cool/{id}.json");
     }
 
-    function testGetNabuAddress() public {
+    function test_getNabuAddress_returnsAddress() public {
         address nabuAddress = _ashurbanipal.getNabuAddress();
         assertEq(nabuAddress, address(_nabu), "Nabu address mismatch");
     }
 
-    function testMintNotNabu() public {
+    function test_mint_reverts_whenCallerIsNotNabu() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(NotNabu.selector));
         _ashurbanipal.mint(mallory, workId, 100, "https://yes.wowee/{id}.json");
     }
 
-    function testTransfer() public {
+    function test_transfer_succeeds() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         assertEq(_ashurbanipal.balanceOf(bob, workId), 1_000, "Bob pass balance before mismatch");
         assertEq(_ashurbanipal.balanceOf(charlie, workId), 2_000, "Charlie pass balance before mismatch");
@@ -100,7 +100,7 @@ contract AshurbanipalTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(charlie, workId), 2_005, "Charlie pass balance after mismatch");
     }
 
-    function testBatchTransfer() public {
+    function test_batchTransfer_succeeds() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -136,7 +136,7 @@ contract AshurbanipalTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(frank, workIdTwo), 20, "Frank work two pass balance after mismatch");
     }
 
-    function testTransferBlacklistedSender() public {
+    function test_transfer_reverts_whenSenderIsBlacklisted() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(alice);
@@ -147,7 +147,7 @@ contract AshurbanipalTest is Ownable, Test {
         _ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
     }
 
-    function testTransferBlacklistedRecipient() public {
+    function test_transfer_reverts_whenRecipientIsBlacklisted() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(alice);
@@ -158,7 +158,7 @@ contract AshurbanipalTest is Ownable, Test {
         _ashurbanipal.safeTransferFrom(bob, charlie, workId, 5, "");
     }
 
-    function testBatchTransferBlacklistedSender() public {
+    function test_batchTransfer_reverts_whenSenderIsBlacklisted() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -188,7 +188,7 @@ contract AshurbanipalTest is Ownable, Test {
         _ashurbanipal.safeBatchTransferFrom(bob, frank, workIds, amounts, "");
     }
 
-    function testBatchTransferBlacklistedRecipient() public {
+    function test_batchTransfer_reverts_whenRecipientIsBlacklisted() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -218,7 +218,7 @@ contract AshurbanipalTest is Ownable, Test {
         _ashurbanipal.safeBatchTransferFrom(alice, frank, workIds, amounts, "");
     }
 
-    function testTransferBanLifted() public {
+    function test_transfer_succeeds_whenBanIsLifted() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(alice);
@@ -241,14 +241,14 @@ contract AshurbanipalTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(charlie, workId), 2_005, "Charlie pass balance after mismatch");
     }
 
-    function testUpdateNabuAddress() public {
-        assertEq(_ashurbanipal.getNabuAddress(), address(_nabu), "Nabu address mismatch");
+    function test_updateNabuAddress_updatesCorrectly() public {
+        assertEq(_ashurbanipal.getNabuAddress(), address(_nabu), "Nabu address before mismatch");
 
         _ashurbanipal.updateNabuAddress(address(420));
-        assertEq(_ashurbanipal.getNabuAddress(), address(420), "Nabu address mismatch");
+        assertEq(_ashurbanipal.getNabuAddress(), address(420), "Nabu address after mismatch");
     }
 
-    function testUpdateNabuAddressNotOwner() public prank(mallory) {
+    function test_updateNabuAddress_reverts_whenCallerIsNotOwner() public prank(mallory) {
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         _ashurbanipal.updateNabuAddress(address(420));
     }
