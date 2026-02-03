@@ -95,13 +95,14 @@ contract Ashurbanipal is ERC1155, Ownable {
         workUri = _uris[workId];
     }
 
-    function _useBeforeTokenTransfer() internal view override returns (bool) {
+    function _useBeforeTokenTransfer() internal pure override returns (bool) {
         return true;
     }
 
     /// @notice Prevent the transfer of frozen passes
     function _beforeTokenTransfer(address from, address to, uint256[] memory ids, uint256[] memory, bytes memory)
         internal
+        view
         override
     {
         uint256 len = ids.length;
