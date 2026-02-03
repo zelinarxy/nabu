@@ -104,7 +104,7 @@ contract EnkiduTest is Ownable, Test {
         vm.stopPrank();
     }
 
-    function testUpdateActive() public {
+    function test_updateActive_updatesCorrectly() public {
         vm.startPrank(alice, alice);
         _enkidu.updateActive(1, false);
         assertFalse(_enkidu.active(1));
@@ -114,13 +114,13 @@ contract EnkiduTest is Ownable, Test {
         vm.stopPrank();
     }
 
-    function testUpdateActiveNotOwner() public {
+    function test_updateActive_reverts_whenCallerIsNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         _enkidu.updateActive(1, true);
     }
 
-    function testUpdatePrice() public {
+    function test_updatePrice_updatesCorrectly() public {
         assertEq(_enkidu.prices(1), 0.05 ether, "Before price mismatch");
 
         vm.prank(alice);
@@ -128,13 +128,13 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_enkidu.prices(1), 100 ether, "After price mismatch");
     }
 
-    function testUpdatePriceNotOwner() public {
+    function test_updatePrice_reverts_whenCallerIsNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         _enkidu.updatePrice(1, 100 ether);
     }
 
-    function testUpdateAshurbanipalAddress() public {
+    function test_updateAshurbanipalAddress_updatesCorrectly() public {
         assertEq(_enkidu.getAshurbanipalAddress(), address(_ashurbanipal), "Before address mismatch");
 
         vm.prank(alice);
@@ -142,13 +142,13 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_enkidu.getAshurbanipalAddress(), address(69), "After address mismatch");
     }
 
-    function testUpdateAshurbanipalAddressNotOwner() public {
+    function test_updateAshurbanipalAddress_reverts_whenCallerIsNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         _enkidu.updateAshurbanipalAddress(address(69));
     }
 
-    function testAdminMint() public {
+    function test_adminMint_succeeds() public {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 0, "Before balance mismatch");
 
         vm.prank(alice);
@@ -156,19 +156,19 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 20, "After balance mismatch");
     }
 
-    function testAdminMintNotOwner() public {
+    function test_adminMint_reverts_whenCallerIsNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         _enkidu.adminMint(1, 20, address(bob));
     }
 
-    function testAdminMintZeroCount() public {
+    function test_adminMint_reverts_whenCalledWithZeroCount() public {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(ZeroCount.selector));
         _enkidu.adminMint(1, 0, address(bob));
     }
 
-    function testMint() public {
+    function test_mint_succeeds() public {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 0, "Before balance mismatch");
 
         vm.deal(address(bob), 20 * 0.05 ether);
@@ -178,7 +178,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 20, "After balance mismatch");
     }
 
-    function testMintWhitelistedHumbaba() public {
+    function test_mint_mintsForFree_whenCallerOwnsHumbaba() public {
         vm.prank(alice);
         _humbaba.adminMintTo(address(bob));
 
@@ -187,7 +187,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
-    function testMinWhitelistedCult() public {
+    function test_mint_mintsForFree_whenCallerOwnsCult() public {
         vm.prank(alice);
         _cult.mintTo(address(bob));
 
@@ -196,7 +196,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
-    function testMintWhitelistedAura() public {
+    function test_mint_mintsForFree_whenCallerOwnsAura() public {
         vm.prank(alice);
         _aura.mintTo(address(bob));
 
@@ -205,7 +205,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
-    function testMintWhitelistedCigawrette() public {
+    function test_mint_mintsForFree_whenCallerOwnsCigawrette() public {
         vm.prank(alice);
         _cigawrette.mintTo(address(bob));
 
@@ -214,7 +214,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
-    function testMintWhitelistedMilady() public {
+    function test_mint_mintsForFree_whenCallerOwnsMilady() public {
         vm.prank(alice);
         _milady.mintTo(address(bob));
 
@@ -223,7 +223,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
-    function testMintWhitelistedPixelady() public {
+    function test_mint_mintsForFree_whenCallerOwnsPixelady() public {
         vm.prank(alice);
         _pixelady.mintTo(address(bob));
 
@@ -232,7 +232,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
-    function testMintWhitelistedRadbro() public {
+    function test_mint_mintsForFree_whenCallerOwnsRadbro() public {
         vm.prank(alice);
         _radbro.mintTo(address(bob));
 
@@ -241,7 +241,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
-    function testMintWhitelistedRemilio() public {
+    function test_mint_mintsForFree_whenCallerOwnsRemilio() public {
         vm.prank(alice);
         _remilio.mintTo(address(bob));
 
@@ -250,7 +250,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
-    function testMintWhitelistedSchizoposter() public {
+    function test_mint_mintsForFree_whenCallerOwnsSchizoposter() public {
         vm.prank(alice);
         _schizoposter.mintTo(address(bob));
 
@@ -259,7 +259,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
-    function testMintWhitelistedAny() public {
+    function test_mint_mintsForFree_whenCalledWithAny() public {
         vm.prank(alice);
         _schizoposter.mintTo(address(bob));
 
@@ -268,7 +268,7 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
-    function testMintWhitelistedTwoBatches() public {
+    function test_mint_mintsForFree_whenSplitIntoBatches() public {
         vm.prank(alice);
         _humbaba.adminMintTo(address(bob));
 
