@@ -9,6 +9,8 @@ import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 
 import {Ashurbanipal} from "./Ashurbanipal.sol";
 
+/// ERRORS ///
+
 /// @dev Can't mint inactive ids
 error Inactive();
 /// @dev The value of the transaction is too low to successfully mint
@@ -17,6 +19,8 @@ error InsufficientFunds();
 error OverLimit();
 /// @dev Can't mint zero passes
 error ZeroCount();
+
+/// EVENTS ///
 
 event ActiveUpdated(uint256 id, bool isActive);
 
@@ -322,7 +326,7 @@ contract Enkidu is Ownable, Receiver {
 
     /// @notice Withdraw mint proceeds
     ///
-    /// @dev Restricted to the contract owner
+    /// @dev Only the contract owner can call this function
     /// @dev This function has no reentrancy guard: do not withdraw to an unvetted address
     ///
     /// @param amount The amount to withdraw; if zero, falls back to the entire balance

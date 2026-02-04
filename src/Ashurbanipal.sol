@@ -4,10 +4,14 @@ pragma solidity 0.8.28;
 import {ERC1155} from "lib/solady/src/tokens/ERC1155.sol";
 import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 
+/// ERRORS ///
+
 /// @dev User is unable to send or receive NFTs for a given work because the work's admin has blacklisted them
 error IsFrozen();
 /// @dev Only the Nabu contract can call the function
 error NotNabu();
+
+/// EVENTS ///
 
 event FreezelistUpdated(uint256 workId, address user, bool shouldFreeze);
 
