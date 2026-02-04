@@ -36,9 +36,7 @@ event PriceUpdated(uint256 id, uint256 price);
  * associated with this Enkidu instance. To save gas, it's the responsibility of the caller of the `mint` function to
  * be aware of the user's portfolio and specify the asset, if any, that grants them whitelisted status. If none, the
  * caller can specify `None` and avoid a series of balance checks. If the caller is uncertain, `Any` will check all
- * eligible assets. If an asset is specified but the balance check comes back negative, the function will check all
- * other assets, on the assumption that the user expects to be whitelisted, but supplied the wrong argument for some
- * reason.
+ * eligible assets.
  */
 enum WhitelistedToken {
     /* Meta */
@@ -248,16 +246,12 @@ contract Enkidu is Ownable, Receiver {
             }
 
             /**
-             * The contract performs an exhaustive check against all whitelisted collections if explicitly instructed to
-             * (through `WhitelistedToken.Any`) or if a whitelisted collection was specified, but the balance check for
-             * that collection failed. Obviously gas-sensitive users should avoid this scenario if possible. Consuming
-             * applications should check users' portfolios ahead of time so they know whether to specify a whitelisted
-             * collection or to just pass `WhitelistedToken.None`.
+             * The contract performs an exhaustive check against all whitelisted collections if explicitly instructed
+             * to. Gas-sensitive users should avoid this scenario if possible. Consuming applications should check
+             * users' portfolios ahead of time so they know whether to specify a whitelisted collection or to just
+             * pass `WhitelistedToken.None`.
              */
-            if (
-                whitelistedToken == WhitelistedToken.Any
-                    || (!isWhitelisted && whitelistedToken != WhitelistedToken.None)
-            ) {
+            if (whitelistedToken == WhitelistedToken.Any) {
                 isWhitelisted = _cult.balanceOf(to) > 0 || _aura.balanceOf(to) > 0 || _cigawrette.balanceOf(to) > 0
                     || _milady.balanceOf(to) > 0 || _pixelady.balanceOf(to) > 0 || _radbro.balanceOf(to) > 0
                     || _remilio.balanceOf(to) > 0 || _schizoposter.balanceOf(to) > 0 || _humbaba.balanceOf(to) > 0;
