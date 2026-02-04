@@ -787,7 +787,7 @@ contract NabuTest is Ownable, Test {
         _nabu.updateWorkTitle(workId, "Donny Q");
     }
 
-    function testUpdateWorkTotalPassagesCount() public {
+    function test_updateWorkTotalPassagesCount() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         assertEq(_nabu.getWork(workId).totalPassagesCount, 1_000_000, "Work total passages count mismatch");
 
@@ -796,14 +796,14 @@ contract NabuTest is Ownable, Test {
         assertEq(_nabu.getWork(workId).totalPassagesCount, 69_000, "Work total passages count mismatch");
     }
 
-    function testUpdateWorkTotalPassagesCountNotAdmin() public {
+    function test_updateWorkTotalPassagesCount_reverts_whenCallerIsNotAdmin() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, alice));
         _nabu.updateWorkTotalPassagesCount(workId, 69_000);
     }
 
-    function testUpdateWorkTotalPassagesCountTooLate() public {
+    function test_updateWorkTotalPassagesCount_reverts_whenItsTooLate() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         vm.roll(THIRTY_DAYS + 1);
         vm.prank(alice);
@@ -811,14 +811,14 @@ contract NabuTest is Ownable, Test {
         _nabu.updateWorkTotalPassagesCount(workId, 69_000);
     }
 
-    function testUpdateWorkTotalPassagesCountZeroCount() public {
+    function test_updateWorkTotalPassagesCount_reverts_whenPassageCountIsZero() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(ZeroPassagesCount.selector));
         _nabu.updateWorkTotalPassagesCount(workId, 0);
     }
 
-    function testConfirmPassageTooSoonToConfirmContent() public {
+    function test_confirmPassage_reverts_whenItsTooSoon() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -830,7 +830,7 @@ contract NabuTest is Ownable, Test {
         _nabu.confirmPassageContent(workId, 1);
     }
 
-    function testManuallyConfirmPassageTooSoonToAssignContent() public {
+    function test_confirmPassageManually_reverts_whenItsTooSoon() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -842,7 +842,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOneCompressed);
     }
 
-    function testDoubleConfirmPassageTooSoonToConfirmContent() public {
+    function test_confirmPassageSecondTime_reverts_whenItsTooSoon() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -858,7 +858,7 @@ contract NabuTest is Ownable, Test {
         _nabu.confirmPassageContent(workId, 1);
     }
 
-    function testManuallyDoubleConfirmPassageTooSoonToAssignContent() public {
+    function test_confirmPassageManuallySecondTime_reverts_whenItsTooSoon() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -874,7 +874,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOneCompressed);
     }
 
-    function testAdminOverrideFinalizedBlock() public {
+    function test_adminAssignPassageContent_whenContentIsFinalized() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -891,7 +891,7 @@ contract NabuTest is Ownable, Test {
         assertEq(
             keccak256(_nabu.getPassageContent(workId, 1)),
             keccak256(passageOneMaliciousCompressed),
-            "Passage.content mismatch"
+            "Passage.content before mismatch"
         );
 
         vm.prank(alice);
@@ -899,16 +899,16 @@ contract NabuTest is Ownable, Test {
 
         Passage memory passage = _nabu.getPassage(workId, 1);
 
-        assertEq(passage.at, ONE_DAY + SEVEN_DAYS, "Passage.at mismatch");
-        assertEq(passage.byZero, alice, "Passage.byZero mismatch");
-        assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
-        assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
+        assertEq(passage.at, ONE_DAY + SEVEN_DAYS, "Passage.at after mismatch");
+        assertEq(passage.byZero, alice, "Passage.byZero after mismatch");
+        assertEq(passage.byOne, address(0), "Passage.byOne after mismatch");
+        assertEq(passage.byTwo, address(0), "Passage.byTwo after mismatch");
         assertEq(
-            keccak256(SSTORE2.read((passage.content))), keccak256(passageOneCompressed), "Passage.content mismatch"
+            keccak256(SSTORE2.read((passage.content))), keccak256(passageOneCompressed), "Passage.content after mismatch"
         );
     }
 
-    function testAdminAssignContentInvalidPassageId() public {
+    function test_adminAssignPassageContent_reverts_whenPassageIdIsInvalid() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(alice);
@@ -916,26 +916,26 @@ contract NabuTest is Ownable, Test {
         _nabu.adminAssignPassageContent(workId, 1_000_001, passageOneCompressed);
     }
 
-    function testConfirmPassageInvalidPassageId() public {
+    function test_confirmPassageContent_reverts_whenPassageIdIsInvalid() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         vm.expectRevert(abi.encodeWithSelector(InvalidPassageId.selector));
         _nabu.confirmPassageContent(workId, 1_000_001);
     }
 
-    function updateWorkAdminOldAdminUnauthorized() public {
+    function test_updateWorkAdmin_reverts_whenOldAdminAttemptsUpdate() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
-        assertEq(_nabu.getWork(workId).admin, alice, "Work admin mismatch");
+        assertEq(_nabu.getWork(workId).admin, alice, "Work admin before mismatch");
 
         vm.startPrank(alice, alice);
         _nabu.updateWorkAdmin(workId, bob);
-        assertEq(_nabu.getWork(workId).admin, bob, "Work admin mismatch");
+        assertEq(_nabu.getWork(workId).admin, bob, "Work admin after mismatch");
 
         vm.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, bob));
         _nabu.updateWorkTitle(workId, "Donny Q");
         vm.stopPrank();
     }
 
-    function updateWorkAdminNewAdminCanUpdate() public {
+    function test_updateWorkAdmin_newAdminCanUpdateTitle() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         assertEq(_nabu.getWork(workId).admin, alice, "Work admin mismatch");
 
