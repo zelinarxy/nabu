@@ -44,9 +44,9 @@ enum WhitelistedToken {
     /* Meta */
     Any, // 0
     None, // 1
-    /* Fungible  */
+    /* Fungible */
     Cult, // 2
-    /* Remilia NFTs  */
+    /* Remilia NFTs */
     Aura, // 3
     Cigawrette, // 4
     Milady, // 5
@@ -54,7 +54,7 @@ enum WhitelistedToken {
     Radbro, // 7
     Remilio, // 8
     Schizoposter, // 9
-    /* Admin NFT  */
+    /* Admin NFT */
     Humbaba // 10
 
 }
