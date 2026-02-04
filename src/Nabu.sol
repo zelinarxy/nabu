@@ -37,6 +37,32 @@ error TooSoonToConfirmContent(uint256 canConfirmAfter);
 /// @dev A work's `totalPassagesCount` must be at least 1
 error ZeroPassagesCount();
 
+event AshurbanipalUpdated(address newAshurbanipalAddress);
+
+event BlacklistUpdated(uint256 workId, address user, bool shouldBan);
+
+event PassageContentAssigned(uint256 workId, uint256 passageId, address by, address contentPointer, uint8 confirmationIndex);
+
+event PassageContentAssignedByAdmin(uint256 workId, uint256 passageId, address by, address contentPointer);
+
+event PassageContentConfirmed(uint256 workId, uint256 passageId, address by, uint8 confirmationIndex);
+
+event WorkAdminUpdated(uint256 workId, address newAdminAddress);
+
+event WorkAuthorUpdated(uint256 workId, string newAuthor);
+
+event WorkCreated(
+    string author, string metadata, string title, uint256 totalPassagesCount, string uri, uint256 supply, address mintTo
+);
+
+event WorkMetadataUpdated(uint256 workId, string newMetadata);
+
+event WorkTitleUpdated(uint256 workId, string newTitle);
+
+event WorkTotalPassagesCountUpdated(uint256 workId, uint256 newTotalPassagesCount);
+
+event WorkUriUpdated(uint256 workId, string newUri);
+
 /**
  * @notice A work is anything that can be expressed in text, but it's easiest to think of it as a book: it must have
  * a title, can have an author, can have arbitrary metadata, and must have a total passages count. When a user creates
@@ -114,7 +140,7 @@ contract Nabu is Ownable {
     /// @notice A work's admin has 30 days to make updates to the work's title, author, etc.
     modifier notTooLate(uint256 workId) {
         uint256 expiredAt = _works[workId].createdAt + THIRTY_DAYS;
-        // admin can still make changes in the `expiredAt` block itself
+        // Admin can still make changes in the `expiredAt` block itself
         require(block.number < expiredAt + 1, TooLate(expiredAt));
         _;
     }
@@ -155,8 +181,11 @@ contract Nabu is Ownable {
             revert InvalidPassageId();
         }
 
+        // Track the address of the SSTORE2 write location for the event
+        address contentPointer = SSTORE2.write({data: content});
+
         // Assign the content
-        _passages[workId][passageId].content = SSTORE2.write({data: content});
+        _passages[workId][passageId].content = contentPointer;
         // Mark admin as having performed the initial content assignment
         _passages[workId][passageId].byZero = msg.sender;
         // Clear the user who performed the first confirmation, if any
@@ -165,6 +194,8 @@ contract Nabu is Ownable {
         _passages[workId][passageId].byTwo = address(0);
         // Update the block number at which the initial content assignment was performed to the current block
         _passages[workId][passageId].at = block.number;
+
+        emit PassageContentAssignedByAdmin(workId, passageId, msg.sender, contentPointer);
     }
 
     /// @notice Anyone holding a work's Ashurbanipal NFT can assign content to a passage
@@ -185,7 +216,7 @@ contract Nabu is Ownable {
 
         Work storage work = _works[workId];
 
-        // if the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
+        // If the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
 
         // The passage doesn't exist
         if (passageId > work.totalPassagesCount) {
@@ -231,6 +262,13 @@ contract Nabu is Ownable {
             revert NoPass();
         }
 
+        // Track confirmation index for the event: 0 if call is going to be recorded as `byZero` (i.e., a manual
+        // confirmation rather than an assignment), 1 if `byOne`, 2 if `byTwo`
+        uint8 confirmationIndex;
+
+        // Track the address of the SSTORE2 write location, whether new or existing, for the event
+        address contentPointer = passage.content;
+
         // The passage already has content assigned to it
         if (passage.content != address(0)) {
             // The content being assigned is identical to the existing content (perform a confirmation)
@@ -239,17 +277,21 @@ contract Nabu is Ownable {
                 if (passage.byOne != address(0)) {
                     // Finalize the passage
                     _passages[workId][passageId].byTwo = msg.sender;
+                    confirmationIndex = 2;
                 } else {
                     // Record the first confirmation
                     _passages[workId][passageId].byOne = msg.sender;
+                    confirmationIndex = 1;
                 }
             } else {
                 // The content being assigned differs from the passage's existing content: overwrite the content,
                 // record this user as having performed the intial assignment, and clear the first confirmation (if
                 // there had been a second confirmation, the call would already have thrown an error)
-                _passages[workId][passageId].content = SSTORE2.write({data: content});
+                contentPointer = SSTORE2.write({data: content});                
+                _passages[workId][passageId].content = contentPointer;
                 _passages[workId][passageId].byZero = msg.sender;
                 _passages[workId][passageId].byOne = address(0);
+                confirmationIndex = 0;
             }
         } else {
             // The passage has not yet been assigned content: write the content and record this user as having
@@ -260,6 +302,8 @@ contract Nabu is Ownable {
 
         // Update the block number at which the last content update or confirmation was performed to the current block
         _passages[workId][passageId].at = block.number;
+
+        emit PassageContentAssigned(workId, passageId, msg.sender, contentPointer, confirmationIndex);
     }
 
     /// @notice Anyone holding a work's Ashurbanipal NFT can confirm a passage's existing content
@@ -271,7 +315,7 @@ contract Nabu is Ownable {
     function confirmPassageContent(uint256 workId, uint256 passageId) public {
         Work storage work = _works[workId];
 
-        // if the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
+        // If the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
 
         // The passage doesn't exist
         if (passageId > work.totalPassagesCount) {
@@ -321,16 +365,23 @@ contract Nabu is Ownable {
             revert NoPass();
         }
 
+        // Track confirmation index for the event: 1 if caller is going to be recorded as `byOne`, 2 if `byTwo`
+        uint8 confirmationIndex = 1;
+
         if (passage.byOne != address(0)) {
             // Record this user as having performed the second (final) confirmation
             _passages[workId][passageId].byTwo = msg.sender;
+            confirmationIndex = 2;
         } else {
             // Record this user as having performed the first confirmation
             _passages[workId][passageId].byOne = msg.sender;
+            confirmationIndex = 1;
         }
 
         // Update the block number at which the last content confirmation was performed to the current block
         _passages[workId][passageId].at = block.number;
+        
+        emit PassageContentConfirmed(workId, passageId, msg.sender, confirmationIndex);
     }
 
     /// @notice Create and configure a new work; the user who calls this function becomes the work's admin
@@ -375,6 +426,8 @@ contract Nabu is Ownable {
         // as "passes" allowing holders to assign or confirm the content of passages in the corresponding work
         _ashurbanipal.mint({account: mintToOrAdmin, workId: _worksTip, supply: supply, workUri: uri});
         newWorksTip = _worksTip;
+
+        emit WorkCreated(author, metadata, title, totalPassagesCount, uri, supply, mintTo);
     }
 
     /// @notice Get the Ashurbanipal contract address
@@ -388,9 +441,10 @@ contract Nabu is Ownable {
     /// @notice Restricted to the Nabu contract owner
     ///
     /// @param newAshurbanipalAddress The new Ashurbanipal contract address
-    function updateAshurbanipalAddress(address newAshurbanipalAddress) public onlyOwner {
+    function updateAshurbanipal(address newAshurbanipalAddress) public onlyOwner {
         _ashurbanipalAddress = newAshurbanipalAddress;
         _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
+        emit AshurbanipalUpdated(newAshurbanipalAddress);
     }
 
     /// @notice Update the blacklist for a work, either banning or un-banning an address
@@ -405,6 +459,8 @@ contract Nabu is Ownable {
 
         // Freeze the user's Ashurbanipal "pass" NFTs to prevent transfer to a sybil (or unfreeze)
         _ashurbanipal.updateFreezelist({workId: workId, user: user, shouldFreeze: shouldBan});
+
+        emit BlacklistUpdated(workId, user, shouldBan);
     }
 
     /// @notice Update the admin address for a work
@@ -415,6 +471,7 @@ contract Nabu is Ownable {
     /// @param newAdminAddress The address of the work's new admin
     function updateWorkAdmin(uint256 workId, address newAdminAddress) public onlyWorkAdmin(workId) {
         _works[workId].admin = newAdminAddress;
+        emit WorkAdminUpdated(workId, newAdminAddress);
     }
 
     /// @notice Update the author of a work
@@ -428,6 +485,7 @@ contract Nabu is Ownable {
         onlyWorkAdmin(workId)
     {
         _works[workId].author = newAuthor;
+        emit WorkAuthorUpdated(workId, newAuthor);
     }
 
     /// @notice Update the metadata of a work
@@ -441,6 +499,7 @@ contract Nabu is Ownable {
         onlyWorkAdmin(workId)
     {
         _works[workId].metadata = newMetadata;
+        emit WorkMetadataUpdated(workId, newMetadata);
     }
 
     /// @notice Update the title of a work
@@ -454,6 +513,7 @@ contract Nabu is Ownable {
         }
 
         _works[workId].title = newTitle;
+        emit WorkTitleUpdated(workId, newTitle);
     }
 
     /// @notice Update the total number of passages in a work
@@ -473,6 +533,7 @@ contract Nabu is Ownable {
         }
 
         _works[workId].totalPassagesCount = newTotalPassagesCount;
+        emit WorkTotalPassagesCountUpdated(workId, newTotalPassagesCount);
     }
 
     /// @notice Update the metadata URI of the ERC-1155 id associated with the work
@@ -485,6 +546,7 @@ contract Nabu is Ownable {
     function updateWorkUri(uint256 workId, string memory newUri) public onlyWorkAdmin(workId) {
         _ashurbanipal.updateUri({workId: workId, newUri: newUri});
         _works[workId].uri = newUri;
+        emit WorkUriUpdated(workId, newUri);
     }
 
     /// @notice View a passage: content and confirmation metadata

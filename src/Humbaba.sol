@@ -8,6 +8,8 @@ import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 /// @dev The token doesn't exist
 error NonExistentToken();
 
+event BaseURIUpdated(string newBaseURI);
+
 /// @title An NFT serving as a whitelist pass for Enkidu minters
 ///
 /// @author Zelinar XY
@@ -67,5 +69,6 @@ contract Humbaba is ERC721, Ownable {
     /// @param newBaseURI The new base URI
     function updateBaseURI(string calldata newBaseURI) external onlyOwner {
         baseURI = newBaseURI;
+        emit BaseURIUpdated(newBaseURI);
     }
 }

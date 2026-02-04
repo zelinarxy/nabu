@@ -54,7 +54,7 @@ contract EnkiduTest is Ownable, Test {
         address nabuAddress = address(_nabu);
 
         _ashurbanipal = new Ashurbanipal(nabuAddress);
-        _nabu.updateAshurbanipalAddress(address(_ashurbanipal));
+        _nabu.updateAshurbanipal(address(_ashurbanipal));
 
         vm.startPrank(alice, alice);
         _humbaba = new Humbaba("https://foo.bar/");
@@ -134,18 +134,18 @@ contract EnkiduTest is Ownable, Test {
         _enkidu.updatePrice(1, 100 ether);
     }
 
-    function test_updateAshurbanipalAddress_updatesCorrectly() public {
+    function test_updateAshurbanipal_updatesCorrectly() public {
         assertEq(_enkidu.getAshurbanipalAddress(), address(_ashurbanipal), "Before address mismatch");
 
         vm.prank(alice);
-        _enkidu.updateAshurbanipalAddress(address(69));
+        _enkidu.updateAshurbanipal(address(69));
         assertEq(_enkidu.getAshurbanipalAddress(), address(69), "After address mismatch");
     }
 
-    function test_updateAshurbanipalAddress_reverts_whenCallerIsNotOwner() public {
+    function test_updateAshurbanipal_reverts_whenCallerIsNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
-        _enkidu.updateAshurbanipalAddress(address(69));
+        _enkidu.updateAshurbanipal(address(69));
     }
 
     function test_adminMint() public {

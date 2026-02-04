@@ -18,6 +18,14 @@ error OverLimit();
 /// @dev Can't mint zero passes
 error ZeroCount();
 
+event ActiveUpdated(uint256 id, bool isActive);
+
+event AshurbanipalUpdated(address newAshurbanipalAddress);
+
+event HumbabaUpdated(address newHumbabaAddress);
+
+event PriceUpdated(uint256 id, uint256 price);
+
 /**
  * @dev Owners of a number of Remilia assets are whitelisted: they can mint up to a certain number of passes per id
  * for free. The same is the case for owners of Humbaba NFTs, assuming a Humbaba contract has been deployed and
@@ -148,6 +156,7 @@ contract Enkidu is Ownable, Receiver {
     function updateHumbaba(address newHumbabaAddress) public onlyOwner {
         _humbabaAddress = newHumbabaAddress;
         _humbaba = ERC721(newHumbabaAddress);
+        emit HumbabaUpdated(newHumbabaAddress);
     }
 
     /// @notice Transfer a quantity of Ashurbanipal NFTS to the caller or specified recipient
@@ -282,6 +291,7 @@ contract Enkidu is Ownable, Receiver {
     /// @param isActive The new value for `active`
     function updateActive(uint256 id, bool isActive) public onlyOwner {
         active[id] = isActive;
+        emit ActiveUpdated(id, isActive);
     }
 
     /// @notice Update the price for an id
@@ -292,6 +302,7 @@ contract Enkidu is Ownable, Receiver {
     /// @param price The new price
     function updatePrice(uint256 id, uint256 price) public onlyOwner {
         prices[id] = price;
+        emit PriceUpdated(id, price);
     }
 
     /// @notice Update the Ashurbanipal address and contract instance
@@ -299,9 +310,10 @@ contract Enkidu is Ownable, Receiver {
     /// @dev Only the contract owner can call this function
     ///
     /// @param newAshurbanipalAddress The new contract address
-    function updateAshurbanipalAddress(address newAshurbanipalAddress) public onlyOwner {
+    function updateAshurbanipal(address newAshurbanipalAddress) public onlyOwner {
         _ashurbanipalAddress = newAshurbanipalAddress;
         _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
+        emit AshurbanipalUpdated(newAshurbanipalAddress);
     }
 
     /// @notice Withdraw mint proceeds

@@ -31,7 +31,7 @@ contract AshurbanipalTest is Ownable, Test {
         _nabu = new Nabu();
         address nabuAddress = address(_nabu);
         _ashurbanipal = new Ashurbanipal(nabuAddress);
-        _nabu.updateAshurbanipalAddress(address(_ashurbanipal));
+        _nabu.updateAshurbanipal(address(_ashurbanipal));
     }
 
     bytes passageOne = bytes(

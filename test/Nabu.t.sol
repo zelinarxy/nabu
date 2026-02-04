@@ -51,7 +51,7 @@ contract NabuTest is Ownable, Test {
         _nabu = new Nabu();
         address nabuAddress = address(_nabu);
         _ashurbanipal = new Ashurbanipal(nabuAddress);
-        _nabu.updateAshurbanipalAddress(address(_ashurbanipal));
+        _nabu.updateAshurbanipal(address(_ashurbanipal));
     }
 
     bytes passageOne = bytes(
@@ -597,16 +597,16 @@ contract NabuTest is Ownable, Test {
         );
     }
 
-    function test_updateAshurbanipalAddress() public {
+    function test_updateAshurbanipal() public {
         assertEq(_nabu.getAshurbanipalAddress(), address(_ashurbanipal), "Ashurbanipal address mismatch");
 
-        _nabu.updateAshurbanipalAddress(address(69));
+        _nabu.updateAshurbanipal(address(69));
         assertEq(_nabu.getAshurbanipalAddress(), address(69), "Ashurbanipal address mismatch");
     }
 
-    function test_updateAshurbanipalAddress_reverts_whenCallerIsNotOwner() public prank(mallory) {
+    function test_updateAshurbanipal_reverts_whenCallerIsNotOwner() public prank(mallory) {
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
-        _nabu.updateAshurbanipalAddress(address(69));
+        _nabu.updateAshurbanipal(address(69));
     }
 
     function test_updateWorkAdmin() public {
@@ -718,7 +718,7 @@ contract NabuTest is Ownable, Test {
             keccak256(bytes("https://foo.bar/{id}.json")),
             "Work uri mismatch"
         );
-    
+
         assertEq(
             keccak256(bytes(_ashurbanipal.uri(workId))),
             keccak256(bytes("https://foo.bar/{id}.json")),
@@ -904,7 +904,9 @@ contract NabuTest is Ownable, Test {
         assertEq(passage.byOne, address(0), "Passage.byOne after mismatch");
         assertEq(passage.byTwo, address(0), "Passage.byTwo after mismatch");
         assertEq(
-            keccak256(SSTORE2.read((passage.content))), keccak256(passageOneCompressed), "Passage.content after mismatch"
+            keccak256(SSTORE2.read((passage.content))),
+            keccak256(passageOneCompressed),
+            "Passage.content after mismatch"
         );
     }
 

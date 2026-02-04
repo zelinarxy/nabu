@@ -9,6 +9,12 @@ error IsFrozen();
 /// @dev Only the Nabu contract can call the function
 error NotNabu();
 
+event FreezelistUpdated(uint256 workId, address user, bool shouldFreeze);
+
+event NabuAddressUpdated(address newNabuAddress);
+
+event UriUpdated(uint256 workId, string newUri);
+
 /// @title NFT passes for writing content to Nabu works
 ///
 /// @author Zelinar XY
@@ -67,6 +73,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @param shouldFreeze Should the user's passes be frozen or unfrozen
     function updateFreezelist(uint256 workId, address user, bool shouldFreeze) public onlyNabu {
         _freezelist[workId][user] = shouldFreeze;
+        emit FreezelistUpdated(workId, user, shouldFreeze);
     }
 
     /// @notice Update the Nabu contract address
@@ -76,6 +83,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @param newNabuAddress The new address
     function updateNabuAddress(address newNabuAddress) public onlyOwner {
         _nabuAddress = newNabuAddress;
+        emit NabuAddressUpdated(newNabuAddress);
     }
 
     /// @notice Update the metadata uri for a given work
@@ -86,6 +94,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @param newUri The new metadata uri
     function updateUri(uint256 workId, string memory newUri) public onlyNabu {
         _uris[workId] = newUri;
+        emit UriUpdated(workId, newUri);
     }
 
     /// @notice Get a work's metadata uri
