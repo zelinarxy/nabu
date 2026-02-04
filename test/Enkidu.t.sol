@@ -148,7 +148,7 @@ contract EnkiduTest is Ownable, Test {
         _enkidu.updateAshurbanipalAddress(address(69));
     }
 
-    function test_adminMint_succeeds() public {
+    function test_adminMint() public {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 0, "Before balance mismatch");
 
         vm.prank(alice);
@@ -168,7 +168,7 @@ contract EnkiduTest is Ownable, Test {
         _enkidu.adminMint(1, 0, address(bob));
     }
 
-    function test_mint_succeeds() public {
+    function test_mint() public {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 0, "Before balance mismatch");
 
         vm.deal(address(bob), 20 * 0.05 ether);
@@ -397,7 +397,7 @@ contract EnkiduTest is Ownable, Test {
         _enkidu.updateHumbaba(address(666));
     }
 
-    function test_mint_succeeds_whenCallerMintsSecondWork() public {
+    function test_mint_whenCallerMintsSecondWork() public {
         vm.startPrank(alice, alice);
         uint256 workId = _nabu.createWork(
             "William Shakespeare",

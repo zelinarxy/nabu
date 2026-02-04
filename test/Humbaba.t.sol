@@ -25,7 +25,7 @@ contract HumbabaTest is Ownable, Test {
         assertEq(_humbaba.symbol(), "HUMB", "Symbol mismatch");
     }
 
-    function test_adminMintTo_succeeds() public {
+    function test_adminMintTo() public {
         vm.prank(alice);
         _humbaba.adminMintTo(address(bob));
         assertEq(_humbaba.balanceOf(address(bob)), 1, "Bob balance mismatch");

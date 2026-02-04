@@ -21,7 +21,7 @@ contract MockERC721Test is Test {
         assertEq(_mockERC721.symbol(), "DUMMY", "Symbol mismatch");
     }
 
-    function test_mintTo_succeeds() public {
+    function test_mintTo() public {
         _mockERC721.mintTo(address(alice));
         assertEq(_mockERC721.balanceOf(address(alice)), 1, "Balance mismatch");
     }

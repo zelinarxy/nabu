@@ -21,7 +21,7 @@ contract MockERC20Test is Test {
         assertEq(_mockERC20.symbol(), "COIN", "Symbol mismatch");
     }
 
-    function test_mintTo_succeeds() public {
+    function test_mintTo() public {
         _mockERC20.mintTo(address(alice));
         assertEq(_mockERC20.balanceOf(address(alice)), 1_000_000, "Balance mismatch");
     }

@@ -88,7 +88,7 @@ contract AshurbanipalTest is Ownable, Test {
         _ashurbanipal.mint(mallory, workId, 100, "https://yes.wowee/{id}.json");
     }
 
-    function test_transfer_succeeds() public {
+    function test_transfer() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         assertEq(_ashurbanipal.balanceOf(bob, workId), 1_000, "Bob pass balance before mismatch");
         assertEq(_ashurbanipal.balanceOf(charlie, workId), 2_000, "Charlie pass balance before mismatch");
@@ -100,7 +100,7 @@ contract AshurbanipalTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(charlie, workId), 2_005, "Charlie pass balance after mismatch");
     }
 
-    function test_batchTransfer_succeeds() public {
+    function test_batchTransfer() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
@@ -218,7 +218,7 @@ contract AshurbanipalTest is Ownable, Test {
         _ashurbanipal.safeBatchTransferFrom(alice, frank, workIds, amounts, "");
     }
 
-    function test_transfer_succeeds_whenBanIsLifted() public {
+    function test_transfer_whenBanIsLifted() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(alice);
