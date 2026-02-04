@@ -10,6 +10,10 @@ uint256 constant ONE_DAY = 7_200;
 uint256 constant SEVEN_DAYS = 50_400;
 uint256 constant THIRTY_DAYS = 216_000;
 
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                          ERRORS                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
 /// @dev User is blacklisted by the work's admin from assigning or confirming passage content for that work
 error Blacklisted();
 /// @dev A given user is limited to assigning a passage's content or confirming it once
@@ -37,14 +41,24 @@ error TooSoonToConfirmContent(uint256 canConfirmAfter);
 /// @dev A work's `totalPassagesCount` must be at least 1
 error ZeroPassagesCount();
 
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                          EVENTS                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
 event AshurbanipalUpdated(address newAshurbanipalAddress);
 
 event BlacklistUpdated(uint256 workId, address user, bool shouldBan);
 
-event PassageContentAssigned(uint256 workId, uint256 passageId, address by, address contentPointer, uint8 confirmationIndex);
+/// @dev Content pointer is the SSTORE2 location, whether new or existing
+/// @dev Confirmation index is 0 for freshly assigned/updated content, 1 for the first confirmation, 2 for the second
+event PassageContentAssigned(
+    uint256 workId, uint256 passageId, address by, address contentPointer, uint8 confirmationIndex
+);
 
+/// @dev Content pointer is the SSTORE2 location, whether new or existing
 event PassageContentAssignedByAdmin(uint256 workId, uint256 passageId, address by, address contentPointer);
 
+/// @dev Confirmation index is 1 for the first confirmation (`byOne`), 2 for the second (`byTwo`)
 event PassageContentConfirmed(uint256 workId, uint256 passageId, address by, uint8 confirmationIndex);
 
 event WorkAdminUpdated(uint256 workId, address newAdminAddress);
@@ -62,6 +76,10 @@ event WorkTitleUpdated(uint256 workId, string newTitle);
 event WorkTotalPassagesCountUpdated(uint256 workId, uint256 newTotalPassagesCount);
 
 event WorkUriUpdated(uint256 workId, string newUri);
+
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                         STRUCTS                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 /**
  * @notice A work is anything that can be expressed in text, but it's easiest to think of it as a book: it must have
@@ -119,6 +137,10 @@ struct Passage {
     /// @dev The block at which the most recent content assignment or confirmation was performed
     uint256 at;
 }
+
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                           𒀭𒀝                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 /// @title A text preservation tool
 ///
@@ -287,7 +309,7 @@ contract Nabu is Ownable {
                 // The content being assigned differs from the passage's existing content: overwrite the content,
                 // record this user as having performed the intial assignment, and clear the first confirmation (if
                 // there had been a second confirmation, the call would already have thrown an error)
-                contentPointer = SSTORE2.write({data: content});                
+                contentPointer = SSTORE2.write({data: content});
                 _passages[workId][passageId].content = contentPointer;
                 _passages[workId][passageId].byZero = msg.sender;
                 _passages[workId][passageId].byOne = address(0);
@@ -380,7 +402,7 @@ contract Nabu is Ownable {
 
         // Update the block number at which the last content confirmation was performed to the current block
         _passages[workId][passageId].at = block.number;
-        
+
         emit PassageContentConfirmed(workId, passageId, msg.sender, confirmationIndex);
     }
 

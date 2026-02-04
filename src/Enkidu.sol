@@ -79,6 +79,10 @@ uint256 constant FREE_MINTS = 7;
 /// @dev Maximum mints per id per user
 uint256 constant MINT_LIMIT = 69;
 
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                          𒂗𒆠𒄭                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
 /// @title A mint contract for distributing Ashurbanipal NFTs
 ///
 /// @author Zelinar XY

@@ -15,6 +15,10 @@ event NabuAddressUpdated(address newNabuAddress);
 
 event UriUpdated(uint256 workId, string newUri);
 
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                         𒀸𒋩𒆕𒀀                           */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
 /// @title NFT passes for writing content to Nabu works
 ///
 /// @author Zelinar XY

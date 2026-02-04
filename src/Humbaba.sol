@@ -10,6 +10,10 @@ error NonExistentToken();
 
 event BaseURIUpdated(string newBaseURI);
 
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                         𒄷𒌝𒁀𒁀                           */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
 /// @title An NFT serving as a whitelist pass for Enkidu minters
 ///
 /// @author Zelinar XY
