@@ -501,11 +501,7 @@ contract Nabu is Ownable {
     ///
     /// @param workId The id of the work
     /// @param newAuthor The work's new author (the real-world author, e.g. Homer or Shakespeare)
-    function updateWorkAuthor(uint256 workId, string memory newAuthor)
-        public
-        notTooLate(workId)
-        onlyWorkAdmin(workId)
-    {
+    function updateWorkAuthor(uint256 workId, string memory newAuthor) public notTooLate(workId) onlyWorkAdmin(workId) {
         _works[workId].author = newAuthor;
         emit WorkAuthorUpdated(workId, newAuthor);
     }

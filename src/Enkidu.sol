@@ -54,7 +54,6 @@ enum WhitelistedToken {
     Schizoposter, // 9
     /* Admin NFT */
     Humbaba // 10
-
 }
 
 /// @dev Whitelisted token: Cult
