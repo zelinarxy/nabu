@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {Script, console} from "lib/forge-std/src/Script.sol";
 
 import {Enkidu} from "../../../src/Enkidu.sol";
-import {ASHURBANIPAL, HUMBABA} from "./constants/DeployedAddresses.sol";
+import {ASHURBANIPAL, HUMBABA} from "../../constants/sepolia/DeployedAddressesSepolia.sol";
 
 contract DeployEnkiduSepolia is Script {
     Enkidu public enkidu;

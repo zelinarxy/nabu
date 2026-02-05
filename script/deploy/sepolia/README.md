@@ -41,7 +41,7 @@ forge script \
   --interactives 1
 ```
 
-4. Update [DeployedAddresses.sol](/script/deploy/sepolia/constants/DeployedAddresses.sol#l8).
+4. Update [DeployedAddressesSepolia.sol](/script/constants/sepolia/DeployedAddressesSepolia.sol#l8).
 
 ```
 address constant NABU = <deployed address>;
@@ -60,7 +60,7 @@ forge script \
   --interactives 1
 ```
 
-6. Update [DeployedAddresses.sol](/script/deploy/sepolia/constants/DeployedAddresses.sol#l5).
+6. Update [DeployedAddressesSepolia.sol](/script/constants/sepolia/DeployedAddressesSepolia.sol#l5).
 
 ```
 address constant ASHURBANIPAL = <deployed address>;
@@ -109,7 +109,7 @@ forge script \
   --interactives 1
 ```
 
-11. Update [DeployedAddresses.sol](/script/deploy/sepolia/constants/DeployedAddresses.sol#l7).
+11. Update [DeployedAddressesSepolia.sol](/script/constants/sepolia/DeployedAddressesSepolia.sol#l7).
 
 ```
 address constant HUMBABA = <deployed address>;
@@ -128,7 +128,7 @@ forge script \
   --interactives 1
 ```
 
-13. This doesn't do anything but it feels wrong not to. Update [DeployedAddresses.sol](/script/deploy/sepolia/constants/DeployedAddresses.sol#l6).
+13. This doesn't do anything but it feels wrong not to. Update [DeployedAddressesSepolia.sol](/script/constants/sepolia/DeployedAddressesSepolia.sol#l6).
 
 ```
 address constant ENKIDU = <deployed address>;

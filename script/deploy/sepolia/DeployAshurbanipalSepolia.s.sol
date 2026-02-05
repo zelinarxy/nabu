@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {Script, console} from "lib/forge-std/src/Script.sol";
 
 import {Ashurbanipal} from "../../../src/Ashurbanipal.sol";
-import {NABU} from "./constants/DeployedAddresses.sol";
+import {NABU} from "../../constants/sepolia/DeployedAddressesSepolia.sol";
 
 contract DeployAshurbanipalSepolia is Script {
     Ashurbanipal public ashurbanipal;
