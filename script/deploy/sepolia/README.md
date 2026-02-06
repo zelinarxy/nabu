@@ -128,8 +128,8 @@ forge script \
   --interactives 1
 ```
 
-13. This doesn't do anything but it feels wrong not to. Update [DeployedAddressesSepolia.sol](/script/constants/sepolia/DeployedAddressesSepolia.sol#l6).
+13. Update [DeployedAddressesSepolia.sol](/script/constants/sepolia/DeployedAddressesSepolia.sol#l6).
 
 ```
-address constant ENKIDU = <deployed address>;
+address payable constant ENKIDU = payable(<deployed address>);
 ```
