@@ -4,6 +4,17 @@ _A tool for fighting censorship, oblivion and decay._
 
 Nabu is an experiment in permissionless, decentralized text preservation using the EVM. It provides a structure for dozens, hundreds or thousands of people to collaborate in committing a document to a blockchain so that it can't be tampered with by inquisitors, fact checkers, trust and safety teams or sensitivity readers.
 
+## Deployments
+
+### Sepolia
+
+| Contract | Sepolia address | Explorer link |
+|---|---|---|
+| Ashurbanipal | 0xFcF9aab2af05549a41dC0fd23584A138fC3e1DF2 | [→](https://sepolia.etherscan.io/address/0xfcf9aab2af05549a41dc0fd23584a138fc3e1df2#code) |
+| Enkidu | 0xbdA76Dba819272E469Ae9AcCcc9161Cd835e1f5e | [→](https://sepolia.etherscan.io/address/0xbdA76Dba819272E469Ae9AcCcc9161Cd835e1f5e#code) |
+| Humbaba | 0x86dD0B9f3BfF7a8fD573A1287da82fA95d8F6FDF | [→](https://sepolia.etherscan.io/address/0x86dd0b9f3bff7a8fd573a1287da82fa95d8f6fdf#code) |
+| Nabu | 0x881E623973fe5be9CeeACA91Aa8AA636ee751243 | [→](https://sepolia.etherscan.io/address/0x881e623973fe5be9ceeaca91aa8aa636ee751243#code) |
+
 ## The concept
 
 Anyone can configure a text with Nabu, and anyone can help to populate it. The protocol is designed to prevent malicious actors from vandalizing a text by making it frustrating and expensive, so long as a community committed to preserving the text exists. Here is the process:
