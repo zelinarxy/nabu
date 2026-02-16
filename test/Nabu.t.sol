@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {LibZip} from "lib/solady/src/utils/LibZip.sol";
 import {Ownable} from "lib/solady/src/auth/Ownable.sol";
-import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 import {Test, console2} from "lib/forge-std/src/Test.sol";
 
 import {Ashurbanipal} from "../src/Ashurbanipal.sol";
@@ -18,8 +16,8 @@ import {
     NoPassageContent,
     NotWorkAdmin,
     ONE_DAY,
-    Passage,
     PassageAlreadyFinalized,
+    ReadablePassage,
     SEVEN_DAYS,
     THIRTY_DAYS,
     TooLate,
@@ -57,10 +55,8 @@ contract NabuTest is Ownable, Test {
     bytes passageOne = bytes(
         unicode"En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad."
     );
-    bytes passageOneCompressed = LibZip.flzCompress(passageOne);
 
     bytes passageOneMalicious = bytes(unicode"¡Soy muy malo y quiero destruir el patrimonio literario de España!");
-    bytes passageOneMaliciousCompressed = LibZip.flzCompress(passageOneMalicious);
 
     bytes passageTooLong = bytes(
         unicode"En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad."
@@ -196,21 +192,15 @@ contract NabuTest is Ownable, Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
-        bytes memory content = _nabu.getPassageContent(workId, 1);
-        assertEq(keccak256(LibZip.flzDecompress(content)), keccak256(passageOne), "Content mismatch");
+        ReadablePassage memory passage = _nabu.getPassage(workId, 1);
 
-        Passage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, 0, "Passage.at mismatch");
-        assertEq(passage.byZero, bob, "Passage.byZero mismatch");
-        assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
-        assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(
-            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
-            keccak256(passageOne),
-            "Passage.content mismatch"
-        );
+        assertEq(passage.at, 0, "ReadablePassage.at mismatch");
+        assertEq(passage.byZero, bob, "ReadablePassage.byZero mismatch");
+        assertEq(passage.byOne, address(0), "ReadablePassage.byOne mismatch");
+        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
+        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
     }
 
     function test_assignPassageContent_reverts_whenPassageIdIsInvalid() public {
@@ -218,7 +208,7 @@ contract NabuTest is Ownable, Test {
 
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(InvalidPassageId.selector));
-        _nabu.assignPassageContent(workId, 1_000_001, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1_000_001, passageOne);
     }
 
     function test_assignPassageContent_reverts_whenCallerIsBlacklisted() public {
@@ -229,13 +219,13 @@ contract NabuTest is Ownable, Test {
 
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(Blacklisted.selector));
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
     }
 
     function test_confirmPassage_reverts_whenCallerHasNoPass() public {
         vm.startPrank(alice, alice);
         uint256 workId = createWork(alice);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
         vm.stopPrank();
 
         vm.roll(ONE_DAY);
@@ -250,62 +240,54 @@ contract NabuTest is Ownable, Test {
 
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(NoPass.selector));
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
     }
 
     function test_confirmPassage_manuallyConfirmOnce() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
-        Passage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, ONE_DAY, "Passage.at mismatch");
-        assertEq(passage.byZero, bob, "Passage.byZero mismatch");
-        assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
-        assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(
-            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
-            keccak256(passageOne),
-            "Passage.content mismatch"
-        );
+        ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+        assertEq(passage.at, ONE_DAY, "ReadablePassage.at mismatch");
+        assertEq(passage.byZero, bob, "ReadablePassage.byZero mismatch");
+        assertEq(passage.byOne, charlie, "ReadablePassage.byOne mismatch");
+        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
+        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
     }
 
     function test_confirmPassage_manuallyConfirmTwice() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY + SEVEN_DAYS);
         vm.prank(dave);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
-        Passage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, ONE_DAY + SEVEN_DAYS, "Passage.at mismatch");
-        assertEq(passage.byZero, bob, "Passage.byZero mismatch");
-        assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
-        assertEq(passage.byTwo, dave, "Passage.byTwo mismatch");
-        assertEq(
-            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
-            keccak256(passageOne),
-            "Passage.content mismatch"
-        );
+        ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+        assertEq(passage.at, ONE_DAY + SEVEN_DAYS, "ReadablePassage.at mismatch");
+        assertEq(passage.byZero, bob, "ReadablePassage.byZero mismatch");
+        assertEq(passage.byOne, charlie, "ReadablePassage.byOne mismatch");
+        assertEq(passage.byTwo, dave, "ReadablePassage.byTwo mismatch");
+        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
     }
 
     function test_confirmPassage_reverts_whenCallerDoubleConfirms() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
@@ -321,16 +303,16 @@ contract NabuTest is Ownable, Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY + SEVEN_DAYS);
         vm.prank(charlie);
         vm.expectRevert(abi.encodeWithSelector(CannotDoubleConfirmPassage.selector));
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
     }
 
     function test_assignPassageContent_reverts_whenContentIsTooLong() public {
@@ -386,58 +368,48 @@ contract NabuTest is Ownable, Test {
         _nabu.getPassage(workId, 1_000_001);
     }
 
-    function test_getPassageContent_reverts_whenIdIsInvalid() public {
-        uint256 workId = createWork(alice);
-        vm.expectRevert(abi.encodeWithSelector(InvalidPassageId.selector));
-        _nabu.getPassageContent(workId, 1_000_001);
-    }
-
     function test_assignPassageContent_reverts_whenPassageIsFinalized() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY + SEVEN_DAYS);
         vm.prank(dave);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(PassageAlreadyFinalized.selector));
-        _nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOneMalicious);
     }
 
     function test_confirmPassage() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
         _nabu.confirmPassageContent(workId, 1);
 
-        Passage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, ONE_DAY, "Passage.at mismatch");
-        assertEq(passage.byZero, bob, "Passage.byZero mismatch");
-        assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
-        assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(
-            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
-            keccak256(passageOne),
-            "Passage.content mismatch"
-        );
+        ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+        assertEq(passage.at, ONE_DAY, "ReadablePassage.at mismatch");
+        assertEq(passage.byZero, bob, "ReadablePassage.byZero mismatch");
+        assertEq(passage.byOne, charlie, "ReadablePassage.byOne mismatch");
+        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
+        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
     }
 
     function test_confirmPassage_twice() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
@@ -447,23 +419,19 @@ contract NabuTest is Ownable, Test {
         vm.prank(dave);
         _nabu.confirmPassageContent(workId, 1);
 
-        Passage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, ONE_DAY + SEVEN_DAYS, "Passage.at mismatch");
-        assertEq(passage.byZero, bob, "Passage.byZero mismatch");
-        assertEq(passage.byOne, charlie, "Passage.byOne mismatch");
-        assertEq(passage.byTwo, dave, "Passage.byTwo mismatch");
-        assertEq(
-            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
-            keccak256(passageOne),
-            "Passage.content mismatch"
-        );
+        ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+        assertEq(passage.at, ONE_DAY + SEVEN_DAYS, "ReadablePassage.at mismatch");
+        assertEq(passage.byZero, bob, "ReadablePassage.byZero mismatch");
+        assertEq(passage.byOne, charlie, "ReadablePassage.byOne mismatch");
+        assertEq(passage.byTwo, dave, "ReadablePassage.byTwo mismatch");
+        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
     }
 
     function test_confirmPassage_reverts_whenPassageIsFinalized() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
@@ -485,7 +453,7 @@ contract NabuTest is Ownable, Test {
         _nabu.updateBlacklist(workId, charlie, true);
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
@@ -497,103 +465,72 @@ contract NabuTest is Ownable, Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(mallory);
-        _nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
-        bytes memory maliciousContent = _nabu.getPassageContent(workId, 1);
+        ReadablePassage memory maliciousPassage = _nabu.getPassage(workId, 1);
+        assertEq(maliciousPassage.at, 0, "ReadablePassage.at mismatch");
+        assertEq(maliciousPassage.byZero, mallory, "ReadablePassage.byZero mismatch");
+        assertEq(maliciousPassage.byOne, address(0), "ReadablePassage.byOne mismatch");
+        assertEq(maliciousPassage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
         assertEq(
-            keccak256(LibZip.flzDecompress(maliciousContent)),
+            keccak256(maliciousPassage.readableContent),
             keccak256(passageOneMalicious),
-            "Passage.content mismatch"
-        );
-
-        Passage memory maliciousPassage = _nabu.getPassage(workId, 1);
-        assertEq(maliciousPassage.at, 0, "Passage.at mismatch");
-        assertEq(maliciousPassage.byZero, mallory, "Passage.byZero mismatch");
-        assertEq(maliciousPassage.byOne, address(0), "Passage.byOne mismatch");
-        assertEq(maliciousPassage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(
-            keccak256(LibZip.flzDecompress(SSTORE2.read(maliciousPassage.content))),
-            keccak256(passageOneMalicious),
-            "Passage.content mismatch"
+            "ReadablePassage.readableContent mismatch"
         );
 
         vm.roll(ONE_DAY);
         vm.prank(alice);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
-        bytes memory content = _nabu.getPassageContent(workId, 1);
-        assertEq(keccak256(LibZip.flzDecompress(content)), keccak256(passageOne), "Passage.content mismatch");
-
-        Passage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, ONE_DAY, "Passage.at mismatch");
-        assertEq(passage.byZero, alice, "Passage.byZero mismatch");
-        assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
-        assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(
-            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
-            keccak256(passageOne),
-            "Passage.content mismatch"
-        );
+        ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+        assertEq(passage.at, ONE_DAY, "ReadablePassage.at mismatch");
+        assertEq(passage.byZero, alice, "ReadablePassage.byZero mismatch");
+        assertEq(passage.byOne, address(0), "ReadablePassage.byOne mismatch");
+        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
+        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
     }
 
     function test_overwritePassage_twice() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(alice);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
-        bytes memory content = _nabu.getPassageContent(workId, 1);
-        assertEq(keccak256(LibZip.flzDecompress(content)), keccak256(passageOne), "Passage.content mismatch");
-
-        Passage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, 0, "Passage.at mismatch");
-        assertEq(passage.byZero, alice, "Passage.byZero mismatch");
-        assertEq(passage.byOne, address(0), "Passage.byOne mismatch");
-        assertEq(passage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(
-            keccak256(LibZip.flzDecompress(SSTORE2.read(passage.content))),
-            keccak256(passageOne),
-            "Passage.content mismatch"
-        );
+        ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+        assertEq(passage.at, 0, "ReadablePassage.at mismatch");
+        assertEq(passage.byZero, alice, "ReadablePassage.byZero mismatch");
+        assertEq(passage.byOne, address(0), "ReadablePassage.byOne mismatch");
+        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
+        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
 
         vm.roll(ONE_DAY);
         vm.prank(mallory);
-        _nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
-        bytes memory maliciousContent = _nabu.getPassageContent(workId, 1);
+        ReadablePassage memory maliciousPassage = _nabu.getPassage(workId, 1);
+        assertEq(maliciousPassage.at, ONE_DAY, "ReadablePassage.at mismatch");
+        assertEq(maliciousPassage.byZero, mallory, "ReadablePassage.byZero mismatch");
+        assertEq(maliciousPassage.byOne, address(0), "ReadablePassage.byOne mismatch");
+        assertEq(maliciousPassage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
         assertEq(
-            keccak256(LibZip.flzDecompress(maliciousContent)),
+            keccak256(maliciousPassage.readableContent),
             keccak256(passageOneMalicious),
-            "Passage.content mismatch"
-        );
-
-        Passage memory maliciousPassage = _nabu.getPassage(workId, 1);
-        assertEq(maliciousPassage.at, ONE_DAY, "Passage.at mismatch");
-        assertEq(maliciousPassage.byZero, mallory, "Passage.byZero mismatch");
-        assertEq(maliciousPassage.byOne, address(0), "Passage.byOne mismatch");
-        assertEq(maliciousPassage.byTwo, address(0), "Passage.byTwo mismatch");
-        assertEq(
-            keccak256(LibZip.flzDecompress(SSTORE2.read(maliciousPassage.content))),
-            keccak256(passageOneMalicious),
-            "Passage.content mismatch"
+            "ReadablePassage.readableContent mismatch"
         );
 
         vm.roll(ONE_DAY + SEVEN_DAYS);
         vm.prank(alice);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
-        bytes memory restoredContent = _nabu.getPassageContent(workId, 1);
-        assertEq(keccak256(LibZip.flzDecompress(restoredContent)), keccak256(passageOne), "Passage.content mismatch");
-
-        Passage memory restoredPassage = _nabu.getPassage(workId, 1);
-        assertEq(restoredPassage.at, ONE_DAY + SEVEN_DAYS, "Passage.at mismatch");
-        assertEq(restoredPassage.byZero, alice, "Passage.byZero mismatch");
-        assertEq(restoredPassage.byOne, address(0), "Passage.byOne mismatch");
-        assertEq(restoredPassage.byTwo, address(0), "Passage.byOne mismatch");
+        ReadablePassage memory restoredPassage = _nabu.getPassage(workId, 1);
+        assertEq(restoredPassage.at, ONE_DAY + SEVEN_DAYS, "ReadablePassage.at mismatch");
+        assertEq(restoredPassage.byZero, alice, "ReadablePassage.byZero mismatch");
+        assertEq(restoredPassage.byOne, address(0), "ReadablePassage.byOne mismatch");
+        assertEq(restoredPassage.byTwo, address(0), "ReadablePassage.byOne mismatch");
         assertEq(
-            keccak256(LibZip.flzDecompress(SSTORE2.read(restoredPassage.content))),
+            keccak256(restoredPassage.readableContent),
             keccak256(passageOne),
-            "Passage.content mismatch"
+            "ReadablePassage.readableContent mismatch"
         );
     }
 
@@ -822,7 +759,7 @@ contract NabuTest is Ownable, Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY - 1);
         vm.prank(charlie);
@@ -834,19 +771,19 @@ contract NabuTest is Ownable, Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY - 1);
         vm.prank(charlie);
         vm.expectRevert(abi.encodeWithSelector(TooSoonToAssignContent.selector, ONE_DAY));
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
     }
 
     function test_confirmPassageSecondTime_reverts_whenItsTooSoon() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
@@ -862,51 +799,51 @@ contract NabuTest is Ownable, Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
 
         vm.roll(ONE_DAY + SEVEN_DAYS - 1);
         vm.prank(dave);
         vm.expectRevert(abi.encodeWithSelector(TooSoonToAssignContent.selector, ONE_DAY + SEVEN_DAYS));
-        _nabu.assignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOne);
     }
 
     function test_adminAssignPassageContent_whenContentIsFinalized() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         vm.prank(bob);
-        _nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
         vm.roll(ONE_DAY);
         vm.prank(charlie);
-        _nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
         vm.roll(ONE_DAY + SEVEN_DAYS);
         vm.prank(dave);
-        _nabu.assignPassageContent(workId, 1, passageOneMaliciousCompressed);
+        _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
         assertEq(
-            keccak256(_nabu.getPassageContent(workId, 1)),
-            keccak256(passageOneMaliciousCompressed),
-            "Passage.content before mismatch"
+            keccak256(_nabu.getPassage(workId, 1).readableContent),
+            keccak256(passageOneMalicious),
+            "ReadablePassage.readableContent before mismatch"
         );
 
         vm.prank(alice);
-        _nabu.adminAssignPassageContent(workId, 1, passageOneCompressed);
+        _nabu.adminAssignPassageContent(workId, 1, passageOne);
 
-        Passage memory passage = _nabu.getPassage(workId, 1);
+        ReadablePassage memory passage = _nabu.getPassage(workId, 1);
 
-        assertEq(passage.at, ONE_DAY + SEVEN_DAYS, "Passage.at after mismatch");
-        assertEq(passage.byZero, alice, "Passage.byZero after mismatch");
-        assertEq(passage.byOne, address(0), "Passage.byOne after mismatch");
-        assertEq(passage.byTwo, address(0), "Passage.byTwo after mismatch");
+        assertEq(passage.at, ONE_DAY + SEVEN_DAYS, "ReadablePassage.at after mismatch");
+        assertEq(passage.byZero, alice, "ReadablePassage.byZero after mismatch");
+        assertEq(passage.byOne, address(0), "ReadablePassage.byOne after mismatch");
+        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo after mismatch");
         assertEq(
-            keccak256(SSTORE2.read((passage.content))),
-            keccak256(passageOneCompressed),
-            "Passage.content after mismatch"
+            keccak256((passage.readableContent)),
+            keccak256(passageOne),
+            "ReadablePassage.readableContent after mismatch"
         );
     }
 
@@ -915,7 +852,7 @@ contract NabuTest is Ownable, Test {
 
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(InvalidPassageId.selector));
-        _nabu.adminAssignPassageContent(workId, 1_000_001, passageOneCompressed);
+        _nabu.adminAssignPassageContent(workId, 1_000_001, passageOne);
     }
 
     function test_confirmPassageContent_reverts_whenPassageIdIsInvalid() public {

@@ -6,7 +6,7 @@ import {LibString} from "lib/solady/src/utils/LibString.sol";
 import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 import {Script, console} from "lib/forge-std/src/Script.sol";
 
-import {Nabu, Passage} from "../../../src/Nabu.sol";
+import {Nabu, ReadablePassage} from "../../../src/Nabu.sol";
 import {ENKIDU, NABU} from "../../constants/sepolia/DeployedAddressesSepolia.sol";
 
 // Update as needed
@@ -19,14 +19,9 @@ contract GetPassageSepolia is Script {
     function run() public {
         nabu = Nabu(NABU);
 
-        Passage memory passage = nabu.getPassage({passageId: PASSAGE_ID, workId: WORK_ID});
+        ReadablePassage memory passage = nabu.getPassage({passageId: PASSAGE_ID, workId: WORK_ID});
 
-        bytes memory rawContent = SSTORE2.read(passage.content);
-
-        console.log("raw content:", string(rawContent));
-
-        console.log("content:", string(LibZip.flzDecompress(rawContent)));
-
+        console.log("content:", string(passage.readableContent));
         console.log("byZero:", passage.byZero);
         console.log("byOne:", passage.byOne);
         console.log("byTwo:", passage.byTwo);

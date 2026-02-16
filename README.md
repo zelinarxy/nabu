@@ -124,10 +124,8 @@ To preserve a text with Nabu:
     c. Devise some method by which you and others can quickly and reliably look up the correct content of a passage by its id. This could be a SQL database, a public spreadsheet, an eremite with perfect recall who never sleeps. Probably a SQL database.
 
 4. (Recommended.)
-
-    a. Decide on a compression algorithm. I've tested Nabu with [FastLZ](https://github.com/ariya/FastLZ). I don't have any reason to expect that other algorithms would break the protocol, nor do I don't have any evidence they won't.
     
-    b. Provide an interface for users to take a human-readable passage, compress it, write it to the chain, read it back from the chain, decompress it, display it. Probably a web UI that talks to a server that talks to a database. These are only suggestions.
+    b. Provide an interface for users to take a human-readable passage, write it to the chain, read it back from the chain, and display it. Probably a web UI that talks to a server that talks to a database. These are only suggestions.
 
 5. (Required.) Decide how many Ashurbanipal passes you want to create to give users permission to populate the work. I have no useful insights into tokenomics, if profit is a motive. I will say that while you can burn passes (the ones you've retained or repurchased, at least), you can't create more.
 

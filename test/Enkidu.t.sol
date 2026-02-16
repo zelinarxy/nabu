@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {LibZip} from "lib/solady/src/utils/LibZip.sol";
 import {Ownable} from "lib/solady/src/auth/Ownable.sol";
-import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 import {Test, console2} from "lib/forge-std/src/Test.sol";
 
 import {Ashurbanipal} from "../src/Ashurbanipal.sol";

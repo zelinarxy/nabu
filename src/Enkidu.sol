@@ -5,7 +5,6 @@ import {ERC20} from "lib/solady/src/tokens/ERC20.sol";
 import {ERC721} from "lib/solady/src/tokens/ERC721.sol";
 import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 import {Receiver} from "lib/solady/src/accounts/Receiver.sol";
-import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 
 import {Ashurbanipal} from "./Ashurbanipal.sol";
 

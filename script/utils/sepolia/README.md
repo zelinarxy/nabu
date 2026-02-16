@@ -82,6 +82,16 @@ forge script \
   -vvvv
 ```
 
+# Get passage content
+
+```
+forge script \
+  --chain sepolia \
+  script/utils/sepolia/GetPassageContentSepolia.s.sol:GetPassageContentSepolia \
+  --rpc-url $SEPOLIA_RPC_URL \
+  -vvvv
+```
+
 # Confirm passage
 
 ```

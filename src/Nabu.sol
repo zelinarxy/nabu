@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
+import {LibZip} from "lib/solady/src/utils/LibZip.sol";
 import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 
@@ -66,7 +67,14 @@ event WorkAdminUpdated(uint256 workId, address newAdminAddress);
 event WorkAuthorUpdated(uint256 workId, string newAuthor);
 
 event WorkCreated(
-    string author, string metadata, string title, uint256 totalPassagesCount, string uri, uint256 supply, address mintTo
+    string author,
+    string metadata,
+    string title,
+    uint256 totalPassagesCount,
+    string uri,
+    uint256 supply,
+    address mintTo,
+    uint256 id
 );
 
 event WorkMetadataUpdated(uint256 workId, string newMetadata);
@@ -87,8 +95,7 @@ event WorkUriUpdated(uint256 workId, string newUri);
  * a work by calling `createWork`, they must specify how many passages the work has (this can be updated, along with
  * author and title, for 30 days after creating the work). This user, who becomes the work's admin, should
  * decide ahead of time what each passage's content should be, and provide other users an interface where they can
- * populate each passage's content correctly. For the Bible, for example, passage 0 would be Genesis 1:1, compressed
- * to save gas. Works that aren't scripture or classics will need to be broken up into passages by admins.
+ * populate each passage's content correctly. For the Bible, for example, passage 1 would be Genesis 1:1. Works that aren't scripture or classics will need to be broken up into passages by admins.
  */
 struct Work {
     /// @dev The real-world author of the work, e.g. Homer or Shakespeare
@@ -124,10 +131,21 @@ struct Work {
  * the admin renounces their status and the text is set in stone.
  */
 struct Passage {
-    /// @dev The address pointer for the passage's content; this content should be compressed to save gas
-    /// @dev Nothing necessarily dictates a particular compression algorithm, but Nabu has been tested with FastLZ
-    /// @dev See: https://github.com/ariya/FastLZ
+    /// @dev The address pointer for the passage's content
     address content;
+    /// @dev The address of the user who performed the initial content assignment (possibly an overwrite)
+    address byZero;
+    /// @dev The address of the user who performed the first content confirmation
+    address byOne;
+    /// @dev The address of the user who performed the second content confirmation (finalized the passage)
+    address byTwo;
+    /// @dev The block at which the most recent content assignment or confirmation was performed
+    uint256 at;
+}
+
+struct ReadablePassage {
+    /// @dev The decompressed, human readable content
+    bytes readableContent;
     /// @dev The address of the user who performed the initial content assignment (possibly an overwrite)
     address byZero;
     /// @dev The address of the user who performed the first content confirmation
@@ -182,7 +200,6 @@ contract Nabu is Ownable {
     /// @notice A work's admin can update the content of a passage even if that passage has been finalized
     /// @notice Unlike other admin-only functions, this one has no time limitation (no `notTooLate` modifier)
     ///
-    /// @dev Content should be compressed to save gas; this contract has been tested with FastLZ compression
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
@@ -203,8 +220,11 @@ contract Nabu is Ownable {
             revert InvalidPassageId();
         }
 
+        // Compress the content
+        bytes memory compressedContent = LibZip.flzCompress(content);
+
         // Track the address of the SSTORE2 write location for the event
-        address contentPointer = SSTORE2.write({data: content});
+        address contentPointer = SSTORE2.write({data: compressedContent});
 
         // Assign the content
         _passages[workId][passageId].content = contentPointer;
@@ -224,8 +244,6 @@ contract Nabu is Ownable {
     /// @notice Once a passage has received two confirmations, only the work's admin can change its content
     /// @notice A user can overwrite a passage's existing content, resetting the confirmation count to zero
     /// @notice If content is identical to the passage's current content, the confirmation count is incremented
-    ///
-    /// @dev Content should be compressed to save gas; the contract has been tested with FastLZ compression
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
@@ -291,10 +309,13 @@ contract Nabu is Ownable {
         // Track the address of the SSTORE2 write location, whether new or existing, for the event
         address contentPointer = passage.content;
 
+        // Compress the content
+        bytes memory compressedContent = LibZip.flzCompress(content);
+
         // The passage already has content assigned to it
         if (passage.content != address(0)) {
             // The content being assigned is identical to the existing content (perform a confirmation)
-            if (keccak256(SSTORE2.read({pointer: passage.content})) == keccak256(content)) {
+            if (keccak256(SSTORE2.read({pointer: passage.content})) == keccak256(compressedContent)) {
                 // The passage already has one confirmation
                 if (passage.byOne != address(0)) {
                     // Finalize the passage
@@ -309,7 +330,7 @@ contract Nabu is Ownable {
                 // The content being assigned differs from the passage's existing content: overwrite the content,
                 // record this user as having performed the intial assignment, and clear the first confirmation (if
                 // there had been a second confirmation, the call would already have thrown an error)
-                contentPointer = SSTORE2.write({data: content});
+                contentPointer = SSTORE2.write({data: compressedContent});
                 _passages[workId][passageId].content = contentPointer;
                 _passages[workId][passageId].byZero = msg.sender;
                 _passages[workId][passageId].byOne = address(0);
@@ -318,7 +339,8 @@ contract Nabu is Ownable {
         } else {
             // The passage has not yet been assigned content: write the content and record this user as having
             // performed the initial assignement
-            _passages[workId][passageId].content = SSTORE2.write({data: content});
+            contentPointer = SSTORE2.write({data: compressedContent});
+            _passages[workId][passageId].content = contentPointer;
             _passages[workId][passageId].byZero = msg.sender;
         }
 
@@ -449,7 +471,7 @@ contract Nabu is Ownable {
         _ashurbanipal.mint({account: mintToOrAdmin, workId: _worksTip, supply: supply, workUri: uri});
         newWorksTip = _worksTip;
 
-        emit WorkCreated(author, metadata, title, totalPassagesCount, uri, supply, mintTo);
+        emit WorkCreated(author, metadata, title, totalPassagesCount, uri, supply, mintTo, _worksTip);
     }
 
     /// @notice Get the Ashurbanipal contract address
@@ -567,15 +589,17 @@ contract Nabu is Ownable {
         emit WorkUriUpdated(workId, newUri);
     }
 
-    /// @notice View a passage: content and confirmation metadata
-    ///
-    /// @dev Content is returned as written; if compressed (recommended), the consuming application needs to decompress
+    /// @notice View a passage: decompressed content and confirmation metadata
     ///
     /// @param workId The id of the work
     /// @param passageId The id of the passage
     ///
-    /// @return passage The passage
-    function getPassage(uint256 workId, uint256 passageId) public view returns (Passage memory passage) {
+    /// @return readablePassage The passage
+    function getPassage(uint256 workId, uint256 passageId)
+        public
+        view
+        returns (ReadablePassage memory readablePassage)
+    {
         Work storage work = _works[workId];
 
         // The passage doesn't exist
@@ -583,26 +607,21 @@ contract Nabu is Ownable {
             revert InvalidPassageId();
         }
 
-        passage = _passages[workId][passageId];
-    }
+        Passage memory passage = _passages[workId][passageId];
 
-    /// @notice View a passage's content only
-    ///
-    /// @dev Content is returned as written; if compressed (recommended), the consuming application needs to decompress
-    ///
-    /// @param workId The id of the work
-    /// @param passageId The id of the passage
-    ///
-    /// @return passageContent The passage's content
-    function getPassageContent(uint256 workId, uint256 passageId) public view returns (bytes memory passageContent) {
-        Work storage work = _works[workId];
+        // Read the content from the store
+        bytes memory compressedContent = SSTORE2.read({pointer: _passages[workId][passageId].content});
 
-        // The passage doesn't exist
-        if (passageId > work.totalPassagesCount) {
-            revert InvalidPassageId();
-        }
+        // Decompress the content
+        bytes memory decompressedContent = LibZip.flzDecompress(compressedContent);
 
-        passageContent = SSTORE2.read({pointer: _passages[workId][passageId].content});
+        readablePassage = ReadablePassage({
+            readableContent: decompressedContent,
+            byZero: passage.byZero,
+            byOne: passage.byOne,
+            byTwo: passage.byTwo,
+            at: passage.at
+        });
     }
 
     /// @notice View a work: author, title, admin, etc. (but no content)
