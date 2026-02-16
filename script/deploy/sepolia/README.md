@@ -6,10 +6,10 @@ For a general guide to Solidity scripting, see the [Foundry docs](https://getfou
 
 | Contract | Sepolia address | Explorer link |
 |---|---|---|
-| Ashurbanipal | 0xFcF9aab2af05549a41dC0fd23584A138fC3e1DF2 | [→](https://sepolia.etherscan.io/address/0xfcf9aab2af05549a41dc0fd23584a138fc3e1df2#code) |
-| Enkidu | 0xbdA76Dba819272E469Ae9AcCcc9161Cd835e1f5e | [→](https://sepolia.etherscan.io/address/0xbdA76Dba819272E469Ae9AcCcc9161Cd835e1f5e#code) |
-| Humbaba | 0x86dD0B9f3BfF7a8fD573A1287da82fA95d8F6FDF | [→](https://sepolia.etherscan.io/address/0x86dd0b9f3bff7a8fd573a1287da82fa95d8f6fdf#code) |
-| Nabu | 0x881E623973fe5be9CeeACA91Aa8AA636ee751243 | [→](https://sepolia.etherscan.io/address/0x881e623973fe5be9ceeaca91aa8aa636ee751243#code) |
+| Ashurbanipal | 0x55be0d94a9A432Bbd56161516BbCa0c6081efb5f | [→](https://sepolia.etherscan.io/address/0x55be0d94a9A432Bbd56161516BbCa0c6081efb5f#code) |
+| Enkidu | 0x0D8AE464e55d210E3147DbC674d1F6D34fa81085 | [→](https://sepolia.etherscan.io/address/0x0D8AE464e55d210E3147DbC674d1F6D34fa81085#code) |
+| Humbaba | 0x03Ead8cAe839bEC7a0FA2B7E00bb172EF1D6150D | [→](https://sepolia.etherscan.io/address/0x03Ead8cAe839bEC7a0FA2B7E00bb172EF1D6150D#code) |
+| Nabu | 0x2E5E997776d79d416811f80bF16df58FCc6c3268 | [→](https://sepolia.etherscan.io/address/0x2E5E997776d79d416811f80bF16df58FCc6c3268#code) |
 
 ## Steps
 
@@ -39,6 +39,15 @@ forge script \
   --verify \
   -vvvv \
   --interactives 1
+```
+
+If verificaction fails:
+
+```
+forge verify-contract \
+  <contract address> \
+  src/Nabu.sol:Nabu \
+  --chain sepolia
 ```
 
 4. Update [DeployedAddressesSepolia.sol](/script/constants/sepolia/DeployedAddressesSepolia.sol#l8).
