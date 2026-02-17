@@ -24,6 +24,18 @@ forge script \
   --interactives 1
 ```
 
+## Admin write passage
+
+```
+forge script \
+  --chain sepolia \
+  script/utils/sepolia/AdminWritePassageSepolia.s.sol:AdminWritePassageSepolia \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --broadcast \
+  -vvvv \
+  --interactives 1
+```
+
 ## Admin mint Humbaba
 
 ```

@@ -12,7 +12,7 @@ uint256 constant WORK_ID = 1;
 // Don't remove the `unicode` prefix
 string constant RAW_PASSAGE = unicode"In the beginning God created the heaven and the earth.";
 
-contract WritePassageSepolia is Script {
+contract AdminWritePassageSepolia is Script {
     Nabu public nabu;
 
     bytes passage = bytes(RAW_PASSAGE);
@@ -21,7 +21,7 @@ contract WritePassageSepolia is Script {
         vm.startBroadcast();
 
         nabu = Nabu(NABU);
-        nabu.assignPassageContent({content: passage, passageId: PASSAGE_ID, workId: WORK_ID});
+        nabu.adminAssignPassageContent({content: passage, passageId: PASSAGE_ID, workId: WORK_ID});
 
         vm.stopBroadcast();
     }

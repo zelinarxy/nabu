@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import {LibZip} from "lib/solady/src/utils/LibZip.sol";
 import {LibString} from "lib/solady/src/utils/LibString.sol";
-import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 import {Script, console} from "lib/forge-std/src/Script.sol";
 
 import {Nabu, ReadablePassage} from "../../../src/Nabu.sol";
