@@ -888,4 +888,16 @@ contract NabuTest is Ownable, Test {
         _nabu.updateWorkTitle(workId, "Donny Q");
         assertEq(keccak256(bytes(_nabu.getWork(workId).title)), keccak256(bytes("Donny Q")), "Work title mismatch");
     }
+
+    function test_getPassage_whenNoContent() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        ReadablePassage memory readablePassage = _nabu.getPassage(workId, 10);
+
+        assertEq(keccak256(readablePassage.readableContent), keccak256(""), "Readable content mismatch");
+
+        assertEq(readablePassage.byZero, (address(0)), "By zero mismatch");
+        assertEq(readablePassage.byOne, (address(0)), "By one mismatch");
+        assertEq(readablePassage.byTwo, (address(0)), "By two mismatch");
+        assertEq(readablePassage.at, 0, "At mismatch");
+    }
 }

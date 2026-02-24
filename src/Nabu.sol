@@ -4,7 +4,8 @@ pragma solidity 0.8.28;
 import {LibZip} from "lib/solady/src/utils/LibZip.sol";
 import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
-
+import {console2} from "lib/forge-std/src/console2.sol";
+import {LibString} from "lib/solady/src/utils/LibString.sol";
 import {Ashurbanipal} from "./Ashurbanipal.sol";
 
 uint256 constant ONE_DAY = 7_200;
@@ -609,8 +610,19 @@ contract Nabu is Ownable {
 
         Passage memory passage = _passages[workId][passageId];
 
+        // Trying to read passage content with a pointer of address(0) will result in out of gas errors
+        if (passage.content == address(0)) {
+            return ReadablePassage({
+                readableContent: bytes(""),
+                byZero: passage.byZero,
+                byOne: passage.byOne,
+                byTwo: passage.byTwo,
+                at: passage.at
+            });
+        }
+
         // Read the content from the store
-        bytes memory compressedContent = SSTORE2.read({pointer: _passages[workId][passageId].content});
+        bytes memory compressedContent = SSTORE2.read({pointer: passage.content});
 
         // Decompress the content
         bytes memory decompressedContent = LibZip.flzDecompress(compressedContent);
