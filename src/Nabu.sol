@@ -757,7 +757,7 @@ contract Nabu is Ownable {
         if (passage.metadata == address(0)) {
             readableMetadata = bytes("");
         } else {
-            bytes memory compressedMetadata = SSTORE2.read({pointer: passage.content});
+            bytes memory compressedMetadata = SSTORE2.read({pointer: passage.metadata});
             readableMetadata = LibZip.flzDecompress(compressedMetadata);
         }
 
