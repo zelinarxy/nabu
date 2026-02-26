@@ -291,6 +291,12 @@ contract Nabu is Ownable {
         _passages[workId][passageId].metadataBy = msg.sender;
         _passages[workId][passageId].metadataAt = block.number;
 
+        // If the passage is finalized, clear byTwo so a new independent confirmer must re-finalize,
+        // giving the community the opportunity to reject incorrect admin-assigned metadata
+        if (_passages[workId][passageId].byTwo != address(0)) {
+            _passages[workId][passageId].byTwo = address(0);
+        }
+
         emit PassageMetadataAssignedByAdmin(workId, passageId, msg.sender, metadataPointer);
     }
 
@@ -443,7 +449,7 @@ contract Nabu is Ownable {
 
         if (passage.metadataBy != address(0)) {
             canAssignAfter = passage.metadataAt + SEVEN_DAYS;
-        } else if (passage.byZero != address(0)) {
+        } else {
             canAssignAfter = passage.metadataAt;
         }
 
@@ -463,22 +469,15 @@ contract Nabu is Ownable {
         // Compress the content
         bytes memory compressedMetadata = LibZip.flzCompress(metadata);
 
-        // The passage already has metadata assigned to it
         if (metadataPointer != address(0)) {
-            if (keccak256(SSTORE2.read({pointer: passage.metadata})) == keccak256(compressedMetadata)) {
+            if (keccak256(SSTORE2.read({pointer: metadataPointer})) == keccak256(compressedMetadata)) {
                 revert NoChangeInMetadata();
             }
-
-            metadataPointer = SSTORE2.write({data: compressedMetadata});
-            _passages[workId][passageId].metadata = metadataPointer;
-            _passages[workId][passageId].metadataBy = msg.sender;
-        } else {
-            // The passage has not yet been assigned content: write the content and record this user as having
-            // performed the initial assignement
-            metadataPointer = SSTORE2.write({data: compressedMetadata});
-            _passages[workId][passageId].metadata = metadataPointer;
-            _passages[workId][passageId].metadataBy = msg.sender;
         }
+
+        metadataPointer = SSTORE2.write({data: compressedMetadata});
+        _passages[workId][passageId].metadata = metadataPointer;
+        _passages[workId][passageId].metadataBy = msg.sender;
 
         _passages[workId][passageId].metadataAt = block.number;
 

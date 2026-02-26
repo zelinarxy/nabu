@@ -1049,10 +1049,26 @@ contract NabuTest is Ownable, Test {
         vm.prank(alice);
         _nabu.adminAssignPassageMetadata(workId, 1, passageOneMetadata);
 
+        // byTwo should be cleared: the passage is no longer finalized, allowing the community
+        // to re-confirm (and implicitly endorse the admin-assigned metadata) or withhold
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo should be cleared after admin assigns metadata");
         assertEq(passage.metadataBy, alice, "ReadablePassage.metadataBy mismatch");
         assertEq(passage.metadataAt, ONE_DAY + SEVEN_DAYS, "ReadablePassage.metadataAt mismatch");
         assertEq(keccak256(passage.readableMetadata), keccak256(passageOneMetadata), "ReadablePassage.readableMetadata mismatch");
+
+        // Give frank a pass so he can re-finalize
+        vm.prank(alice);
+        _ashurbanipal.safeTransferFrom(alice, frank, workId, 1, "");
+
+        // A new independent confirmer (frank, who hasn't participated) can re-finalize the passage,
+        // implicitly endorsing the existing content and admin-assigned metadata
+        vm.roll(ONE_DAY + SEVEN_DAYS + SEVEN_DAYS);
+        vm.prank(frank);
+        _nabu.confirmPassageContent(workId, 1);
+
+        passage = _nabu.getPassage(workId, 1);
+        assertEq(passage.byTwo, frank, "ReadablePassage.byTwo should be frank after re-finalization");
     }
 
     // TODO: test unassigned content
