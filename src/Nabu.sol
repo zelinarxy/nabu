@@ -20,12 +20,18 @@ uint256 constant THIRTY_DAYS = 216_000;
 error Blacklisted();
 /// @dev A given user is limited to assigning a passage's content or confirming it once
 error CannotDoubleConfirmPassage();
+/// @dev TODO
+error CannotReassignOwnMetadata();
 /// @dev SSTORE2 has a max length of 24576
 error ContentTooLarge();
 /// @dev Works require a title
 error EmptyTitle();
 /// @dev Passage doesn't exist
 error InvalidPassageId();
+/// @dev SSTORE2 has a max length of 24576
+error MetadataTooLarge();
+/// @dev Attempting to write the same metadata twice doesn't perform a confirmation; revert to avoid wasting gas
+error NoChangeInMetadata();
 /// @dev User must hold a "pass" (Ashurbanipal NFT) corresponding to the work in order to assign or confirm content
 error NoPass();
 /// @dev Can't confirm an empty passage
@@ -36,8 +42,10 @@ error NotWorkAdmin(address workAdmin);
 error PassageAlreadyFinalized();
 /// @dev Function can only be called within 30 days of a work's creation
 error TooLate(uint256 expiredAt);
-/// @dev There is a one-day cooling-off period between initial content assignment and first confirmation
+/// @dev There is a cooling-off period before first confirmation (one day) and second confirmation (seven days)
 error TooSoonToAssignContent(uint256 canAssignAfter);
+/// @dev There is a cooling-off period after first confirmation (one day)
+error TooSoonToAssignMetadata(uint256 canAssignAfter);
 /// @dev There is a seven-day cooling-off period between first and second content confirmations
 error TooSoonToConfirmContent(uint256 canConfirmAfter);
 /// @dev A work's `totalPassagesCount` must be at least 1
@@ -57,8 +65,12 @@ event PassageContentAssigned(
     uint256 workId, uint256 passageId, address by, address contentPointer, uint8 confirmationIndex
 );
 
+event PassageMetadataAssigned(uint256 workId, uint256 passageId, address by, address metadataPointer);
+
 /// @dev Content pointer is the SSTORE2 location, whether new or existing
 event PassageContentAssignedByAdmin(uint256 workId, uint256 passageId, address by, address contentPointer);
+
+event PassageMetadataAssignedByAdmin(uint256 workId, uint256 passageId, address by, address metadataPointer);
 
 /// @dev Confirmation index is 1 for the first confirmation (`byOne`), 2 for the second (`byTwo`)
 event PassageContentConfirmed(uint256 workId, uint256 passageId, address by, uint8 confirmationIndex);
@@ -134,27 +146,39 @@ struct Work {
 struct Passage {
     /// @dev The address pointer for the passage's content
     address content;
+    /// @dev TODO
+    address metadata;
     /// @dev The address of the user who performed the initial content assignment (possibly an overwrite)
     address byZero;
     /// @dev The address of the user who performed the first content confirmation
     address byOne;
     /// @dev The address of the user who performed the second content confirmation (finalized the passage)
     address byTwo;
+    /// @dev TODO
+    address metadataBy;
     /// @dev The block at which the most recent content assignment or confirmation was performed
     uint256 at;
+    /// @dev TODO
+    uint256 metadataAt;
 }
 
 struct ReadablePassage {
     /// @dev The decompressed, human readable content
     bytes readableContent;
+    /// @dev TODO
+    bytes readableMetadata;
     /// @dev The address of the user who performed the initial content assignment (possibly an overwrite)
     address byZero;
     /// @dev The address of the user who performed the first content confirmation
     address byOne;
     /// @dev The address of the user who performed the second content confirmation (finalized the passage)
     address byTwo;
+    /// @dev TODO
+    address metadataBy;
     /// @dev The block at which the most recent content assignment or confirmation was performed
     uint256 at;
+    /// @dev TODO
+    uint256 metadataAt;
 }
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -241,6 +265,35 @@ contract Nabu is Ownable {
         emit PassageContentAssignedByAdmin(workId, passageId, msg.sender, contentPointer);
     }
 
+    // TODO
+    function adminAssignPassageMetadata(uint256 workId, uint256 passageId, bytes memory metadata)
+        public
+        onlyWorkAdmin(workId)
+    {
+        // SSTORE2 max size
+        if (metadata.length > 24576) {
+            revert MetadataTooLarge();
+        }
+
+        Work storage work = _works[workId];
+
+        // The passage doesn't exist
+        if (passageId > work.totalPassagesCount) {
+            revert InvalidPassageId();
+        }
+
+        bytes memory compressedMetadata = LibZip.flzCompress(metadata);
+
+        // Track the address of the SSTORE2 write location for the event
+        address metadataPointer = SSTORE2.write({data: compressedMetadata});
+
+        _passages[workId][passageId].metadata = metadataPointer;
+        _passages[workId][passageId].metadataBy = msg.sender;
+        _passages[workId][passageId].metadataAt = block.number;
+
+        emit PassageMetadataAssignedByAdmin(workId, passageId, msg.sender, metadataPointer);
+    }
+
     /// @notice Anyone holding a work's Ashurbanipal NFT can assign content to a passage
     /// @notice Once a passage has received two confirmations, only the work's admin can change its content
     /// @notice A user can overwrite a passage's existing content, resetting the confirmation count to zero
@@ -277,7 +330,7 @@ contract Nabu is Ownable {
             revert PassageAlreadyFinalized();
         }
 
-        // A user can't confirm passage content they assigned in the first place; nor can they double-confirm
+        // A user can't confirm passage content they assigned in the first place
         if (passage.byZero == msg.sender || passage.byOne == msg.sender) {
             revert CannotDoubleConfirmPassage();
         }
@@ -314,9 +367,9 @@ contract Nabu is Ownable {
         bytes memory compressedContent = LibZip.flzCompress(content);
 
         // The passage already has content assigned to it
-        if (passage.content != address(0)) {
+        if (contentPointer != address(0)) {
             // The content being assigned is identical to the existing content (perform a confirmation)
-            if (keccak256(SSTORE2.read({pointer: passage.content})) == keccak256(compressedContent)) {
+            if (keccak256(SSTORE2.read({pointer: contentPointer})) == keccak256(compressedContent)) {
                 // The passage already has one confirmation
                 if (passage.byOne != address(0)) {
                     // Finalize the passage
@@ -343,12 +396,93 @@ contract Nabu is Ownable {
             contentPointer = SSTORE2.write({data: compressedContent});
             _passages[workId][passageId].content = contentPointer;
             _passages[workId][passageId].byZero = msg.sender;
+            _passages[workId][passageId].byOne = address(0); // TODO: necessary?
         }
 
         // Update the block number at which the last content update or confirmation was performed to the current block
         _passages[workId][passageId].at = block.number;
 
         emit PassageContentAssigned(workId, passageId, msg.sender, contentPointer, confirmationIndex);
+    }
+
+    // TODO: natspec
+    function assignPassageMetadata(uint256 workId, uint256 passageId, bytes memory metadata) public {
+        // SSTORE2 max size
+        if (metadata.length > 24576) {
+            revert MetadataTooLarge();
+        }
+
+        Work storage work = _works[workId];
+
+        // If the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
+
+        // The passage doesn't exist
+        if (passageId > work.totalPassagesCount) {
+            revert InvalidPassageId();
+        }
+
+        // The user is blacklisted
+        if (_blacklist[workId][msg.sender]) {
+            revert Blacklisted();
+        }
+
+        Passage memory passage = _passages[workId][passageId];
+
+        // The passage has received two confirmations: it's finalized and only the work's admin can update it by
+        // explicitly calling `adminAssignPassageContent`
+        if (passage.byTwo != address(0)) {
+            revert PassageAlreadyFinalized();
+        }
+
+        if (passage.metadataBy == msg.sender) {
+            revert CannotReassignOwnMetadata();
+        }
+
+        // The earliest block in which this function can be successfully called
+        uint256 canAssignAfter;
+
+        if (passage.metadataBy != address(0)) {
+            canAssignAfter = passage.metadataAt + SEVEN_DAYS;
+        } else if (passage.byZero != address(0)) {
+            canAssignAfter = passage.metadataAt;
+        }
+
+        // Not enough time has elapsed
+        if (block.number < canAssignAfter) {
+            revert TooSoonToAssignMetadata(canAssignAfter);
+        }
+
+        // The user doesn't hold an NFT "pass" from the Ashurbanipal contract corresponding to this work
+        if (_ashurbanipal.balanceOf({owner: msg.sender, id: workId}) == 0) {
+            revert NoPass();
+        }
+
+        // Track the address of the SSTORE2 write location, whether new or existing, for the event
+        address metadataPointer = passage.metadata;
+
+        // Compress the content
+        bytes memory compressedMetadata = LibZip.flzCompress(metadata);
+
+        // The passage already has metadata assigned to it
+        if (metadataPointer != address(0)) {
+            if (keccak256(SSTORE2.read({pointer: passage.metadata})) == keccak256(compressedMetadata)) {
+                revert NoChangeInMetadata();
+            }
+
+            metadataPointer = SSTORE2.write({data: compressedMetadata});
+            _passages[workId][passageId].metadata = metadataPointer;
+            _passages[workId][passageId].metadataBy = msg.sender;
+        } else {
+            // The passage has not yet been assigned content: write the content and record this user as having
+            // performed the initial assignement
+            metadataPointer = SSTORE2.write({data: compressedMetadata});
+            _passages[workId][passageId].metadata = metadataPointer;
+            _passages[workId][passageId].metadataBy = msg.sender;
+        }
+
+        _passages[workId][passageId].metadataAt = block.number;
+
+        emit PassageMetadataAssigned(workId, passageId, msg.sender, metadataPointer);
     }
 
     /// @notice Anyone holding a work's Ashurbanipal NFT can confirm a passage's existing content
@@ -384,7 +518,7 @@ contract Nabu is Ownable {
             revert PassageAlreadyFinalized();
         }
 
-        // The same user can't assign and confirm a passage's content; nor can they double-confirm
+        // The same user can't assign and confirm a passage's content
         if (passage.byZero == msg.sender || passage.byOne == msg.sender) {
             revert CannotDoubleConfirmPassage();
         }
@@ -610,29 +744,32 @@ contract Nabu is Ownable {
 
         Passage memory passage = _passages[workId][passageId];
 
-        // Trying to read passage content with a pointer of address(0) will result in out of gas errors
+        bytes memory readableContent;
+        bytes memory readableMetadata;
+
         if (passage.content == address(0)) {
-            return ReadablePassage({
-                readableContent: bytes(""),
-                byZero: passage.byZero,
-                byOne: passage.byOne,
-                byTwo: passage.byTwo,
-                at: passage.at
-            });
+            readableContent = bytes("");
+        } else {
+            bytes memory compressedContent = SSTORE2.read({pointer: passage.content});
+            readableContent = LibZip.flzDecompress(compressedContent);
         }
 
-        // Read the content from the store
-        bytes memory compressedContent = SSTORE2.read({pointer: passage.content});
-
-        // Decompress the content
-        bytes memory decompressedContent = LibZip.flzDecompress(compressedContent);
+        if (passage.metadata == address(0)) {
+            readableMetadata = bytes("");
+        } else {
+            bytes memory compressedMetadata = SSTORE2.read({pointer: passage.content});
+            readableMetadata = LibZip.flzDecompress(compressedMetadata);
+        }
 
         readablePassage = ReadablePassage({
-            readableContent: decompressedContent,
+            readableContent: readableContent,
+            readableMetadata: readableMetadata,
             byZero: passage.byZero,
             byOne: passage.byOne,
             byTwo: passage.byTwo,
-            at: passage.at
+            metadataBy: passage.metadataBy,
+            at: passage.at,
+            metadataAt: passage.metadataAt
         });
     }
 

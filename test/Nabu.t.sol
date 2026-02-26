@@ -900,4 +900,52 @@ contract NabuTest is Ownable, Test {
         assertEq(readablePassage.byTwo, (address(0)), "By two mismatch");
         assertEq(readablePassage.at, 0, "At mismatch");
     }
+
+    function test_assignPassageMetadata() public {
+
+    }
+
+    function test_assignPassageMetadata_reverts_whenContentIsTooLong() public {
+
+    }
+
+    function test_assignPassageMetadata_reverts_whenOverwritingOwnMetadata() public {
+
+    }
+
+    function test_assignPassageMetadata_reverts_whenItsTooSoon() public {
+
+    }
+
+    function test_assignPassageMetadata_reverts_whenPassageIdIsInvalid() public {
+
+    }
+
+
+    function test_assignPassageMetadata_reverts_whenCallerIsBlacklisted() public {
+
+    }
+
+    function test_assignPassageMetadata_reverts_whenCallerHasNoPass() public {
+
+    }
+
+    function test_assignPassageMetadata_reverts_whenPassageIsFinalized() public {
+
+    }
+
+
+    function test_assignPassageMetadata_reverts_whenUnchanged() public {
+
+    }
+
+    function test_adminAssignPassageMetadata() public {
+
+    }
+
+    // TODO: test unassigned content
+
+    // TODO: test unassigned metadata
+
+    // TODO: test unassigned content and metadata
 }
