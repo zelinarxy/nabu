@@ -1071,6 +1071,22 @@ contract NabuTest is Ownable, Test {
         assertEq(passage.byTwo, frank, "ReadablePassage.byTwo should be frank after re-finalization");
     }
 
+    function test_adminAssignPassageMetadata_reverts_whenMetadataIsTooLong() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(MetadataTooLarge.selector));
+        _nabu.adminAssignPassageMetadata(workId, 1, passageTooLong);
+    }
+
+    function test_adminAssignPassageMetadata_reverts_whenPassageIdIsInvalid() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(InvalidPassageId.selector));
+        _nabu.adminAssignPassageMetadata(workId, 1_000_001, passageOneMetadata);
+    }
+
     // TODO: test unassigned content
 
     // TODO: test unassigned metadata
