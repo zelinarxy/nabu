@@ -896,17 +896,6 @@ contract NabuTest is Ownable, Test {
         assertEq(keccak256(bytes(_nabu.getWork(workId).title)), keccak256(bytes("Donny Q")), "Work title mismatch");
     }
 
-    function test_getPassage_whenNoContent() public {
-        uint256 workId = createWorkAndDistributePassesAsAlice();
-        ReadablePassage memory readablePassage = _nabu.getPassage(workId, 10);
-
-        assertEq(keccak256(readablePassage.readableContent), keccak256(""), "Readable content mismatch");
-
-        assertEq(readablePassage.byZero, (address(0)), "By zero mismatch");
-        assertEq(readablePassage.byOne, (address(0)), "By one mismatch");
-        assertEq(readablePassage.byTwo, (address(0)), "By two mismatch");
-        assertEq(readablePassage.at, 0, "At mismatch");
-    }
 
     function test_assignPassageMetadata() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
@@ -1087,9 +1076,46 @@ contract NabuTest is Ownable, Test {
         _nabu.adminAssignPassageMetadata(workId, 1_000_001, passageOneMetadata);
     }
 
-    // TODO: test unassigned content
+    function test_getPassage_whenContentIsUnassigned() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
 
-    // TODO: test unassigned metadata
+        // Assign metadata to a passage that has no content yet
+        vm.prank(bob);
+        _nabu.assignPassageMetadata(workId, 1, passageOneMetadata);
 
-    // TODO: test unassigned content and metadata
+        ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+        assertEq(keccak256(passage.readableContent), keccak256(""), "readableContent should be empty");
+        assertEq(keccak256(passage.readableMetadata), keccak256(passageOneMetadata), "readableMetadata mismatch");
+        assertEq(passage.byZero, address(0), "byZero should be empty");
+        assertEq(passage.metadataBy, bob, "metadataBy mismatch");
+        assertEq(passage.at, 0, "at should be 0");
+        assertEq(passage.metadataAt, 0, "metadataAt mismatch");
+    }
+
+    function test_getPassage_whenMetadataIsUnassigned() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        vm.prank(bob);
+        _nabu.assignPassageContent(workId, 1, passageOne);
+
+        ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "readableContent mismatch");
+        assertEq(keccak256(passage.readableMetadata), keccak256(""), "readableMetadata should be empty");
+        assertEq(passage.byZero, bob, "byZero mismatch");
+        assertEq(passage.metadataBy, address(0), "metadataBy should be empty");
+        assertEq(passage.at, 0, "at mismatch");
+        assertEq(passage.metadataAt, 0, "metadataAt should be 0");
+    }
+
+    function test_getPassage_whenContentAndMetadataAreUnassigned() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+
+        ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+        assertEq(keccak256(passage.readableContent), keccak256(""), "readableContent should be empty");
+        assertEq(keccak256(passage.readableMetadata), keccak256(""), "readableMetadata should be empty");
+        assertEq(passage.byZero, address(0), "byZero should be empty");
+        assertEq(passage.metadataBy, address(0), "metadataBy should be empty");
+        assertEq(passage.at, 0, "at should be 0");
+        assertEq(passage.metadataAt, 0, "metadataAt should be 0");
+    }
 }
