@@ -111,10 +111,14 @@ contract NabuTest is Ownable, Test {
         assertEq(actual.byZero, expectedByZero, "ReadablePassage.byZero mismatch");
         assertEq(actual.byOne, expectedByOne, "ReadablePassage.byOne mismatch");
         assertEq(actual.byTwo, expectedByTwo, "ReadablePassage.byTwo mismatch");
-        assertEq(keccak256(actual.readableContent), keccak256(expectedContent), "ReadablePassage.readableContent mismatch");
+        assertEq(
+            keccak256(actual.readableContent), keccak256(expectedContent), "ReadablePassage.readableContent mismatch"
+        );
         assertEq(actual.metadataBy, expectedMetadataBy, "ReadablePassage.metadataBy mismatch");
         assertEq(actual.metadataAt, expectedMetadataAt, "ReadablePassage.metadataAt mismatch");
-        assertEq(keccak256(actual.readableMetadata), keccak256(expectedMetadata), "ReadablePassage.readableMetadata mismatch");
+        assertEq(
+            keccak256(actual.readableMetadata), keccak256(expectedMetadata), "ReadablePassage.readableMetadata mismatch"
+        );
     }
 
     function test_createWork() public {
@@ -972,7 +976,6 @@ contract NabuTest is Ownable, Test {
         _nabu.updateWorkTitle(workId, "Donny Q");
         assertEq(keccak256(bytes(_nabu.getWork(workId).title)), keccak256(bytes("Donny Q")), "Work title mismatch");
     }
-
 
     function test_assignPassageMetadata() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
