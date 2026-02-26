@@ -96,6 +96,27 @@ contract NabuTest is Ownable, Test {
         return workId;
     }
 
+    function assertPassage(
+        ReadablePassage memory actual,
+        uint256 expectedAt,
+        address expectedByZero,
+        address expectedByOne,
+        address expectedByTwo,
+        bytes memory expectedContent,
+        address expectedMetadataBy,
+        uint256 expectedMetadataAt,
+        bytes memory expectedMetadata
+    ) internal {
+        assertEq(actual.at, expectedAt, "ReadablePassage.at mismatch");
+        assertEq(actual.byZero, expectedByZero, "ReadablePassage.byZero mismatch");
+        assertEq(actual.byOne, expectedByOne, "ReadablePassage.byOne mismatch");
+        assertEq(actual.byTwo, expectedByTwo, "ReadablePassage.byTwo mismatch");
+        assertEq(keccak256(actual.readableContent), keccak256(expectedContent), "ReadablePassage.readableContent mismatch");
+        assertEq(actual.metadataBy, expectedMetadataBy, "ReadablePassage.metadataBy mismatch");
+        assertEq(actual.metadataAt, expectedMetadataAt, "ReadablePassage.metadataAt mismatch");
+        assertEq(keccak256(actual.readableMetadata), keccak256(expectedMetadata), "ReadablePassage.readableMetadata mismatch");
+    }
+
     function test_createWork() public {
         vm.prank(alice);
         uint256 workId = createWork(alice);
@@ -203,11 +224,17 @@ contract NabuTest is Ownable, Test {
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
 
-        assertEq(passage.at, 0, "ReadablePassage.at mismatch");
-        assertEq(passage.byZero, bob, "ReadablePassage.byZero mismatch");
-        assertEq(passage.byOne, address(0), "ReadablePassage.byOne mismatch");
-        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
-        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
+        assertPassage({
+            actual: passage,
+            expectedAt: 0,
+            expectedByZero: bob,
+            expectedByOne: address(0),
+            expectedByTwo: address(0),
+            expectedContent: passageOne,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
     }
 
     function test_assignPassageContent_reverts_whenPassageIdIsInvalid() public {
@@ -261,11 +288,17 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, ONE_DAY, "ReadablePassage.at mismatch");
-        assertEq(passage.byZero, bob, "ReadablePassage.byZero mismatch");
-        assertEq(passage.byOne, charlie, "ReadablePassage.byOne mismatch");
-        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
-        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
+        assertPassage({
+            actual: passage,
+            expectedAt: ONE_DAY,
+            expectedByZero: bob,
+            expectedByOne: charlie,
+            expectedByTwo: address(0),
+            expectedContent: passageOne,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
     }
 
     function test_confirmPassage_manuallyConfirmTwice() public {
@@ -283,11 +316,17 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, ONE_DAY + SEVEN_DAYS, "ReadablePassage.at mismatch");
-        assertEq(passage.byZero, bob, "ReadablePassage.byZero mismatch");
-        assertEq(passage.byOne, charlie, "ReadablePassage.byOne mismatch");
-        assertEq(passage.byTwo, dave, "ReadablePassage.byTwo mismatch");
-        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
+        assertPassage({
+            actual: passage,
+            expectedAt: ONE_DAY + SEVEN_DAYS,
+            expectedByZero: bob,
+            expectedByOne: charlie,
+            expectedByTwo: dave,
+            expectedContent: passageOne,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
     }
 
     function test_confirmPassage_reverts_whenCallerDoubleConfirms() public {
@@ -405,11 +444,17 @@ contract NabuTest is Ownable, Test {
         _nabu.confirmPassageContent(workId, 1);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, ONE_DAY, "ReadablePassage.at mismatch");
-        assertEq(passage.byZero, bob, "ReadablePassage.byZero mismatch");
-        assertEq(passage.byOne, charlie, "ReadablePassage.byOne mismatch");
-        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
-        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
+        assertPassage({
+            actual: passage,
+            expectedAt: ONE_DAY,
+            expectedByZero: bob,
+            expectedByOne: charlie,
+            expectedByTwo: address(0),
+            expectedContent: passageOne,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
     }
 
     function test_confirmPassage_twice() public {
@@ -427,11 +472,17 @@ contract NabuTest is Ownable, Test {
         _nabu.confirmPassageContent(workId, 1);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, ONE_DAY + SEVEN_DAYS, "ReadablePassage.at mismatch");
-        assertEq(passage.byZero, bob, "ReadablePassage.byZero mismatch");
-        assertEq(passage.byOne, charlie, "ReadablePassage.byOne mismatch");
-        assertEq(passage.byTwo, dave, "ReadablePassage.byTwo mismatch");
-        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
+        assertPassage({
+            actual: passage,
+            expectedAt: ONE_DAY + SEVEN_DAYS,
+            expectedByZero: bob,
+            expectedByOne: charlie,
+            expectedByTwo: dave,
+            expectedContent: passageOne,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
     }
 
     function test_confirmPassage_reverts_whenPassageIsFinalized() public {
@@ -475,26 +526,34 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
         ReadablePassage memory maliciousPassage = _nabu.getPassage(workId, 1);
-        assertEq(maliciousPassage.at, 0, "ReadablePassage.at mismatch");
-        assertEq(maliciousPassage.byZero, mallory, "ReadablePassage.byZero mismatch");
-        assertEq(maliciousPassage.byOne, address(0), "ReadablePassage.byOne mismatch");
-        assertEq(maliciousPassage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
-        assertEq(
-            keccak256(maliciousPassage.readableContent),
-            keccak256(passageOneMalicious),
-            "ReadablePassage.readableContent mismatch"
-        );
+        assertPassage({
+            actual: maliciousPassage,
+            expectedAt: 0,
+            expectedByZero: mallory,
+            expectedByOne: address(0),
+            expectedByTwo: address(0),
+            expectedContent: passageOneMalicious,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
 
         vm.roll(ONE_DAY);
         vm.prank(alice);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, ONE_DAY, "ReadablePassage.at mismatch");
-        assertEq(passage.byZero, alice, "ReadablePassage.byZero mismatch");
-        assertEq(passage.byOne, address(0), "ReadablePassage.byOne mismatch");
-        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
-        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
+        assertPassage({
+            actual: passage,
+            expectedAt: ONE_DAY,
+            expectedByZero: alice,
+            expectedByOne: address(0),
+            expectedByTwo: address(0),
+            expectedContent: passageOne,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
     }
 
     function test_overwritePassage_twice() public {
@@ -504,41 +563,51 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.at, 0, "ReadablePassage.at mismatch");
-        assertEq(passage.byZero, alice, "ReadablePassage.byZero mismatch");
-        assertEq(passage.byOne, address(0), "ReadablePassage.byOne mismatch");
-        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
-        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "ReadablePassage.readableContent mismatch");
+        assertPassage({
+            actual: passage,
+            expectedAt: 0,
+            expectedByZero: alice,
+            expectedByOne: address(0),
+            expectedByTwo: address(0),
+            expectedContent: passageOne,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
 
         vm.roll(ONE_DAY);
         vm.prank(mallory);
         _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
         ReadablePassage memory maliciousPassage = _nabu.getPassage(workId, 1);
-        assertEq(maliciousPassage.at, ONE_DAY, "ReadablePassage.at mismatch");
-        assertEq(maliciousPassage.byZero, mallory, "ReadablePassage.byZero mismatch");
-        assertEq(maliciousPassage.byOne, address(0), "ReadablePassage.byOne mismatch");
-        assertEq(maliciousPassage.byTwo, address(0), "ReadablePassage.byTwo mismatch");
-        assertEq(
-            keccak256(maliciousPassage.readableContent),
-            keccak256(passageOneMalicious),
-            "ReadablePassage.readableContent mismatch"
-        );
+        assertPassage({
+            actual: maliciousPassage,
+            expectedAt: ONE_DAY,
+            expectedByZero: mallory,
+            expectedByOne: address(0),
+            expectedByTwo: address(0),
+            expectedContent: passageOneMalicious,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
 
         vm.roll(ONE_DAY + SEVEN_DAYS);
         vm.prank(alice);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory restoredPassage = _nabu.getPassage(workId, 1);
-        assertEq(restoredPassage.at, ONE_DAY + SEVEN_DAYS, "ReadablePassage.at mismatch");
-        assertEq(restoredPassage.byZero, alice, "ReadablePassage.byZero mismatch");
-        assertEq(restoredPassage.byOne, address(0), "ReadablePassage.byOne mismatch");
-        assertEq(restoredPassage.byTwo, address(0), "ReadablePassage.byOne mismatch");
-        assertEq(
-            keccak256(restoredPassage.readableContent),
-            keccak256(passageOne),
-            "ReadablePassage.readableContent mismatch"
-        );
+        assertPassage({
+            actual: restoredPassage,
+            expectedAt: ONE_DAY + SEVEN_DAYS,
+            expectedByZero: alice,
+            expectedByOne: address(0),
+            expectedByTwo: address(0),
+            expectedContent: passageOne,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
     }
 
     function test_updateAshurbanipal() public {
@@ -832,26 +901,34 @@ contract NabuTest is Ownable, Test {
         vm.prank(dave);
         _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
-        assertEq(
-            keccak256(_nabu.getPassage(workId, 1).readableContent),
-            keccak256(passageOneMalicious),
-            "ReadablePassage.readableContent before mismatch"
-        );
+        ReadablePassage memory passageBefore = _nabu.getPassage(workId, 1);
+        assertPassage({
+            actual: passageBefore,
+            expectedAt: ONE_DAY + SEVEN_DAYS,
+            expectedByZero: bob,
+            expectedByOne: charlie,
+            expectedByTwo: dave,
+            expectedContent: passageOneMalicious,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
 
         vm.prank(alice);
         _nabu.adminAssignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-
-        assertEq(passage.at, ONE_DAY + SEVEN_DAYS, "ReadablePassage.at after mismatch");
-        assertEq(passage.byZero, alice, "ReadablePassage.byZero after mismatch");
-        assertEq(passage.byOne, address(0), "ReadablePassage.byOne after mismatch");
-        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo after mismatch");
-        assertEq(
-            keccak256((passage.readableContent)),
-            keccak256(passageOne),
-            "ReadablePassage.readableContent after mismatch"
-        );
+        assertPassage({
+            actual: passage,
+            expectedAt: ONE_DAY + SEVEN_DAYS,
+            expectedByZero: alice,
+            expectedByOne: address(0),
+            expectedByTwo: address(0),
+            expectedContent: passageOne,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
     }
 
     function test_adminAssignPassageContent_reverts_whenPassageIdIsInvalid() public {
@@ -909,9 +986,17 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageMetadata(workId, 1, passageOneMetadata);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.metadataBy, charlie, "ReadablePassage.metadataBy mismatch");
-        assertEq(passage.metadataAt, 0, "ReadablePassage.metadataAt mismatch");
-        assertEq(keccak256(passage.readableMetadata), keccak256(passageOneMetadata), "ReadablePassage.readableMetadata mismatch");
+        assertPassage({
+            actual: passage,
+            expectedAt: 0,
+            expectedByZero: bob,
+            expectedByOne: address(0),
+            expectedByTwo: address(0),
+            expectedContent: passageOne,
+            expectedMetadataBy: charlie,
+            expectedMetadataAt: 0,
+            expectedMetadata: passageOneMetadata
+        });
     }
 
     function test_assignPassageMetadata_reverts_whenContentIsTooLong() public {
@@ -1041,10 +1126,17 @@ contract NabuTest is Ownable, Test {
         // byTwo should be cleared: the passage is no longer finalized, allowing the community
         // to re-confirm (and implicitly endorse the admin-assigned metadata) or withhold
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.byTwo, address(0), "ReadablePassage.byTwo should be cleared after admin assigns metadata");
-        assertEq(passage.metadataBy, alice, "ReadablePassage.metadataBy mismatch");
-        assertEq(passage.metadataAt, ONE_DAY + SEVEN_DAYS, "ReadablePassage.metadataAt mismatch");
-        assertEq(keccak256(passage.readableMetadata), keccak256(passageOneMetadata), "ReadablePassage.readableMetadata mismatch");
+        assertPassage({
+            actual: passage,
+            expectedAt: ONE_DAY + SEVEN_DAYS,
+            expectedByZero: bob,
+            expectedByOne: charlie,
+            expectedByTwo: address(0),
+            expectedContent: passageOne,
+            expectedMetadataBy: alice,
+            expectedMetadataAt: ONE_DAY + SEVEN_DAYS,
+            expectedMetadata: passageOneMetadata
+        });
 
         // Give frank a pass so he can re-finalize
         vm.prank(alice);
@@ -1057,7 +1149,17 @@ contract NabuTest is Ownable, Test {
         _nabu.confirmPassageContent(workId, 1);
 
         passage = _nabu.getPassage(workId, 1);
-        assertEq(passage.byTwo, frank, "ReadablePassage.byTwo should be frank after re-finalization");
+        assertPassage({
+            actual: passage,
+            expectedAt: ONE_DAY + SEVEN_DAYS + SEVEN_DAYS,
+            expectedByZero: bob,
+            expectedByOne: charlie,
+            expectedByTwo: frank,
+            expectedContent: passageOne,
+            expectedMetadataBy: alice,
+            expectedMetadataAt: ONE_DAY + SEVEN_DAYS,
+            expectedMetadata: passageOneMetadata
+        });
     }
 
     function test_adminAssignPassageMetadata_reverts_whenMetadataIsTooLong() public {
@@ -1084,12 +1186,17 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageMetadata(workId, 1, passageOneMetadata);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(keccak256(passage.readableContent), keccak256(""), "readableContent should be empty");
-        assertEq(keccak256(passage.readableMetadata), keccak256(passageOneMetadata), "readableMetadata mismatch");
-        assertEq(passage.byZero, address(0), "byZero should be empty");
-        assertEq(passage.metadataBy, bob, "metadataBy mismatch");
-        assertEq(passage.at, 0, "at should be 0");
-        assertEq(passage.metadataAt, 0, "metadataAt mismatch");
+        assertPassage({
+            actual: passage,
+            expectedAt: 0,
+            expectedByZero: address(0),
+            expectedByOne: address(0),
+            expectedByTwo: address(0),
+            expectedContent: "",
+            expectedMetadataBy: bob,
+            expectedMetadataAt: 0,
+            expectedMetadata: passageOneMetadata
+        });
     }
 
     function test_getPassage_whenMetadataIsUnassigned() public {
@@ -1099,23 +1206,33 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(keccak256(passage.readableContent), keccak256(passageOne), "readableContent mismatch");
-        assertEq(keccak256(passage.readableMetadata), keccak256(""), "readableMetadata should be empty");
-        assertEq(passage.byZero, bob, "byZero mismatch");
-        assertEq(passage.metadataBy, address(0), "metadataBy should be empty");
-        assertEq(passage.at, 0, "at mismatch");
-        assertEq(passage.metadataAt, 0, "metadataAt should be 0");
+        assertPassage({
+            actual: passage,
+            expectedAt: 0,
+            expectedByZero: bob,
+            expectedByOne: address(0),
+            expectedByTwo: address(0),
+            expectedContent: passageOne,
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
     }
 
     function test_getPassage_whenContentAndMetadataAreUnassigned() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
-        assertEq(keccak256(passage.readableContent), keccak256(""), "readableContent should be empty");
-        assertEq(keccak256(passage.readableMetadata), keccak256(""), "readableMetadata should be empty");
-        assertEq(passage.byZero, address(0), "byZero should be empty");
-        assertEq(passage.metadataBy, address(0), "metadataBy should be empty");
-        assertEq(passage.at, 0, "at should be 0");
-        assertEq(passage.metadataAt, 0, "metadataAt should be 0");
+        assertPassage({
+            actual: passage,
+            expectedAt: 0,
+            expectedByZero: address(0),
+            expectedByOne: address(0),
+            expectedByTwo: address(0),
+            expectedContent: "",
+            expectedMetadataBy: address(0),
+            expectedMetadataAt: 0,
+            expectedMetadata: ""
+        });
     }
 }
