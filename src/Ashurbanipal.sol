@@ -36,6 +36,10 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @notice A work's admin can ban a user from sending or receiving passes for a work
     mapping(uint256 workId => mapping(address user => bool isFrozen)) private _freezelist;
 
+    /// @notice The block at which a user's pass balance for a work was most recently replenished from zero via transfer
+    /// @dev Nabu uses this to enforce a one-day holding period before new pass recipients can participate
+    mapping(uint256 id => mapping(address user => uint256 receivedAt)) public passReceivedAt;
+
     /// @notice Only the Nabu contract can invoke the function
     modifier onlyNabu() {
         require(msg.sender == _nabuAddress, NotNabu());
@@ -129,6 +133,38 @@ contract Ashurbanipal is ERC1155, Ownable {
 
             if (_freezelist[id][from] || _freezelist[id][to]) {
                 revert IsFrozen();
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function _useAfterTokenTransfer() internal pure override returns (bool) {
+        return true;
+    }
+
+    /// @notice Record when a user's pass balance for a work is replenished from zero via transfer
+    /// @dev Mints (from == address(0)) are excluded: initial recipients have no holding period
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory
+    ) internal override {
+        if (from == address(0) || to == address(0)) return;
+
+        uint256 len = ids.length;
+
+        for (uint256 i = 0; i < len;) {
+            uint256 id = ids[i];
+
+            // balanceOf(to, id) already reflects the post-transfer balance; if it equals the
+            // amount just received, the recipient had zero passes before this transfer
+            if (balanceOf(to, id) == amounts[i]) {
+                passReceivedAt[id][to] = block.number;
             }
 
             unchecked {

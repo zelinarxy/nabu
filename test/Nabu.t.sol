@@ -19,6 +19,7 @@ import {
     NoPassageContent,
     NotWorkAdmin,
     ONE_DAY,
+    PassCooldown,
     PassageAlreadyFinalized,
     ReadablePassage,
     SEVEN_DAYS,
@@ -1257,5 +1258,104 @@ contract NabuTest is Ownable, Test {
             expectedMetadataAt: 0,
             expectedMetadata: ""
         });
+    }
+
+    // ── PassCooldown ──────────────────────────────────────────────────────────
+
+    function test_assignPassageContent_reverts_whenPassCooldownIsActive() public {
+        // Create work at block 1, then transfer a pass to bob at block 1
+        vm.roll(1);
+        vm.startPrank(alice);
+        uint256 workId = createWork(alice);
+        _ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
+        vm.stopPrank();
+
+        // Bob received passes at block 1; cooldown expires at block 1 + ONE_DAY
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(PassCooldown.selector, 1 + ONE_DAY));
+        _nabu.assignPassageContent(workId, 1, passageOne);
+    }
+
+    function test_assignPassageContent_succeeds_afterPassCooldownExpires() public {
+        vm.roll(1);
+        vm.startPrank(alice);
+        uint256 workId = createWork(alice);
+        _ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
+        vm.stopPrank();
+
+        vm.roll(1 + ONE_DAY);
+        vm.prank(bob);
+        _nabu.assignPassageContent(workId, 1, passageOne);
+    }
+
+    function test_confirmPassageContent_reverts_whenPassCooldownIsActive() public {
+        // Alice assigns content (she minted, so no cooldown)
+        vm.roll(1);
+        vm.prank(alice);
+        uint256 workId = createWork(alice);
+
+        vm.prank(alice);
+        _nabu.assignPassageContent(workId, 1, passageOne);
+
+        // Transfer a pass to bob after content is assigned
+        vm.roll(2);
+        vm.prank(alice);
+        _ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
+
+        // Bob is in the confirmation window (ONE_DAY has passed since content) but still in cooldown
+        vm.roll(1 + ONE_DAY);
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(PassCooldown.selector, 2 + ONE_DAY));
+        _nabu.confirmPassageContent(workId, 1);
+    }
+
+    function test_assignPassageMetadata_reverts_whenPassCooldownIsActive() public {
+        // Alice creates work and assigns content (mint recipient — no cooldown)
+        vm.roll(1);
+        vm.startPrank(alice);
+        uint256 workId = createWork(alice);
+        _nabu.assignPassageContent(workId, 1, passageOne);
+        // Transfer passes to charlie; charlie's cooldown starts at block 1
+        _ashurbanipal.safeTransferFrom(alice, charlie, workId, 500, "");
+        vm.stopPrank();
+
+        // Charlie is still within the one-day holding period
+        vm.roll(2);
+        vm.prank(charlie);
+        vm.expectRevert(abi.encodeWithSelector(PassCooldown.selector, 1 + ONE_DAY));
+        _nabu.assignPassageMetadata(workId, 1, passageOneMetadata);
+    }
+
+    function test_passReceivedAt_resetsWhenBalanceReplenishedFromZero() public {
+        vm.roll(1);
+        vm.startPrank(alice);
+        uint256 workId = createWork(alice);
+        _ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
+        vm.stopPrank();
+
+        assertEq(_ashurbanipal.passReceivedAt(workId, bob), 1, "passReceivedAt should be block 1 after first transfer");
+
+        // Bob transfers all passes away — balance goes to zero
+        vm.roll(2);
+        vm.prank(bob);
+        _ashurbanipal.safeTransferFrom(bob, charlie, workId, 1_000, "");
+
+        // Alice transfers passes back to bob — balance replenished from zero
+        vm.roll(3);
+        vm.prank(alice);
+        _ashurbanipal.safeTransferFrom(alice, bob, workId, 500, "");
+
+        assertEq(_ashurbanipal.passReceivedAt(workId, bob), 3, "passReceivedAt should reset to block 3");
+    }
+
+    function test_passCooldown_doesNotApplyToMintRecipient() public {
+        // Alice mints at block 1 — passReceivedAt stays at 0 (mint excluded from hook)
+        vm.roll(1);
+        vm.prank(alice);
+        uint256 workId = createWork(alice);
+
+        // Alice should be able to act immediately (mint recipients have no cooldown)
+        vm.prank(alice);
+        _nabu.assignPassageContent(workId, 1, passageOne);
     }
 }

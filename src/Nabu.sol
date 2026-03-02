@@ -32,6 +32,8 @@ error MetadataTooLarge();
 error NoChangeInMetadata();
 /// @dev User must hold a "pass" (Ashurbanipal NFT) corresponding to the work in order to assign or confirm content
 error NoPass();
+/// @dev Passes received via transfer must be held for one day before they can be used; does not apply if the user's balance was already above zero
+error PassCooldown(uint256 until);
 /// @dev Can't confirm an empty passage
 error NoPassageContent();
 /// @dev Function is restricted to the work's admin
@@ -366,6 +368,12 @@ contract Nabu is Ownable {
             revert NoPass();
         }
 
+        // Passes received via transfer must be held for one day before they can be used
+        uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
+        if (passReceiveBlock != 0 && block.number < passReceiveBlock + ONE_DAY) {
+            revert PassCooldown(passReceiveBlock + ONE_DAY);
+        }
+
         // Track confirmation index for the event: 0 if call is going to be recorded as `byZero` (i.e., a manual
         // confirmation rather than an assignment), 1 if `byOne`, 2 if `byTwo`
         uint8 confirmationIndex;
@@ -472,6 +480,12 @@ contract Nabu is Ownable {
             revert NoPass();
         }
 
+        // Passes received via transfer must be held for one day before they can be used
+        uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
+        if (passReceiveBlock != 0 && block.number < passReceiveBlock + ONE_DAY) {
+            revert PassCooldown(passReceiveBlock + ONE_DAY);
+        }
+
         // Track the address of the SSTORE2 write location, whether new or existing, for the event
         address metadataPointer = passage.metadata;
 
@@ -547,6 +561,12 @@ contract Nabu is Ownable {
         // The user doesn't hold an NFT "pass" from the Ashurbanipal contract corresponding to this work
         if (_ashurbanipal.balanceOf({owner: msg.sender, id: workId}) == 0) {
             revert NoPass();
+        }
+
+        // Passes received via transfer must be held for one day before they can be used
+        uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
+        if (passReceiveBlock != 0 && block.number < passReceiveBlock + ONE_DAY) {
+            revert PassCooldown(passReceiveBlock + ONE_DAY);
         }
 
         // Track confirmation index for the event: 1 if caller is going to be recorded as `byOne`, 2 if `byTwo`
