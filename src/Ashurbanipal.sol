@@ -147,13 +147,10 @@ contract Ashurbanipal is ERC1155, Ownable {
 
     /// @notice Record when a user's pass balance for a work is replenished from zero via transfer
     /// @dev Mints (from == address(0)) are excluded: initial recipients have no holding period
-    function _afterTokenTransfer(
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory
-    ) internal override {
+    function _afterTokenTransfer(address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory)
+        internal
+        override
+    {
         if (from == address(0) || to == address(0)) return;
 
         uint256 len = ids.length;

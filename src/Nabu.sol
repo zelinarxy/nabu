@@ -622,7 +622,9 @@ contract Nabu is Ownable {
         }
 
         uint256 workId;
-        unchecked { workId = ++_worksTip; }
+        unchecked {
+            workId = ++_worksTip;
+        }
 
         _works[workId] = Work({
             author: author,
@@ -701,10 +703,7 @@ contract Nabu is Ownable {
     ///
     /// @param workId The id of the work
     /// @param newMetadata The work's new metadata (an arbitrary string: whatever the admin wants)
-    function updateWorkMetadata(uint256 workId, string calldata newMetadata)
-        external
-        onlyWorkAdminNotTooLate(workId)
-    {
+    function updateWorkMetadata(uint256 workId, string calldata newMetadata) external onlyWorkAdminNotTooLate(workId) {
         _works[workId].metadata = newMetadata;
         emit WorkMetadataUpdated(workId, newMetadata);
     }

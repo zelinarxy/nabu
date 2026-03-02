@@ -91,7 +91,6 @@ contract Enkidu is Ownable, Receiver {
 
     ERC721 private _humbaba;
 
-
     /// @notice Map Ashurbanipal ids (corresponding to a Nabu works) to their prices
     mapping(uint256 id => uint256 price) public prices;
 
@@ -110,7 +109,6 @@ contract Enkidu is Ownable, Receiver {
 
         _ashurbanipal = Ashurbanipal(initialAshurbanipalAddress);
         _humbaba = ERC721(initialHumbabaAddress);
-
     }
 
     /// @notice Get the Ashurbanipal contract address
