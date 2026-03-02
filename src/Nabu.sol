@@ -684,6 +684,7 @@ contract Nabu is Ownable {
     /// @param workId The id of the work
     /// @param newAdminAddress The address of the work's new admin
     function updateWorkAdmin(uint256 workId, address newAdminAddress) external onlyWorkAdmin(workId) {
+        require(newAdminAddress != address(0));
         _works[workId].admin = newAdminAddress;
         emit WorkAdminUpdated(workId, newAdminAddress);
     }
