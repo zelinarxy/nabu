@@ -50,6 +50,8 @@ error TooSoonToAssignMetadata(uint256 canAssignAfter);
 error TooSoonToConfirmContent(uint256 canConfirmAfter);
 /// @dev A work's `totalPassagesCount` must be at least 1
 error ZeroPassagesCount();
+/// @dev A work's pass supply must be at least 1; a work with no passes can never have content assigned
+error ZeroSupply();
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                          EVENTS                            */
@@ -610,6 +612,10 @@ contract Nabu is Ownable {
     ) external returns (uint256 newWorksTip) {
         if (totalPassagesCount == 0) {
             revert ZeroPassagesCount();
+        }
+
+        if (supply == 0) {
+            revert ZeroSupply();
         }
 
         if (bytes(title).length == 0) {

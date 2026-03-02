@@ -29,7 +29,8 @@ import {
     TooSoonToAssignMetadata,
     TooSoonToConfirmContent,
     Work,
-    ZeroPassagesCount
+    ZeroPassagesCount,
+    ZeroSupply
 } from "../src/Nabu.sol";
 
 contract NabuTest is Ownable, Test {
@@ -402,6 +403,13 @@ contract NabuTest is Ownable, Test {
         _nabu.createWork("Nemo", "Metadata?", "Nada", 0, "https://noth.ing/{id}.json", 1, alice);
     }
 
+    function test_createWork_reverts_whenSupplyIsZero() public {
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(ZeroSupply.selector));
+
+        _nabu.createWork("Nemo", "Metadata?", "Nada", 10_000, "https://noth.ing/{id}.json", 0, alice);
+    }
+
     function test_createWork_whenWorkHasEmptyTitle() public {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(EmptyTitle.selector));
@@ -653,6 +661,13 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(NotWorkAdmin.selector, alice));
         _nabu.updateWorkAdmin(workId, bob);
+    }
+
+    function test_updateWorkAdmin_reverts_whenNewAdminIsZeroAddress() public {
+        uint256 workId = createWorkAndDistributePassesAsAlice();
+        vm.prank(alice);
+        vm.expectRevert();
+        _nabu.updateWorkAdmin(workId, address(0));
     }
 
     function test_updateWorkAuthor() public {

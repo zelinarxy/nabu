@@ -6,6 +6,7 @@ solc = "0.8.28"
 via_ir = true
 optimizer = true
 optimizer_runs = 1_000_000
+no_match_coverage = "(test/mocks|script)"
 
 [rpc_endpoints]
 sepolia = "${SEPOLIA_RPC_URL}"
