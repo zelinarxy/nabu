@@ -20,7 +20,7 @@ uint256 constant THIRTY_DAYS = 216_000;
 error Blacklisted();
 /// @dev A given user is limited to assigning a passage's content or confirming it once
 error CannotDoubleConfirmPassage();
-/// @dev TODO
+/// @dev A user can't assign a passage's metadata if they were the last one to do so
 error CannotReassignOwnMetadata();
 /// @dev SSTORE2 has a max length of 24576
 error ContentTooLarge();
@@ -65,11 +65,13 @@ event PassageContentAssigned(
     uint256 workId, uint256 passageId, address by, address contentPointer, uint8 confirmationIndex
 );
 
+/// @dev Content pointer is the SSTORE2 location
 event PassageMetadataAssigned(uint256 workId, uint256 passageId, address by, address metadataPointer);
 
 /// @dev Content pointer is the SSTORE2 location, whether new or existing
 event PassageContentAssignedByAdmin(uint256 workId, uint256 passageId, address by, address contentPointer);
 
+/// @dev Content pointer is the SSTORE2 location
 event PassageMetadataAssignedByAdmin(uint256 workId, uint256 passageId, address by, address metadataPointer);
 
 /// @dev Confirmation index is 1 for the first confirmation (`byOne`), 2 for the second (`byTwo`)
@@ -130,6 +132,7 @@ struct Work {
     string uri;
 }
 
+// TODO
 /**
  * @notice Nabu provides a method for preserving texts on EVM blockchains by delegating the task to potentially large
  * networks. The fundamental unit of a text in Nabu is a passage, and the content of a passage is recorded via a three-
@@ -146,7 +149,7 @@ struct Work {
 struct Passage {
     /// @dev The address pointer for the passage's content
     address content;
-    /// @dev TODO
+    /// @dev The address pointer for the passage's metadata
     address metadata;
     /// @dev The address of the user who performed the initial content assignment (possibly an overwrite)
     address byZero;
@@ -154,18 +157,18 @@ struct Passage {
     address byOne;
     /// @dev The address of the user who performed the second content confirmation (finalized the passage)
     address byTwo;
-    /// @dev TODO
+    /// @dev The address of the user who performed the most recent metadata assignment
     address metadataBy;
     /// @dev The block at which the most recent content assignment or confirmation was performed
     uint256 at;
-    /// @dev TODO
+    /// @dev The block at which the most recent metadata assignment was performed
     uint256 metadataAt;
 }
 
 struct ReadablePassage {
     /// @dev The decompressed, human readable content
     bytes readableContent;
-    /// @dev TODO
+    /// @dev The decompressed, human readable metadata
     bytes readableMetadata;
     /// @dev The address of the user who performed the initial content assignment (possibly an overwrite)
     address byZero;
@@ -173,11 +176,11 @@ struct ReadablePassage {
     address byOne;
     /// @dev The address of the user who performed the second content confirmation (finalized the passage)
     address byTwo;
-    /// @dev TODO
+    /// @dev The address of the user who performed the most recent metadata assignment
     address metadataBy;
     /// @dev The block at which the most recent content assignment or confirmation was performed
     uint256 at;
-    /// @dev TODO
+    /// @dev The block at which the most recent metadata assignment was performed
     uint256 metadataAt;
 }
 
@@ -265,7 +268,12 @@ contract Nabu is Ownable {
         emit PassageContentAssignedByAdmin(workId, passageId, msg.sender, contentPointer);
     }
 
-    // TODO
+    /// @notice A work's admin can update the metadata of a passage even if that passage has been finalized
+    /// @notice Unlike other admin-only functions, this one has no time limitation (no `notTooLate` modifier)
+    ///
+    /// @param workId The id of the work being updated
+    /// @param passageId The id of the passage being updated
+    /// @param metadata The metadata of the passage
     function adminAssignPassageMetadata(uint256 workId, uint256 passageId, bytes memory metadata)
         public
         onlyWorkAdmin(workId)
@@ -291,8 +299,8 @@ contract Nabu is Ownable {
         _passages[workId][passageId].metadataBy = msg.sender;
         _passages[workId][passageId].metadataAt = block.number;
 
-        // If the passage is finalized, clear byTwo so a new independent confirmer must re-finalize,
-        // giving the community the opportunity to reject incorrect admin-assigned metadata
+        // If the passage is finalized, clear byTwo so the passage is no longer finalized. This prevents the admin from
+        // being able to unilaterally set a passage's metadata in stone (something they can't do for content either)
         if (_passages[workId][passageId].byTwo != address(0)) {
             _passages[workId][passageId].byTwo = address(0);
         }
@@ -411,7 +419,14 @@ contract Nabu is Ownable {
         emit PassageContentAssigned(workId, passageId, msg.sender, contentPointer, confirmationIndex);
     }
 
-    // TODO: natspec
+    /// @notice Anyone holding a work's Ashurbanipal NFT can assign arbitrary metadata to a passage
+    /// @notice Metadata is optional: it can be assigned to some passages or none
+    /// @notice Once a passage has received two confirmations, only the work's admin can change its metadata
+    /// @notice Updating metadata after passage finalization clears the last confirmation (`byTwo`)
+    ///
+    /// @param workId The id of the work being updated
+    /// @param passageId The id of the passage being updated
+    /// @param metadata The metadata of the passage
     function assignPassageMetadata(uint256 workId, uint256 passageId, bytes memory metadata) public {
         // SSTORE2 max size
         if (metadata.length > 24576) {

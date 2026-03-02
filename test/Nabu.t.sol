@@ -111,11 +111,14 @@ contract NabuTest is Ownable, Test {
         assertEq(actual.byZero, expectedByZero, "ReadablePassage.byZero mismatch");
         assertEq(actual.byOne, expectedByOne, "ReadablePassage.byOne mismatch");
         assertEq(actual.byTwo, expectedByTwo, "ReadablePassage.byTwo mismatch");
+
         assertEq(
             keccak256(actual.readableContent), keccak256(expectedContent), "ReadablePassage.readableContent mismatch"
         );
+
         assertEq(actual.metadataBy, expectedMetadataBy, "ReadablePassage.metadataBy mismatch");
         assertEq(actual.metadataAt, expectedMetadataAt, "ReadablePassage.metadataAt mismatch");
+
         assertEq(
             keccak256(actual.readableMetadata), keccak256(expectedMetadata), "ReadablePassage.readableMetadata mismatch"
         );
@@ -292,6 +295,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: ONE_DAY,
@@ -320,6 +324,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: ONE_DAY + SEVEN_DAYS,
@@ -448,6 +453,7 @@ contract NabuTest is Ownable, Test {
         _nabu.confirmPassageContent(workId, 1);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: ONE_DAY,
@@ -476,6 +482,7 @@ contract NabuTest is Ownable, Test {
         _nabu.confirmPassageContent(workId, 1);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: ONE_DAY + SEVEN_DAYS,
@@ -530,6 +537,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
         ReadablePassage memory maliciousPassage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: maliciousPassage,
             expectedAt: 0,
@@ -547,6 +555,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: ONE_DAY,
@@ -567,6 +576,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: 0,
@@ -584,6 +594,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
         ReadablePassage memory maliciousPassage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: maliciousPassage,
             expectedAt: ONE_DAY,
@@ -601,6 +612,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory restoredPassage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: restoredPassage,
             expectedAt: ONE_DAY + SEVEN_DAYS,
@@ -906,6 +918,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
         ReadablePassage memory passageBefore = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passageBefore,
             expectedAt: ONE_DAY + SEVEN_DAYS,
@@ -922,6 +935,7 @@ contract NabuTest is Ownable, Test {
         _nabu.adminAssignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: ONE_DAY + SEVEN_DAYS,
@@ -989,6 +1003,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageMetadata(workId, 1, passageOneMetadata);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: 0,
@@ -1129,6 +1144,7 @@ contract NabuTest is Ownable, Test {
         // byTwo should be cleared: the passage is no longer finalized, allowing the community
         // to re-confirm (and implicitly endorse the admin-assigned metadata) or withhold
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: ONE_DAY + SEVEN_DAYS,
@@ -1152,6 +1168,7 @@ contract NabuTest is Ownable, Test {
         _nabu.confirmPassageContent(workId, 1);
 
         passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: ONE_DAY + SEVEN_DAYS + SEVEN_DAYS,
@@ -1189,6 +1206,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageMetadata(workId, 1, passageOneMetadata);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: 0,
@@ -1209,6 +1227,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: 0,
@@ -1226,6 +1245,7 @@ contract NabuTest is Ownable, Test {
         uint256 workId = createWorkAndDistributePassesAsAlice();
 
         ReadablePassage memory passage = _nabu.getPassage(workId, 1);
+
         assertPassage({
             actual: passage,
             expectedAt: 0,
