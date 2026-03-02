@@ -247,13 +247,13 @@ contract Enkidu is Ownable, Receiver {
             revert InsufficientFunds();
         }
 
-        // Transfer the passes
-        _mint({id: id, count: count, to: to});
-
-        // Track any free mints used
+        // Prevent reentrancy
         if (countForPrice < count) {
             usedFreeMints[id][to] = usedFree + count - countForPrice;
         }
+
+        // Transfer the passes
+        _mint({id: id, count: count, to: to});
     }
 
     /// @notice Update the `active` status for an id
