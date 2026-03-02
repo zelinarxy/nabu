@@ -203,7 +203,7 @@ contract Nabu is Ownable {
     /// @notice Only a work's admin can update the work's metadata, e.g. title and author
     modifier onlyWorkAdmin(uint256 workId) {
         address admin = _works[workId].admin;
-        require(msg.sender == admin, NotWorkAdmin(admin));
+        if (msg.sender != admin) revert NotWorkAdmin(admin);
         _;
     }
 
@@ -230,8 +230,8 @@ contract Nabu is Ownable {
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
     /// @param content The content of the passage
-    function adminAssignPassageContent(uint256 workId, uint256 passageId, bytes memory content)
-        public
+    function adminAssignPassageContent(uint256 workId, uint256 passageId, bytes calldata content)
+        external
         onlyWorkAdmin(workId)
     {
         // SSTORE2 max size
@@ -272,8 +272,8 @@ contract Nabu is Ownable {
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
     /// @param metadata The metadata of the passage
-    function adminAssignPassageMetadata(uint256 workId, uint256 passageId, bytes memory metadata)
-        public
+    function adminAssignPassageMetadata(uint256 workId, uint256 passageId, bytes calldata metadata)
+        external
         onlyWorkAdmin(workId)
     {
         // SSTORE2 max size
@@ -314,7 +314,7 @@ contract Nabu is Ownable {
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
     /// @param content The content of the passage
-    function assignPassageContent(uint256 workId, uint256 passageId, bytes memory content) public {
+    function assignPassageContent(uint256 workId, uint256 passageId, bytes calldata content) external {
         // SSTORE2 max size
         if (content.length > 24576) {
             revert ContentTooLarge();
@@ -423,7 +423,7 @@ contract Nabu is Ownable {
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
     /// @param metadata The metadata of the passage
-    function assignPassageMetadata(uint256 workId, uint256 passageId, bytes memory metadata) public {
+    function assignPassageMetadata(uint256 workId, uint256 passageId, bytes calldata metadata) external {
         // SSTORE2 max size
         if (metadata.length > 24576) {
             revert MetadataTooLarge();
@@ -498,7 +498,7 @@ contract Nabu is Ownable {
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
-    function confirmPassageContent(uint256 workId, uint256 passageId) public {
+    function confirmPassageContent(uint256 workId, uint256 passageId) external {
         // If the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
 
         // The passage doesn't exist
@@ -587,7 +587,7 @@ contract Nabu is Ownable {
         string memory uri,
         uint256 supply,
         address mintTo
-    ) public returns (uint256 newWorksTip) {
+    ) external returns (uint256 newWorksTip) {
         if (totalPassagesCount == 0) {
             revert ZeroPassagesCount();
         }
@@ -626,7 +626,7 @@ contract Nabu is Ownable {
     /// @notice Get the Ashurbanipal contract address
     ///
     /// @return ashurbanipalAddress The Ashurbanipal contract address
-    function getAshurbanipalAddress() public view returns (address ashurbanipalAddress) {
+    function getAshurbanipalAddress() external view returns (address ashurbanipalAddress) {
         ashurbanipalAddress = address(_ashurbanipal);
     }
 
@@ -634,7 +634,7 @@ contract Nabu is Ownable {
     /// @notice Restricted to the Nabu contract owner
     ///
     /// @param newAshurbanipalAddress The new Ashurbanipal contract address
-    function updateAshurbanipal(address newAshurbanipalAddress) public onlyOwner {
+    function updateAshurbanipal(address newAshurbanipalAddress) external onlyOwner {
         _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
         emit AshurbanipalUpdated(newAshurbanipalAddress);
     }
@@ -646,7 +646,7 @@ contract Nabu is Ownable {
     /// @param workId The id of the work
     /// @param user The address of the user to be updated
     /// @param shouldBan Should the user be banned or unbanned
-    function updateBlacklist(uint256 workId, address user, bool shouldBan) public onlyWorkAdmin(workId) {
+    function updateBlacklist(uint256 workId, address user, bool shouldBan) external onlyWorkAdmin(workId) {
         _blacklist[workId][user] = shouldBan;
 
         // Freeze the user's Ashurbanipal "pass" NFTs to prevent transfer to a sybil (or unfreeze)
@@ -661,7 +661,7 @@ contract Nabu is Ownable {
     ///
     /// @param workId The id of the work
     /// @param newAdminAddress The address of the work's new admin
-    function updateWorkAdmin(uint256 workId, address newAdminAddress) public onlyWorkAdmin(workId) {
+    function updateWorkAdmin(uint256 workId, address newAdminAddress) external onlyWorkAdmin(workId) {
         _works[workId].admin = newAdminAddress;
         emit WorkAdminUpdated(workId, newAdminAddress);
     }
@@ -671,7 +671,7 @@ contract Nabu is Ownable {
     ///
     /// @param workId The id of the work
     /// @param newAuthor The work's new author (the real-world author, e.g. Homer or Shakespeare)
-    function updateWorkAuthor(uint256 workId, string memory newAuthor) public onlyWorkAdminNotTooLate(workId) {
+    function updateWorkAuthor(uint256 workId, string calldata newAuthor) external onlyWorkAdminNotTooLate(workId) {
         _works[workId].author = newAuthor;
         emit WorkAuthorUpdated(workId, newAuthor);
     }
@@ -681,8 +681,8 @@ contract Nabu is Ownable {
     ///
     /// @param workId The id of the work
     /// @param newMetadata The work's new metadata (an arbitrary string: whatever the admin wants)
-    function updateWorkMetadata(uint256 workId, string memory newMetadata)
-        public
+    function updateWorkMetadata(uint256 workId, string calldata newMetadata)
+        external
         onlyWorkAdminNotTooLate(workId)
     {
         _works[workId].metadata = newMetadata;
@@ -694,7 +694,7 @@ contract Nabu is Ownable {
     ///
     /// @param workId The id of the work
     /// @param newTitle The work's new title, e.g. The Odyssey or Hamlet
-    function updateWorkTitle(uint256 workId, string memory newTitle) public onlyWorkAdminNotTooLate(workId) {
+    function updateWorkTitle(uint256 workId, string calldata newTitle) external onlyWorkAdminNotTooLate(workId) {
         if (bytes(newTitle).length == 0) {
             revert EmptyTitle();
         }
@@ -711,7 +711,7 @@ contract Nabu is Ownable {
     /// @param workId The id of the work
     /// @param newTotalPassagesCount The work's new total passage count: must be at least 1
     function updateWorkTotalPassagesCount(uint256 workId, uint96 newTotalPassagesCount)
-        public
+        external
         onlyWorkAdminNotTooLate(workId)
     {
         if (newTotalPassagesCount == 0) {
@@ -729,7 +729,7 @@ contract Nabu is Ownable {
     ///
     /// @param workId The id of the work
     /// @param newUri The work's new metadata URI
-    function updateWorkUri(uint256 workId, string memory newUri) public onlyWorkAdmin(workId) {
+    function updateWorkUri(uint256 workId, string calldata newUri) external onlyWorkAdmin(workId) {
         _ashurbanipal.updateUri({workId: workId, newUri: newUri});
         _works[workId].uri = newUri;
         emit WorkUriUpdated(workId, newUri);
@@ -742,7 +742,7 @@ contract Nabu is Ownable {
     ///
     /// @return readablePassage The passage
     function getPassage(uint256 workId, uint256 passageId)
-        public
+        external
         view
         returns (ReadablePassage memory readablePassage)
     {
@@ -787,7 +787,7 @@ contract Nabu is Ownable {
     /// @param workId The id of the work
     ///
     /// @return work The work
-    function getWork(uint256 workId) public view returns (Work memory work) {
+    function getWork(uint256 workId) external view returns (Work memory work) {
         work = _works[workId];
     }
 
@@ -797,7 +797,7 @@ contract Nabu is Ownable {
     /// @param user The address of the user
     ///
     /// @return isBlacklisted The user's status
-    function getIsBlacklisted(uint256 workId, address user) public view returns (bool isBlacklisted) {
+    function getIsBlacklisted(uint256 workId, address user) external view returns (bool isBlacklisted) {
         isBlacklisted = _blacklist[workId][user];
     }
 }

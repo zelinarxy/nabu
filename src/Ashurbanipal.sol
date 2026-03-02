@@ -59,7 +59,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @param workId The id of the work, which will serve as the NFT id
     /// @param supply The total number of passes
     /// @param workUri The metadata uri
-    function mint(address account, uint256 workId, uint256 supply, string memory workUri) public onlyNabu {
+    function mint(address account, uint256 workId, uint256 supply, string calldata workUri) external onlyNabu {
         _mint({to: account, id: workId, amount: supply, data: ""});
         _uris[workId] = workUri;
     }
@@ -67,7 +67,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @notice Get the Nabu contract address
     ///
     /// @return nabuAddress The contract address
-    function getNabuAddress() public view returns (address nabuAddress) {
+    function getNabuAddress() external view returns (address nabuAddress) {
         nabuAddress = _nabuAddress;
     }
 
@@ -79,7 +79,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @param workId The id of the work
     /// @param user The address of the user
     /// @param shouldFreeze Should the user's passes be frozen or unfrozen
-    function updateFreezelist(uint256 workId, address user, bool shouldFreeze) public onlyNabu {
+    function updateFreezelist(uint256 workId, address user, bool shouldFreeze) external onlyNabu {
         _freezelist[workId][user] = shouldFreeze;
         emit FreezelistUpdated(workId, user, shouldFreeze);
     }
@@ -89,7 +89,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @dev Only the contract owner can call this function
     ///
     /// @param newNabuAddress The new address
-    function updateNabuAddress(address newNabuAddress) public onlyOwner {
+    function updateNabuAddress(address newNabuAddress) external onlyOwner {
         _nabuAddress = newNabuAddress;
         emit NabuAddressUpdated(newNabuAddress);
     }
@@ -100,7 +100,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     ///
     /// @param workId The id of the work
     /// @param newUri The new metadata uri
-    function updateUri(uint256 workId, string memory newUri) public onlyNabu {
+    function updateUri(uint256 workId, string calldata newUri) external onlyNabu {
         _uris[workId] = newUri;
         emit UriUpdated(workId, newUri);
     }
