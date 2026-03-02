@@ -308,6 +308,7 @@ contract Enkidu is Ownable, Receiver {
             to = msg.sender;
         }
 
-        payable(to).transfer(amountToWithdraw);
+        (bool success,) = payable(to).call{value: amountToWithdraw}("");
+        require(success);
     }
 }
