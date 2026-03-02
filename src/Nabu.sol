@@ -240,7 +240,7 @@ contract Nabu is Ownable {
         }
 
         // The passage doesn't exist
-        if (passageId > _works[workId].totalPassagesCount) {
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
             revert InvalidPassageId();
         }
 
@@ -282,7 +282,7 @@ contract Nabu is Ownable {
         }
 
         // The passage doesn't exist
-        if (passageId > _works[workId].totalPassagesCount) {
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
             revert InvalidPassageId();
         }
 
@@ -323,7 +323,7 @@ contract Nabu is Ownable {
         // If the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
 
         // The passage doesn't exist
-        if (passageId > _works[workId].totalPassagesCount) {
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
             revert InvalidPassageId();
         }
 
@@ -432,7 +432,7 @@ contract Nabu is Ownable {
         // If the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
 
         // The passage doesn't exist
-        if (passageId > _works[workId].totalPassagesCount) {
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
             revert InvalidPassageId();
         }
 
@@ -502,7 +502,7 @@ contract Nabu is Ownable {
         // If the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
 
         // The passage doesn't exist
-        if (passageId > _works[workId].totalPassagesCount) {
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
             revert InvalidPassageId();
         }
 
@@ -747,7 +747,7 @@ contract Nabu is Ownable {
         returns (ReadablePassage memory readablePassage)
     {
         // The passage doesn't exist
-        if (passageId > _works[workId].totalPassagesCount) {
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
             revert InvalidPassageId();
         }
 
