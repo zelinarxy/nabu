@@ -85,7 +85,7 @@ event WorkCreated(
     string author,
     string metadata,
     string title,
-    uint256 totalPassagesCount,
+    uint96 totalPassagesCount,
     string uri,
     uint256 supply,
     address mintTo,
@@ -96,7 +96,7 @@ event WorkMetadataUpdated(uint256 workId, string newMetadata);
 
 event WorkTitleUpdated(uint256 workId, string newTitle);
 
-event WorkTotalPassagesCountUpdated(uint256 workId, uint256 newTotalPassagesCount);
+event WorkTotalPassagesCountUpdated(uint256 workId, uint96 newTotalPassagesCount);
 
 event WorkUriUpdated(uint256 workId, string newUri);
 
@@ -119,17 +119,17 @@ struct Work {
     string metadata;
     /// @dev The title of the work, e.g. The Odyssey or Hamlet
     string title;
+    /// @dev The metadata URI for the ERC-1155 token id associated with the work (see the Ashurbanipal contract)
+    string uri;
     /// @dev The address of the user who initialized the work
     /// @dev The admin can update the work's metadata for a limited amount of time
     /// @dev The admin can overwrite the content of finalized passages indefinitely
     /// @dev To renounce the ability to overwrite content, the admin can update the work's admin to a burn address
     address admin;
     /// @dev The total number of passages in the work
-    uint256 totalPassagesCount;
+    uint96 totalPassagesCount;
     /// @dev The block at which the work was created (instantiated onchain using Nabu, not written in the real world)
     uint256 createdAt;
-    /// @dev The metadata URI for the ERC-1155 token id associated with the work (see the Ashurbanipal contract)
-    string uri;
 }
 
 // TODO
@@ -149,8 +149,12 @@ struct Work {
 struct Passage {
     /// @dev The address pointer for the passage's content
     address content;
+    /// @dev The block at which the most recent content assignment or confirmation was performed
+    uint96 at;
     /// @dev The address pointer for the passage's metadata
     address metadata;
+    /// @dev The block at which the most recent metadata assignment was performed
+    uint96 metadataAt;
     /// @dev The address of the user who performed the initial content assignment (possibly an overwrite)
     address byZero;
     /// @dev The address of the user who performed the first content confirmation
@@ -159,10 +163,6 @@ struct Passage {
     address byTwo;
     /// @dev The address of the user who performed the most recent metadata assignment
     address metadataBy;
-    /// @dev The block at which the most recent content assignment or confirmation was performed
-    uint256 at;
-    /// @dev The block at which the most recent metadata assignment was performed
-    uint256 metadataAt;
 }
 
 struct ReadablePassage {
@@ -179,9 +179,9 @@ struct ReadablePassage {
     /// @dev The address of the user who performed the most recent metadata assignment
     address metadataBy;
     /// @dev The block at which the most recent content assignment or confirmation was performed
-    uint256 at;
+    uint96 at;
     /// @dev The block at which the most recent metadata assignment was performed
-    uint256 metadataAt;
+    uint96 metadataAt;
 }
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -263,7 +263,7 @@ contract Nabu is Ownable {
         // Clear the user who performed the second (final) confirmation, if any
         _passages[workId][passageId].byTwo = address(0);
         // Update the block number at which the initial content assignment was performed to the current block
-        _passages[workId][passageId].at = block.number;
+        _passages[workId][passageId].at = uint96(block.number);
 
         emit PassageContentAssignedByAdmin(workId, passageId, msg.sender, contentPointer);
     }
@@ -297,7 +297,7 @@ contract Nabu is Ownable {
 
         _passages[workId][passageId].metadata = metadataPointer;
         _passages[workId][passageId].metadataBy = msg.sender;
-        _passages[workId][passageId].metadataAt = block.number;
+        _passages[workId][passageId].metadataAt = uint96(block.number);
 
         // If the passage is finalized, clear byTwo so the passage is no longer finalized. This prevents the admin from
         // being able to unilaterally set a passage's metadata in stone (something they can't do for content either)
@@ -414,7 +414,7 @@ contract Nabu is Ownable {
         }
 
         // Update the block number at which the last content update or confirmation was performed to the current block
-        _passages[workId][passageId].at = block.number;
+        _passages[workId][passageId].at = uint96(block.number);
 
         emit PassageContentAssigned(workId, passageId, msg.sender, contentPointer, confirmationIndex);
     }
@@ -494,7 +494,7 @@ contract Nabu is Ownable {
         _passages[workId][passageId].metadata = metadataPointer;
         _passages[workId][passageId].metadataBy = msg.sender;
 
-        _passages[workId][passageId].metadataAt = block.number;
+        _passages[workId][passageId].metadataAt = uint96(block.number);
 
         emit PassageMetadataAssigned(workId, passageId, msg.sender, metadataPointer);
     }
@@ -572,7 +572,7 @@ contract Nabu is Ownable {
         }
 
         // Update the block number at which the last content confirmation was performed to the current block
-        _passages[workId][passageId].at = block.number;
+        _passages[workId][passageId].at = uint96(block.number);
 
         emit PassageContentConfirmed(workId, passageId, msg.sender, confirmationIndex);
     }
@@ -593,7 +593,7 @@ contract Nabu is Ownable {
         string memory author,
         string memory metadata,
         string memory title,
-        uint256 totalPassagesCount,
+        uint96 totalPassagesCount,
         string memory uri,
         uint256 supply,
         address mintTo
@@ -612,7 +612,15 @@ contract Nabu is Ownable {
         }
 
         _worksTip += 1;
-        _works[_worksTip] = Work(author, metadata, title, msg.sender, totalPassagesCount, block.number, uri);
+        _works[_worksTip] = Work({
+            author: author,
+            metadata: metadata,
+            title: title,
+            uri: uri,
+            admin: msg.sender,
+            totalPassagesCount: totalPassagesCount,
+            createdAt: block.number
+        });
 
         // Mint a quantity (specified by the `supply` parameter) of Ashurbanipal ERC-1155 NFTs to mintTo (which falls
         // back to msg.sender, the work's admin). This recipient is responsible for distributing the NFTs, which serve
@@ -712,7 +720,7 @@ contract Nabu is Ownable {
     ///
     /// @param workId The id of the work
     /// @param newTotalPassagesCount The work's new total passage count: must be at least 1
-    function updateWorkTotalPassagesCount(uint256 workId, uint256 newTotalPassagesCount)
+    function updateWorkTotalPassagesCount(uint256 workId, uint96 newTotalPassagesCount)
         public
         notTooLate(workId)
         onlyWorkAdmin(workId)

@@ -10,7 +10,7 @@ import {ENKIDU, NABU} from "../../constants/sepolia/DeployedAddressesSepolia.sol
 string constant AUTHOR = "";
 string constant METADATA = "";
 string constant TITLE = "The King James Version of the Bible";
-uint256 constant TOTAL_PASSAGES_COUNT = 31_102;
+uint96 constant TOTAL_PASSAGES_COUNT = 31_102;
 string constant URI = "";
 uint256 constant SUPPLY = 1_000;
 
