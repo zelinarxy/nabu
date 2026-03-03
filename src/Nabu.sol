@@ -216,10 +216,10 @@ contract Nabu is Ownable {
     modifier onlyWorkAdminNotTooLate(uint256 workId) {
         Work storage work = _works[workId];
         address admin = work.admin;
-        require(msg.sender == admin, NotWorkAdmin(admin));
+        if (msg.sender != admin) revert NotWorkAdmin(admin);
         uint256 expiredAt = work.createdAt + THIRTY_DAYS;
         // Admin can still make changes in the `expiredAt` block itself
-        require(block.timestamp <= expiredAt, TooLate(expiredAt));
+        if (block.timestamp > expiredAt) revert TooLate(expiredAt);
         _;
     }
 
