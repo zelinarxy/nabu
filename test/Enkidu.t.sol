@@ -267,6 +267,15 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
+    function test_mint_mintsForFree_whenCalledWithAny_andCallerOwnsHumbaba() public {
+        vm.prank(alice);
+        _humbaba.adminMintTo(address(bob));
+
+        vm.prank(bob);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Any);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
+    }
+
     function test_mint_mintsForFree_whenSplitIntoBatches() public {
         vm.prank(alice);
         _humbaba.adminMintTo(address(bob));

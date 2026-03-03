@@ -141,6 +141,32 @@ contract Enkidu is Ownable, Receiver {
         emit HumbabaUpdated(newHumbabaAddress);
     }
 
+    /// @dev Returns true if `account` holds any balance of the specified whitelisted token.
+    /// @dev For `Any`, exhaustively checks all collections (short-circuits on the first match).
+    function _isWhitelisted(address account, WhitelistedToken token) private view returns (bool) {
+        if (token == WhitelistedToken.Cult) return ERC20(CULT).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Aura) return ERC721(AURA).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Cigawrette) return ERC721(CIGAWRETTE).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Milady) return ERC721(MILADY).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Pixelady) return ERC721(PIXELADY).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Radbro) return ERC721(RADBRO).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Remilio) return ERC721(REMILIO).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Schizoposter) return ERC721(SCHIZOPOSTER).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Humbaba) return _humbaba.balanceOf(account) > 0;
+
+        if (token == WhitelistedToken.Any) {
+            return _isWhitelisted(account, WhitelistedToken.Cult) || _isWhitelisted(account, WhitelistedToken.Aura)
+                || _isWhitelisted(account, WhitelistedToken.Cigawrette)
+                || _isWhitelisted(account, WhitelistedToken.Milady)
+                || _isWhitelisted(account, WhitelistedToken.Pixelady)
+                || _isWhitelisted(account, WhitelistedToken.Radbro) || _isWhitelisted(account, WhitelistedToken.Remilio)
+                || _isWhitelisted(account, WhitelistedToken.Schizoposter)
+                || _isWhitelisted(account, WhitelistedToken.Humbaba);
+        }
+
+        return false; // WhitelistedToken.None
+    }
+
     /// @notice Transfer a quantity of Ashurbanipal NFTS to the caller or specified recipient
     ///
     /// @param id The id of the Ashurbanipal NFT
@@ -203,39 +229,7 @@ contract Enkidu is Ownable, Receiver {
 
         // No need to perform any checks if the user has maxed out on free mints
         if (remainingFreeMints > 0) {
-            if (whitelistedToken == WhitelistedToken.Cult) {
-                isWhitelisted = ERC20(CULT).balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Aura) {
-                isWhitelisted = ERC721(AURA).balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Cigawrette) {
-                isWhitelisted = ERC721(CIGAWRETTE).balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Milady) {
-                isWhitelisted = ERC721(MILADY).balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Pixelady) {
-                isWhitelisted = ERC721(PIXELADY).balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Radbro) {
-                isWhitelisted = ERC721(RADBRO).balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Remilio) {
-                isWhitelisted = ERC721(REMILIO).balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Schizoposter) {
-                isWhitelisted = ERC721(SCHIZOPOSTER).balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Humbaba) {
-                isWhitelisted = _humbaba.balanceOf(to) > 0;
-            }
-
-            /**
-             * The contract performs an exhaustive check against all whitelisted collections if explicitly instructed
-             * to. Gas-sensitive users should avoid this scenario if possible. Consuming applications should check
-             * users' portfolios ahead of time so they know whether to specify a whitelisted collection or to just
-             * pass `WhitelistedToken.None`.
-             */
-            if (whitelistedToken == WhitelistedToken.Any) {
-                isWhitelisted = ERC20(CULT).balanceOf(to) > 0 || ERC721(AURA).balanceOf(to) > 0
-                    || ERC721(CIGAWRETTE).balanceOf(to) > 0 || ERC721(MILADY).balanceOf(to) > 0
-                    || ERC721(PIXELADY).balanceOf(to) > 0 || ERC721(RADBRO).balanceOf(to) > 0
-                    || ERC721(REMILIO).balanceOf(to) > 0 || ERC721(SCHIZOPOSTER).balanceOf(to) > 0
-                    || _humbaba.balanceOf(to) > 0;
-            }
+            isWhitelisted = _isWhitelisted(to, whitelistedToken);
         }
 
         // Calculate the total cost of the transaction
