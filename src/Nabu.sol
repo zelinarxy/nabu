@@ -668,7 +668,7 @@ contract Nabu is Ownable {
             totalPassagesCount: totalPassagesCount,
             uri: uri,
             supply: supply,
-            mintTo: mintTo,
+            mintTo: mintToOrAdmin,
             id: workId
         });
     }
