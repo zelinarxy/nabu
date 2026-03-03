@@ -648,6 +648,11 @@ contract NabuTest is Ownable, Test {
         _nabu.updateAshurbanipal(address(69));
     }
 
+    function test_updateAshurbanipal_reverts_whenNewAddressIsZero() public {
+        vm.expectRevert(abi.encodeWithSelector(ZeroAddress.selector));
+        _nabu.updateAshurbanipal(address(0));
+    }
+
     function test_updateWorkAdmin() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         assertEq(_nabu.getWork(workId).admin, alice, "Work admin mismatch");

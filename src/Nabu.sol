@@ -49,7 +49,7 @@ error TooSoonToAssignContent(uint256 canAssignAfter);
 error TooSoonToAssignMetadata(uint256 canAssignAfter);
 /// @dev There is a seven-day cooling-off period between first and second content confirmations
 error TooSoonToConfirmContent(uint256 canConfirmAfter);
-/// @dev Work admin address must not be address(0)
+/// @dev Work admin address must not be address(0); same with Ashurbanipal address
 error ZeroAddress();
 /// @dev A work's `totalPassagesCount` must be at least 1
 error ZeroPassagesCount();
@@ -687,6 +687,10 @@ contract Nabu is Ownable {
     ///
     /// @param newAshurbanipalAddress The new Ashurbanipal contract address
     function updateAshurbanipal(address newAshurbanipalAddress) external onlyOwner {
+        if (newAshurbanipalAddress == address(0)) {
+            revert ZeroAddress();
+        }
+
         _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
         emit AshurbanipalUpdated(newAshurbanipalAddress);
     }
@@ -716,7 +720,9 @@ contract Nabu is Ownable {
     /// @param workId The id of the work
     /// @param newAdminAddress The address of the work's new admin
     function updateWorkAdmin(uint256 workId, address newAdminAddress) external onlyWorkAdmin(workId) {
-        if (newAdminAddress == address(0)) revert ZeroAddress();
+        if (newAdminAddress == address(0)) {
+            revert ZeroAddress();
+        }
 
         address previousAdminAddress = _works[workId].admin;
         _works[workId].admin = newAdminAddress;

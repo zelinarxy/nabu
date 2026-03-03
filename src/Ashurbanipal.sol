@@ -10,6 +10,8 @@ import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 error IsFrozen();
 /// @dev Only the Nabu contract can call the function
 error NotNabu();
+/// @dev Nabu address cannot be set to address(0)
+error ZeroAddress();
 
 /// EVENTS ///
 
@@ -94,6 +96,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     ///
     /// @param newNabuAddress The new address
     function updateNabuAddress(address newNabuAddress) external onlyOwner {
+        if (newNabuAddress == address(0)) revert ZeroAddress();
         _nabuAddress = newNabuAddress;
         emit NabuAddressUpdated(newNabuAddress);
     }
