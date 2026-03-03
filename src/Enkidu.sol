@@ -142,7 +142,7 @@ contract Enkidu is Ownable, Receiver {
     /// @param id The id of the Ashurbanipal NFT
     /// @param count The quantity of NFTs to transfer
     /// @param to The recipient
-    function _mint(uint256 id, uint256 count, address to) private {
+    function _distribute(uint256 id, uint256 count, address to) private {
         if (count == 0) {
             revert ZeroCount();
         }
@@ -158,7 +158,7 @@ contract Enkidu is Ownable, Receiver {
     /// @param count The quantity of NFTs to transfer
     /// @param to The recipient
     function adminMint(uint256 id, uint256 count, address to) external onlyOwner {
-        _mint({id: id, count: count, to: to});
+        _distribute({id: id, count: count, to: to});
         emit AdminMinted({id: id, count: count, to: to});
     }
 
@@ -258,7 +258,7 @@ contract Enkidu is Ownable, Receiver {
         }
 
         // Transfer the passes
-        _mint({id: id, count: count, to: to});
+        _distribute({id: id, count: count, to: to});
         emit Minted({id: id, count: count, to: to, price: price, whitelistedToken: whitelistedToken});
     }
 
@@ -300,21 +300,21 @@ contract Enkidu is Ownable, Receiver {
     /// @dev This function has no reentrancy guard: do not withdraw to an unvetted address
     ///
     /// @param amount The amount to withdraw; if zero, falls back to the entire balance
-    /// @param _to The recipient of the withdrawn funds; falls back to msg.sender
-    function withdraw(uint256 amount, address _to) external onlyOwner {
+    /// @param to The recipient of the withdrawn funds; falls back to msg.sender
+    function withdraw(uint256 amount, address to) external onlyOwner {
         uint256 amountToWithdraw = amount;
 
         if (amountToWithdraw == 0) {
             amountToWithdraw = address(this).balance;
         }
 
-        address to = _to;
+        address recipient = to;
 
-        if (_to == address(0)) {
-            to = msg.sender;
+        if (to == address(0)) {
+            recipient = msg.sender;
         }
 
-        (bool success,) = payable(to).call{value: amountToWithdraw}("");
+        (bool success,) = payable(recipient).call{value: amountToWithdraw}("");
         require(success);
     }
 }

@@ -46,6 +46,8 @@ contract Humbaba is ERC721, Ownable {
     /// @notice Mint an NFT to the specified recipient
     ///
     /// @dev Restricted to owner, who should be owner of the corresponding Enkidu deployment
+    ///
+    /// @param to The recipient address
     function adminMintTo(address to) external onlyOwner {
         uint256 tokenId = nextTokenId;
         unchecked {

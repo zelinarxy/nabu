@@ -80,7 +80,7 @@ event PassageMetadataAssignedByAdmin(uint256 workId, uint256 passageId, address 
 /// @dev Confirmation index is 1 for the first confirmation (`byOne`), 2 for the second (`byTwo`)
 event PassageContentConfirmed(uint256 workId, uint256 passageId, address by, uint8 confirmationIndex);
 
-event WorkAdminUpdated(uint256 workId, address newAdminAddress);
+event WorkAdminUpdated(uint256 workId, address previousAdminAddress, address newAdminAddress);
 
 event WorkAuthorUpdated(uint256 workId, string newAuthor);
 
@@ -145,7 +145,7 @@ struct Work {
  * confirmation. At this point the passage's content is considered finalized. Only the work's admin (the user who
  * created the work or has been assigned admin status by the creator) can overwrite a passage at this point. Then the
  * confirmation count is reset to zero and the process repeats. The goal is to prevent any given user or group of users
- * from vandalizing a work by assigning it incorret content, while providing a mechanism for honest users to record
+ * from vandalizing a work by assigning it incorrect content, while providing a mechanism for honest users to record
  * their text permanently on the blockchain. Ideally, once every passage of a work is finalized with correct content,
  * the admin renounces their status and the text is set in stone.
  */
@@ -300,11 +300,9 @@ contract Nabu is Ownable {
         passage.metadataBy = msg.sender;
         passage.metadataAt = uint96(block.timestamp);
 
-        // If the passage is finalized, clear byTwo so the passage is no longer finalized. This prevents the admin from
-        // being able to unilaterally set a passage's metadata in stone (something they can't do for content either)
-        if (passage.byTwo != address(0)) {
-            passage.byTwo = address(0);
-        }
+        // Clear byTwo so the passage is no longer finalized. This prevents the admin from being able to unilaterally
+        // set a passage's metadata in stone (something they can't do for content either)
+        passage.byTwo = address(0);
 
         emit PassageMetadataAssignedByAdmin(workId, passageId, msg.sender, metadataPointer);
     }
@@ -400,7 +398,7 @@ contract Nabu is Ownable {
                 }
             } else {
                 // The content being assigned differs from the passage's existing content: overwrite the content,
-                // record this user as having performed the intial assignment, and clear the first confirmation (if
+                // record this user as having performed the initial assignment, and clear the first confirmation (if
                 // there had been a second confirmation, the call would already have thrown an error)
                 contentPointer = SSTORE2.write({data: compressedContent});
                 passage.content = contentPointer;
@@ -410,7 +408,7 @@ contract Nabu is Ownable {
             }
         } else {
             // The passage has not yet been assigned content: write the content and record this user as having
-            // performed the initial assignement
+            // performed the initial assignment
             contentPointer = SSTORE2.write({data: compressedContent});
             passage.content = contentPointer;
             passage.byZero = msg.sender;
@@ -688,8 +686,11 @@ contract Nabu is Ownable {
     /// @param newAdminAddress The address of the work's new admin
     function updateWorkAdmin(uint256 workId, address newAdminAddress) external onlyWorkAdmin(workId) {
         require(newAdminAddress != address(0));
+        address previousAdminAddress = _works[workId].admin;
         _works[workId].admin = newAdminAddress;
-        emit WorkAdminUpdated(workId, newAdminAddress);
+        emit WorkAdminUpdated({
+            workId: workId, previousAdminAddress: previousAdminAddress, newAdminAddress: newAdminAddress
+        });
     }
 
     /// @notice Update the author of a work
