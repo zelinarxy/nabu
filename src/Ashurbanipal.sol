@@ -85,7 +85,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @param shouldFreeze Should the user's passes be frozen or unfrozen
     function updateFreezelist(uint256 workId, address user, bool shouldFreeze) external onlyNabu {
         _freezelist[workId][user] = shouldFreeze;
-        emit FreezelistUpdated(workId, user, shouldFreeze);
+        emit FreezelistUpdated({workId: workId, user: user, shouldFreeze: shouldFreeze});
     }
 
     /// @notice Update the Nabu contract address
@@ -106,7 +106,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @param newUri The new metadata uri
     function updateUri(uint256 workId, string calldata newUri) external onlyNabu {
         _uris[workId] = newUri;
-        emit UriUpdated(workId, newUri);
+        emit UriUpdated({workId: workId, newUri: newUri});
     }
 
     /// @notice Get a work's metadata uri

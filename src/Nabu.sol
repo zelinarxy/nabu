@@ -267,7 +267,9 @@ contract Nabu is Ownable {
         // Update the timestamp at which the initial content assignment was performed to the current block
         passage.at = uint96(block.timestamp);
 
-        emit PassageContentAssignedByAdmin(workId, passageId, msg.sender, contentPointer);
+        emit PassageContentAssignedByAdmin({
+            workId: workId, passageId: passageId, by: msg.sender, contentPointer: contentPointer
+        });
     }
 
     /// @notice A work's admin can update the metadata of a passage even if that passage has been finalized
@@ -304,7 +306,9 @@ contract Nabu is Ownable {
         // set a passage's metadata in stone (something they can't do for content either)
         passage.byTwo = address(0);
 
-        emit PassageMetadataAssignedByAdmin(workId, passageId, msg.sender, metadataPointer);
+        emit PassageMetadataAssignedByAdmin({
+            workId: workId, passageId: passageId, by: msg.sender, metadataPointer: metadataPointer
+        });
     }
 
     /// @notice Anyone holding a work's Ashurbanipal NFT can assign content to a passage
@@ -418,7 +422,13 @@ contract Nabu is Ownable {
         // Update the timestamp at which the last content update or confirmation was performed to the current block
         passage.at = uint96(block.timestamp);
 
-        emit PassageContentAssigned(workId, passageId, msg.sender, contentPointer, confirmationIndex);
+        emit PassageContentAssigned({
+            workId: workId,
+            passageId: passageId,
+            by: msg.sender,
+            contentPointer: contentPointer,
+            confirmationIndex: confirmationIndex
+        });
     }
 
     /// @notice Anyone holding a work's Ashurbanipal NFT can assign arbitrary metadata to a passage
@@ -500,7 +510,9 @@ contract Nabu is Ownable {
         passage.metadataBy = msg.sender;
         passage.metadataAt = uint96(block.timestamp);
 
-        emit PassageMetadataAssigned(workId, passageId, msg.sender, metadataPointer);
+        emit PassageMetadataAssigned({
+            workId: workId, passageId: passageId, by: msg.sender, metadataPointer: metadataPointer
+        });
     }
 
     /// @notice Anyone holding a work's Ashurbanipal NFT can confirm a passage's existing content
@@ -581,7 +593,9 @@ contract Nabu is Ownable {
         // Update the timestamp at which the last content confirmation was performed to the current block
         passage.at = uint96(block.timestamp);
 
-        emit PassageContentConfirmed(workId, passageId, msg.sender, confirmationIndex);
+        emit PassageContentConfirmed({
+            workId: workId, passageId: passageId, by: msg.sender, confirmationIndex: confirmationIndex
+        });
     }
 
     /// @notice Create and configure a new work; the user who calls this function becomes the work's admin
@@ -643,7 +657,16 @@ contract Nabu is Ownable {
         _ashurbanipal.mint({account: mintToOrAdmin, workId: workId, supply: supply, workUri: uri});
         newWorksTip = workId;
 
-        emit WorkCreated(author, metadata, title, totalPassagesCount, uri, supply, mintTo, workId);
+        emit WorkCreated({
+            author: author,
+            metadata: metadata,
+            title: title,
+            totalPassagesCount: totalPassagesCount,
+            uri: uri,
+            supply: supply,
+            mintTo: mintTo,
+            id: workId
+        });
     }
 
     /// @notice Get the Ashurbanipal contract address
@@ -675,7 +698,7 @@ contract Nabu is Ownable {
         // Freeze the user's Ashurbanipal "pass" NFTs to prevent transfer to a sybil (or unfreeze)
         _ashurbanipal.updateFreezelist({workId: workId, user: user, shouldFreeze: shouldBan});
 
-        emit BlacklistUpdated(workId, user, shouldBan);
+        emit BlacklistUpdated({workId: workId, user: user, shouldBan: shouldBan});
     }
 
     /// @notice Update the admin address for a work
@@ -700,7 +723,7 @@ contract Nabu is Ownable {
     /// @param newAuthor The work's new author (the real-world author, e.g. Homer or Shakespeare)
     function updateWorkAuthor(uint256 workId, string calldata newAuthor) external onlyWorkAdminNotTooLate(workId) {
         _works[workId].author = newAuthor;
-        emit WorkAuthorUpdated(workId, newAuthor);
+        emit WorkAuthorUpdated({workId: workId, newAuthor: newAuthor});
     }
 
     /// @notice Update the metadata of a work
@@ -710,7 +733,7 @@ contract Nabu is Ownable {
     /// @param newMetadata The work's new metadata (an arbitrary string: whatever the admin wants)
     function updateWorkMetadata(uint256 workId, string calldata newMetadata) external onlyWorkAdminNotTooLate(workId) {
         _works[workId].metadata = newMetadata;
-        emit WorkMetadataUpdated(workId, newMetadata);
+        emit WorkMetadataUpdated({workId: workId, newMetadata: newMetadata});
     }
 
     /// @notice Update the title of a work
@@ -724,7 +747,7 @@ contract Nabu is Ownable {
         }
 
         _works[workId].title = newTitle;
-        emit WorkTitleUpdated(workId, newTitle);
+        emit WorkTitleUpdated({workId: workId, newTitle: newTitle});
     }
 
     /// @notice Update the total number of passages in a work
@@ -743,7 +766,7 @@ contract Nabu is Ownable {
         }
 
         _works[workId].totalPassagesCount = newTotalPassagesCount;
-        emit WorkTotalPassagesCountUpdated(workId, newTotalPassagesCount);
+        emit WorkTotalPassagesCountUpdated({workId: workId, newTotalPassagesCount: newTotalPassagesCount});
     }
 
     /// @notice Update the metadata URI of the ERC-1155 id associated with the work
@@ -756,7 +779,7 @@ contract Nabu is Ownable {
     function updateWorkUri(uint256 workId, string calldata newUri) external onlyWorkAdmin(workId) {
         _ashurbanipal.updateUri({workId: workId, newUri: newUri});
         _works[workId].uri = newUri;
-        emit WorkUriUpdated(workId, newUri);
+        emit WorkUriUpdated({workId: workId, newUri: newUri});
     }
 
     /// @notice View a passage: decompressed content and confirmation metadata

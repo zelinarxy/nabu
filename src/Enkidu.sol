@@ -270,7 +270,7 @@ contract Enkidu is Ownable, Receiver {
     /// @param isActive The new value for `active`
     function updateActive(uint256 id, bool isActive) external onlyOwner {
         active[id] = isActive;
-        emit ActiveUpdated(id, isActive);
+        emit ActiveUpdated({id: id, isActive: isActive});
     }
 
     /// @notice Update the price for an id
@@ -281,7 +281,7 @@ contract Enkidu is Ownable, Receiver {
     /// @param price The new price
     function updatePrice(uint256 id, uint256 price) external onlyOwner {
         prices[id] = price;
-        emit PriceUpdated(id, price);
+        emit PriceUpdated({id: id, price: price});
     }
 
     /// @notice Update the Ashurbanipal address and contract instance
