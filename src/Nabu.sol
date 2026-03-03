@@ -648,9 +648,9 @@ contract Nabu is Ownable {
 
     /// @notice Get the Ashurbanipal contract address
     ///
-    /// @return ashurbanipalAddress The Ashurbanipal contract address
-    function getAshurbanipalAddress() external view returns (address ashurbanipalAddress) {
-        ashurbanipalAddress = address(_ashurbanipal);
+    /// @return The Ashurbanipal contract address
+    function getAshurbanipalAddress() external view returns (address) {
+        return address(_ashurbanipal);
     }
 
     /// @notice Update the Ashurbanipal contract
@@ -810,9 +810,9 @@ contract Nabu is Ownable {
     ///
     /// @param workId The id of the work
     ///
-    /// @return work The work
-    function getWork(uint256 workId) external view returns (Work memory work) {
-        work = _works[workId];
+    /// @return The work
+    function getWork(uint256 workId) external view returns (Work memory) {
+        return _works[workId];
     }
 
     /// @notice Check whether a user is banned from writing or confirming passages in a certain work
@@ -820,8 +820,8 @@ contract Nabu is Ownable {
     /// @param workId The id of the work
     /// @param user The address of the user
     ///
-    /// @return isBlacklisted The user's status
-    function getIsBlacklisted(uint256 workId, address user) external view returns (bool isBlacklisted) {
-        isBlacklisted = _blacklist[workId][user];
+    /// @return The user's blacklist status
+    function getIsBlacklisted(uint256 workId, address user) external view returns (bool) {
+        return _blacklist[workId][user];
     }
 }

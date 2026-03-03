@@ -70,9 +70,9 @@ contract Ashurbanipal is ERC1155, Ownable {
 
     /// @notice Get the Nabu contract address
     ///
-    /// @return nabuAddress The contract address
-    function getNabuAddress() external view returns (address nabuAddress) {
-        nabuAddress = _nabuAddress;
+    /// @return The contract address
+    function getNabuAddress() external view returns (address) {
+        return _nabuAddress;
     }
 
     /// @notice Freeze or unfreeze a user's passes for a given work
@@ -111,9 +111,9 @@ contract Ashurbanipal is ERC1155, Ownable {
 
     /// @notice Get a work's metadata uri
     ///
-    /// @return workUri The uri
-    function uri(uint256 workId) public view override returns (string memory workUri) {
-        workUri = _uris[workId];
+    /// @return The uri
+    function uri(uint256 workId) public view override returns (string memory) {
+        return _uris[workId];
     }
 
     function _useBeforeTokenTransfer() internal pure override returns (bool) {

@@ -117,16 +117,16 @@ contract Enkidu is Ownable, Receiver {
 
     /// @notice Get the Ashurbanipal contract address
     ///
-    /// @return ashurbanipalAddress The contract address
-    function getAshurbanipalAddress() external view returns (address ashurbanipalAddress) {
-        ashurbanipalAddress = address(_ashurbanipal);
+    /// @return The contract address
+    function getAshurbanipalAddress() external view returns (address) {
+        return address(_ashurbanipal);
     }
 
     /// @notice Get the Humbaba contract address
     ///
-    /// @return humbabaAddress The contract address
-    function getHumbabaAddress() external view returns (address humbabaAddress) {
-        humbabaAddress = address(_humbaba);
+    /// @return The contract address
+    function getHumbabaAddress() external view returns (address) {
+        return address(_humbaba);
     }
 
     /// @notice Update the Humbaba address and contract instance
