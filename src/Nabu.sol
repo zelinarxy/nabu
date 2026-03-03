@@ -9,6 +9,7 @@ import {Ashurbanipal} from "./Ashurbanipal.sol";
 uint256 constant ONE_DAY = 86_400;
 uint256 constant SEVEN_DAYS = 604_800;
 uint256 constant THIRTY_DAYS = 2_592_000;
+uint256 constant MAX_CONTENT_SIZE = 24_576;
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                          ERRORS                            */
@@ -20,13 +21,13 @@ error Blacklisted();
 error CannotDoubleConfirmPassage();
 /// @dev A user can't assign a passage's metadata if they were the last one to do so
 error CannotReassignOwnMetadata();
-/// @dev SSTORE2 has a max length of 24576
+/// @dev SSTORE2 has a max data size of MAX_CONTENT_SIZE (24_576) bytes
 error ContentTooLarge();
 /// @dev Works require a title
 error EmptyTitle();
 /// @dev Passage doesn't exist
 error InvalidPassageId();
-/// @dev SSTORE2 has a max length of 24576
+/// @dev SSTORE2 has a max data size of MAX_CONTENT_SIZE (24_576) bytes
 error MetadataTooLarge();
 /// @dev Attempting to write the same metadata twice doesn't perform a confirmation; revert to avoid wasting gas
 error NoChangeInMetadata();
@@ -238,8 +239,7 @@ contract Nabu is Ownable {
         external
         onlyWorkAdmin(workId)
     {
-        // SSTORE2 max size
-        if (content.length > 24576) {
+        if (content.length > MAX_CONTENT_SIZE) {
             revert ContentTooLarge();
         }
 
@@ -280,8 +280,7 @@ contract Nabu is Ownable {
         external
         onlyWorkAdmin(workId)
     {
-        // SSTORE2 max size
-        if (metadata.length > 24576) {
+        if (metadata.length > MAX_CONTENT_SIZE) {
             revert MetadataTooLarge();
         }
 
@@ -319,8 +318,7 @@ contract Nabu is Ownable {
     /// @param passageId The id of the passage being updated
     /// @param content The content of the passage
     function assignPassageContent(uint256 workId, uint256 passageId, bytes calldata content) external {
-        // SSTORE2 max size
-        if (content.length > 24576) {
+        if (content.length > MAX_CONTENT_SIZE) {
             revert ContentTooLarge();
         }
 
@@ -434,8 +432,7 @@ contract Nabu is Ownable {
     /// @param passageId The id of the passage being updated
     /// @param metadata The metadata of the passage
     function assignPassageMetadata(uint256 workId, uint256 passageId, bytes calldata metadata) external {
-        // SSTORE2 max size
-        if (metadata.length > 24576) {
+        if (metadata.length > MAX_CONTENT_SIZE) {
             revert MetadataTooLarge();
         }
 
