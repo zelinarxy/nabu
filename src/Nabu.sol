@@ -417,7 +417,6 @@ contract Nabu is Ownable {
             contentPointer = SSTORE2.write({data: compressedContent});
             passage.content = contentPointer;
             passage.byZero = msg.sender;
-            passage.byOne = address(0); // TODO: necessary?
         }
 
         // Update the timestamp at which the last content update or confirmation was performed to the current block
