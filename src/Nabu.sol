@@ -132,7 +132,7 @@ struct Work {
     /// @dev The total number of passages in the work
     uint96 totalPassagesCount;
     /// @dev The timestamp at which the work was created (instantiated onchain using Nabu, not written in the real world)
-    uint256 createdAt;
+    uint96 createdAt;
 }
 
 // TODO
@@ -652,7 +652,7 @@ contract Nabu is Ownable {
             uri: uri,
             admin: msg.sender,
             totalPassagesCount: totalPassagesCount,
-            createdAt: block.timestamp
+            createdAt: uint96(block.timestamp)
         });
 
         // Mint a quantity (specified by the `supply` parameter) of Ashurbanipal ERC-1155 NFTs to mintTo (which falls
