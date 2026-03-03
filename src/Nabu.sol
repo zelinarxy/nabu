@@ -229,8 +229,8 @@ contract Nabu is Ownable {
     }
 
     /// @notice A work's admin can update the content of a passage even if that passage has been finalized
-    /// @notice Unlike other admin-only functions, this one has no time limitation (no `notTooLate` modifier)
     ///
+    /// @dev Unlike other admin-only functions, this one has no time limitation (no `notTooLate` modifier)
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
@@ -273,7 +273,7 @@ contract Nabu is Ownable {
     }
 
     /// @notice A work's admin can update the metadata of a passage even if that passage has been finalized
-    /// @notice Unlike other admin-only functions, this one has no time limitation (no `notTooLate` modifier)
+    /// @dev Unlike other admin-only functions, this one has no time limitation (no `notTooLate` modifier)
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
@@ -312,9 +312,10 @@ contract Nabu is Ownable {
     }
 
     /// @notice Anyone holding a work's Ashurbanipal NFT can assign content to a passage
-    /// @notice Once a passage has received two confirmations, only the work's admin can change its content
-    /// @notice A user can overwrite a passage's existing content, resetting the confirmation count to zero
-    /// @notice If content is identical to the passage's current content, the confirmation count is incremented
+    ///
+    /// @dev Once a passage has received two confirmations, only the work's admin can change its content
+    /// @dev A user can overwrite a passage's existing content, resetting the confirmation count to zero
+    /// @dev If content is identical to the passage's current content, the confirmation count is incremented
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
@@ -432,9 +433,10 @@ contract Nabu is Ownable {
     }
 
     /// @notice Anyone holding a work's Ashurbanipal NFT can assign arbitrary metadata to a passage
-    /// @notice Metadata is optional: it can be assigned to some passages or none
-    /// @notice Once a passage has received two confirmations, only the work's admin can change its metadata
-    /// @notice Updating metadata after passage finalization clears the last confirmation (`byTwo`)
+    ///
+    /// @dev Metadata is optional: it can be assigned to some passages or none
+    /// @dev Once a passage has received two confirmations, only the work's admin can change its metadata
+    /// @dev Updating metadata after passage finalization clears the last confirmation (`byTwo`)
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
@@ -516,8 +518,9 @@ contract Nabu is Ownable {
     }
 
     /// @notice Anyone holding a work's Ashurbanipal NFT can confirm a passage's existing content
-    /// @notice Two confirmations finalizes a passage's content; at that point only the work's admin can change it
-    /// @notice The passage must already have assigned content (can't point to address(0)) or the call throws an error
+    ///
+    /// @dev Two confirmations finalizes a passage's content; at that point only the work's admin can change it
+    /// @dev The passage must already have assigned content (can't point to address(0)) or the call throws an error
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
@@ -599,7 +602,8 @@ contract Nabu is Ownable {
     }
 
     /// @notice Create and configure a new work; the user who calls this function becomes the work's admin
-    /// @notice Absent `mintTo`, admin receives "pass" NFTs from the Ashurbanipal contract (count is equal to `supply`)
+    ///
+    /// @dev Absent `mintTo`, admin receives "pass" NFTs from the Ashurbanipal contract (count is equal to `supply`)
     ///
     /// @param author The real-world author of the work, e.g. Homer or Shakespeare
     /// @param metadata Arbitrary information the work's admin might like to add
@@ -677,7 +681,8 @@ contract Nabu is Ownable {
     }
 
     /// @notice Update the Ashurbanipal contract
-    /// @notice Restricted to the Nabu contract owner
+    ///
+    /// @dev Restricted to the Nabu contract owner
     ///
     /// @param newAshurbanipalAddress The new Ashurbanipal contract address
     function updateAshurbanipal(address newAshurbanipalAddress) external onlyOwner {
@@ -686,8 +691,9 @@ contract Nabu is Ownable {
     }
 
     /// @notice Update the blacklist for a work, either banning or un-banning an address
-    /// @notice Blacklisting also freezes users' Ashurbanipal "pass" NFTs: the user can neither send nor receive a pass
-    /// @notice Restricted to the work's current admin
+    ///
+    /// @dev Blacklisting also freezes users' Ashurbanipal "pass" NFTs: the user can neither send nor receive a pass
+    /// @dev Restricted to the work's current admin
     ///
     /// @param workId The id of the work
     /// @param user The address of the user to be updated
@@ -702,8 +708,9 @@ contract Nabu is Ownable {
     }
 
     /// @notice Update the admin address for a work
-    /// @notice Restricted to the work's current admin
-    /// @notice A work's admin can renounce their status by calling this function with a burn address (e.g. 0x0...dEaD)
+    ///
+    /// @dev Restricted to the work's current admin
+    /// @dev A work's admin can renounce their status by calling this function with a burn address (e.g. 0x0...dEaD)
     ///
     /// @param workId The id of the work
     /// @param newAdminAddress The address of the work's new admin
@@ -717,7 +724,8 @@ contract Nabu is Ownable {
     }
 
     /// @notice Update the author of a work
-    /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
+    ///
+    /// @dev Restricted to the work's admin; must be called within 30 days of the work's creation
     ///
     /// @param workId The id of the work
     /// @param newAuthor The work's new author (the real-world author, e.g. Homer or Shakespeare)
@@ -727,7 +735,8 @@ contract Nabu is Ownable {
     }
 
     /// @notice Update the metadata of a work
-    /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
+    ///
+    /// @dev Restricted to the work's admin; must be called within 30 days of the work's creation
     ///
     /// @param workId The id of the work
     /// @param newMetadata The work's new metadata (an arbitrary string: whatever the admin wants)
@@ -737,7 +746,8 @@ contract Nabu is Ownable {
     }
 
     /// @notice Update the title of a work
-    /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
+    ///
+    /// @dev Restricted to the work's admin; must be called within 30 days of the work's creation
     ///
     /// @param workId The id of the work
     /// @param newTitle The work's new title, e.g. The Odyssey or Hamlet
@@ -751,8 +761,8 @@ contract Nabu is Ownable {
     }
 
     /// @notice Update the total number of passages in a work
-    /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
     ///
+    /// @dev Restricted to the work's admin; must be called within 30 days of the work's creation
     /// @dev When creating a work, it's necessary to break it into a set number of passages ahead of time
     ///
     /// @param workId The id of the work
@@ -770,8 +780,8 @@ contract Nabu is Ownable {
     }
 
     /// @notice Update the metadata URI of the ERC-1155 id associated with the work
-    /// @notice Restricted to the work's admin; no time restriction
     ///
+    /// @dev Restricted to the work's admin; no time restriction
     /// @dev See the Ashurbanipal contract, which defines NFT "passes" that grant permission to assign a work's content
     ///
     /// @param workId The id of the work
