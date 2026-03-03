@@ -23,9 +23,13 @@ error ZeroCount();
 
 event ActiveUpdated(uint256 id, bool isActive);
 
+event AdminMinted(uint256 id, uint256 count, address to);
+
 event AshurbanipalUpdated(address newAshurbanipalAddress);
 
 event HumbabaUpdated(address newHumbabaAddress);
+
+event Minted(uint256 id, uint256 count, address to, uint256 price, WhitelistedToken whitelistedToken);
 
 event PriceUpdated(uint256 id, uint256 price);
 
@@ -155,6 +159,7 @@ contract Enkidu is Ownable, Receiver {
     /// @param to The recipient
     function adminMint(uint256 id, uint256 count, address to) external onlyOwner {
         _mint({id: id, count: count, to: to});
+        emit AdminMinted({id: id, count: count, to: to});
     }
 
     /// @notice Public "mint" function to transfer a quantity of Ashurbanipal NFTs to a recipient
@@ -254,6 +259,7 @@ contract Enkidu is Ownable, Receiver {
 
         // Transfer the passes
         _mint({id: id, count: count, to: to});
+        emit Minted({id: id, count: count, to: to, price: price, whitelistedToken: whitelistedToken});
     }
 
     /// @notice Update the `active` status for an id
