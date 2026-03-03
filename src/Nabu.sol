@@ -813,16 +813,12 @@ contract Nabu is Ownable {
         bytes memory readableContent;
         bytes memory readableMetadata;
 
-        if (passage.content == address(0)) {
-            readableContent = bytes("");
-        } else {
+        if (passage.content != address(0)) {
             bytes memory compressedContent = SSTORE2.read({pointer: passage.content});
             readableContent = LibZip.flzDecompress(compressedContent);
         }
 
-        if (passage.metadata == address(0)) {
-            readableMetadata = bytes("");
-        } else {
+        if (passage.metadata != address(0)) {
             bytes memory compressedMetadata = SSTORE2.read({pointer: passage.metadata});
             readableMetadata = LibZip.flzDecompress(compressedMetadata);
         }
