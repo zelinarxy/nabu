@@ -6,9 +6,9 @@ import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 import {Ashurbanipal} from "./Ashurbanipal.sol";
 
-uint256 constant ONE_DAY = 7_200;
-uint256 constant SEVEN_DAYS = 50_400;
-uint256 constant THIRTY_DAYS = 216_000;
+uint256 constant ONE_DAY = 86_400;
+uint256 constant SEVEN_DAYS = 604_800;
+uint256 constant THIRTY_DAYS = 2_592_000;
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                          ERRORS                            */
@@ -130,7 +130,7 @@ struct Work {
     address admin;
     /// @dev The total number of passages in the work
     uint96 totalPassagesCount;
-    /// @dev The block at which the work was created (instantiated onchain using Nabu, not written in the real world)
+    /// @dev The timestamp at which the work was created (instantiated onchain using Nabu, not written in the real world)
     uint256 createdAt;
 }
 
@@ -151,11 +151,11 @@ struct Work {
 struct Passage {
     /// @dev The address pointer for the passage's content
     address content;
-    /// @dev The block at which the most recent content assignment or confirmation was performed
+    /// @dev The timestamp at which the most recent content assignment or confirmation was performed
     uint96 at;
     /// @dev The address pointer for the passage's metadata
     address metadata;
-    /// @dev The block at which the most recent metadata assignment was performed
+    /// @dev The timestamp at which the most recent metadata assignment was performed
     uint96 metadataAt;
     /// @dev The address of the user who performed the initial content assignment (possibly an overwrite)
     address byZero;
@@ -180,9 +180,9 @@ struct ReadablePassage {
     address byTwo;
     /// @dev The address of the user who performed the most recent metadata assignment
     address metadataBy;
-    /// @dev The block at which the most recent content assignment or confirmation was performed
+    /// @dev The timestamp at which the most recent content assignment or confirmation was performed
     uint96 at;
-    /// @dev The block at which the most recent metadata assignment was performed
+    /// @dev The timestamp at which the most recent metadata assignment was performed
     uint96 metadataAt;
 }
 
@@ -218,7 +218,7 @@ contract Nabu is Ownable {
         require(msg.sender == admin, NotWorkAdmin(admin));
         uint256 expiredAt = work.createdAt + THIRTY_DAYS;
         // Admin can still make changes in the `expiredAt` block itself
-        require(block.number <= expiredAt, TooLate(expiredAt));
+        require(block.timestamp <= expiredAt, TooLate(expiredAt));
         _;
     }
 
@@ -264,8 +264,8 @@ contract Nabu is Ownable {
         passage.byOne = address(0);
         // Clear the user who performed the second (final) confirmation, if any
         passage.byTwo = address(0);
-        // Update the block number at which the initial content assignment was performed to the current block
-        passage.at = uint96(block.number);
+        // Update the timestamp at which the initial content assignment was performed to the current block
+        passage.at = uint96(block.timestamp);
 
         emit PassageContentAssignedByAdmin(workId, passageId, msg.sender, contentPointer);
     }
@@ -299,7 +299,7 @@ contract Nabu is Ownable {
 
         passage.metadata = metadataPointer;
         passage.metadataBy = msg.sender;
-        passage.metadataAt = uint96(block.number);
+        passage.metadataAt = uint96(block.timestamp);
 
         // If the passage is finalized, clear byTwo so the passage is no longer finalized. This prevents the admin from
         // being able to unilaterally set a passage's metadata in stone (something they can't do for content either)
@@ -361,7 +361,7 @@ contract Nabu is Ownable {
         }
 
         // Not enough time has elapsed
-        if (block.number < canAssignAfter) {
+        if (block.timestamp < canAssignAfter) {
             revert TooSoonToAssignContent(canAssignAfter);
         }
 
@@ -372,7 +372,7 @@ contract Nabu is Ownable {
 
         // Passes received via transfer must be held for one day before they can be used
         uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
-        if (passReceiveBlock != 0 && block.number < passReceiveBlock + ONE_DAY) {
+        if (passReceiveBlock != 0 && block.timestamp < passReceiveBlock + ONE_DAY) {
             revert PassCooldown(passReceiveBlock + ONE_DAY);
         }
 
@@ -419,8 +419,8 @@ contract Nabu is Ownable {
             passage.byOne = address(0); // TODO: necessary?
         }
 
-        // Update the block number at which the last content update or confirmation was performed to the current block
-        passage.at = uint96(block.number);
+        // Update the timestamp at which the last content update or confirmation was performed to the current block
+        passage.at = uint96(block.timestamp);
 
         emit PassageContentAssigned(workId, passageId, msg.sender, contentPointer, confirmationIndex);
     }
@@ -473,7 +473,7 @@ contract Nabu is Ownable {
         }
 
         // Not enough time has elapsed
-        if (block.number < canAssignAfter) {
+        if (block.timestamp < canAssignAfter) {
             revert TooSoonToAssignMetadata(canAssignAfter);
         }
 
@@ -484,7 +484,7 @@ contract Nabu is Ownable {
 
         // Passes received via transfer must be held for one day before they can be used
         uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
-        if (passReceiveBlock != 0 && block.number < passReceiveBlock + ONE_DAY) {
+        if (passReceiveBlock != 0 && block.timestamp < passReceiveBlock + ONE_DAY) {
             revert PassCooldown(passReceiveBlock + ONE_DAY);
         }
 
@@ -503,7 +503,7 @@ contract Nabu is Ownable {
         metadataPointer = SSTORE2.write({data: compressedMetadata});
         passage.metadata = metadataPointer;
         passage.metadataBy = msg.sender;
-        passage.metadataAt = uint96(block.number);
+        passage.metadataAt = uint96(block.timestamp);
 
         emit PassageMetadataAssigned(workId, passageId, msg.sender, metadataPointer);
     }
@@ -556,7 +556,7 @@ contract Nabu is Ownable {
         }
 
         // Not enough time has elapsed
-        if (block.number < canConfirmAfter) {
+        if (block.timestamp < canConfirmAfter) {
             revert TooSoonToConfirmContent(canConfirmAfter);
         }
 
@@ -567,7 +567,7 @@ contract Nabu is Ownable {
 
         // Passes received via transfer must be held for one day before they can be used
         uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
-        if (passReceiveBlock != 0 && block.number < passReceiveBlock + ONE_DAY) {
+        if (passReceiveBlock != 0 && block.timestamp < passReceiveBlock + ONE_DAY) {
             revert PassCooldown(passReceiveBlock + ONE_DAY);
         }
 
@@ -583,8 +583,8 @@ contract Nabu is Ownable {
             passage.byOne = msg.sender;
         }
 
-        // Update the block number at which the last content confirmation was performed to the current block
-        passage.at = uint96(block.number);
+        // Update the timestamp at which the last content confirmation was performed to the current block
+        passage.at = uint96(block.timestamp);
 
         emit PassageContentConfirmed(workId, passageId, msg.sender, confirmationIndex);
     }
@@ -639,7 +639,7 @@ contract Nabu is Ownable {
             uri: uri,
             admin: msg.sender,
             totalPassagesCount: totalPassagesCount,
-            createdAt: block.number
+            createdAt: block.timestamp
         });
 
         // Mint a quantity (specified by the `supply` parameter) of Ashurbanipal ERC-1155 NFTs to mintTo (which falls

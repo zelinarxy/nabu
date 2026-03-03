@@ -48,7 +48,7 @@ contract EnkiduTest is Ownable, Test {
     address mallory = makeAddr("Mallory");
 
     function setUp() public {
-        vm.roll(0);
+        vm.warp(0);
         _nabu = new Nabu();
         address nabuAddress = address(_nabu);
 

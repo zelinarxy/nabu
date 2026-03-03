@@ -25,7 +25,7 @@ contract AshurbanipalTest is Ownable, Test {
     }
 
     function setUp() public {
-        vm.roll(0);
+        vm.warp(0);
         _nabu = new Nabu();
         address nabuAddress = address(_nabu);
         _ashurbanipal = new Ashurbanipal(nabuAddress);

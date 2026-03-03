@@ -36,7 +36,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @notice A work's admin can ban a user from sending or receiving passes for a work
     mapping(uint256 workId => mapping(address user => bool isFrozen)) private _freezelist;
 
-    /// @notice The block at which a user's pass balance for a work was most recently replenished from zero via transfer
+    /// @notice The timestamp at which a user's pass balance for a work was most recently replenished from zero via transfer
     /// @dev Nabu uses this to enforce a one-day holding period before new pass recipients can participate
     mapping(uint256 id => mapping(address user => uint256 receivedAt)) public passReceivedAt;
 
@@ -161,7 +161,7 @@ contract Ashurbanipal is ERC1155, Ownable {
             // balanceOf(to, id) already reflects the post-transfer balance; if it equals the
             // amount just received, the recipient had zero passes before this transfer
             if (balanceOf(to, id) == amounts[i]) {
-                passReceivedAt[id][to] = block.number;
+                passReceivedAt[id][to] = block.timestamp;
             }
 
             unchecked {

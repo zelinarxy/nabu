@@ -51,7 +51,7 @@ contract NabuTest is Ownable, Test {
     }
 
     function setUp() public {
-        vm.roll(0);
+        vm.warp(0);
         _nabu = new Nabu();
         address nabuAddress = address(_nabu);
         _ashurbanipal = new Ashurbanipal(nabuAddress);
@@ -271,7 +271,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
         vm.stopPrank();
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(NoPass.selector));
         _nabu.confirmPassageContent(workId, 1);
@@ -292,7 +292,7 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
@@ -317,11 +317,11 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY + SEVEN_DAYS);
+        vm.warp(ONE_DAY + SEVEN_DAYS);
         vm.prank(dave);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
@@ -346,11 +346,11 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.confirmPassageContent(workId, 1);
 
-        vm.roll(ONE_DAY + SEVEN_DAYS);
+        vm.warp(ONE_DAY + SEVEN_DAYS);
         vm.prank(charlie);
         vm.expectRevert(abi.encodeWithSelector(CannotDoubleConfirmPassage.selector));
         _nabu.confirmPassageContent(workId, 1);
@@ -362,11 +362,11 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY + SEVEN_DAYS);
+        vm.warp(ONE_DAY + SEVEN_DAYS);
         vm.prank(charlie);
         vm.expectRevert(abi.encodeWithSelector(CannotDoubleConfirmPassage.selector));
         _nabu.assignPassageContent(workId, 1, passageOne);
@@ -438,11 +438,11 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY + SEVEN_DAYS);
+        vm.warp(ONE_DAY + SEVEN_DAYS);
         vm.prank(dave);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
@@ -457,7 +457,7 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.confirmPassageContent(workId, 1);
 
@@ -482,11 +482,11 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.confirmPassageContent(workId, 1);
 
-        vm.roll(ONE_DAY + SEVEN_DAYS);
+        vm.warp(ONE_DAY + SEVEN_DAYS);
         vm.prank(dave);
         _nabu.confirmPassageContent(workId, 1);
 
@@ -511,11 +511,11 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.confirmPassageContent(workId, 1);
 
-        vm.roll(ONE_DAY + SEVEN_DAYS);
+        vm.warp(ONE_DAY + SEVEN_DAYS);
         vm.prank(dave);
         _nabu.confirmPassageContent(workId, 1);
 
@@ -533,7 +533,7 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         vm.expectRevert(abi.encodeWithSelector(Blacklisted.selector));
         _nabu.confirmPassageContent(workId, 1);
@@ -559,7 +559,7 @@ contract NabuTest is Ownable, Test {
             expectedMetadata: ""
         });
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(alice);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
@@ -598,7 +598,7 @@ contract NabuTest is Ownable, Test {
             expectedMetadata: ""
         });
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(mallory);
         _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
@@ -616,7 +616,7 @@ contract NabuTest is Ownable, Test {
             expectedMetadata: ""
         });
 
-        vm.roll(ONE_DAY + SEVEN_DAYS);
+        vm.warp(ONE_DAY + SEVEN_DAYS);
         vm.prank(alice);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
@@ -692,7 +692,7 @@ contract NabuTest is Ownable, Test {
 
     function test_updateWorkAuthor_reverts_whenItsTooLate() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
-        vm.roll(THIRTY_DAYS + 1);
+        vm.warp(THIRTY_DAYS + 1);
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         _nabu.updateWorkAuthor(workId, "Mickey C");
@@ -720,7 +720,7 @@ contract NabuTest is Ownable, Test {
 
     function test_updateBlacklist_succeedsCauseItsNeverTooLate() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
-        vm.roll(THIRTY_DAYS + 1);
+        vm.warp(THIRTY_DAYS + 1);
         vm.prank(alice);
         _nabu.updateBlacklist(workId, bob, true);
     }
@@ -749,7 +749,7 @@ contract NabuTest is Ownable, Test {
 
     function test_updateWorkMetadata_reverts_whenItsTooLate() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
-        vm.roll(THIRTY_DAYS + 1);
+        vm.warp(THIRTY_DAYS + 1);
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         _nabu.updateWorkMetadata(workId, "New metadata");
@@ -795,7 +795,7 @@ contract NabuTest is Ownable, Test {
 
     function test_updateWorkUri_succeedsCauseItsNeverTooLate() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
-        vm.roll(THIRTY_DAYS + 1);
+        vm.warp(THIRTY_DAYS + 1);
         vm.prank(alice);
         _nabu.updateWorkUri(workId, "https://lol.lmao/{id}.json");
     }
@@ -826,7 +826,7 @@ contract NabuTest is Ownable, Test {
 
     function test_updateWorkTitle_reverts_whenItsTooLate() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
-        vm.roll(THIRTY_DAYS + 1);
+        vm.warp(THIRTY_DAYS + 1);
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         _nabu.updateWorkTitle(workId, "Donny Q");
@@ -850,7 +850,7 @@ contract NabuTest is Ownable, Test {
 
     function test_updateWorkTotalPassagesCount_reverts_whenItsTooLate() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
-        vm.roll(THIRTY_DAYS + 1);
+        vm.warp(THIRTY_DAYS + 1);
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(TooLate.selector, THIRTY_DAYS));
         _nabu.updateWorkTotalPassagesCount(workId, 69_000);
@@ -869,7 +869,7 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY - 1);
+        vm.warp(ONE_DAY - 1);
         vm.prank(charlie);
         vm.expectRevert(abi.encodeWithSelector(TooSoonToConfirmContent.selector, ONE_DAY));
         _nabu.confirmPassageContent(workId, 1);
@@ -881,7 +881,7 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY - 1);
+        vm.warp(ONE_DAY - 1);
         vm.prank(charlie);
         vm.expectRevert(abi.encodeWithSelector(TooSoonToAssignContent.selector, ONE_DAY));
         _nabu.assignPassageContent(workId, 1, passageOne);
@@ -893,11 +893,11 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.confirmPassageContent(workId, 1);
 
-        vm.roll(ONE_DAY + SEVEN_DAYS - 1);
+        vm.warp(ONE_DAY + SEVEN_DAYS - 1);
         vm.prank(dave);
         vm.expectRevert(abi.encodeWithSelector(TooSoonToConfirmContent.selector, ONE_DAY + SEVEN_DAYS));
         _nabu.confirmPassageContent(workId, 1);
@@ -909,11 +909,11 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY + SEVEN_DAYS - 1);
+        vm.warp(ONE_DAY + SEVEN_DAYS - 1);
         vm.prank(dave);
         vm.expectRevert(abi.encodeWithSelector(TooSoonToAssignContent.selector, ONE_DAY + SEVEN_DAYS));
         _nabu.assignPassageContent(workId, 1, passageOne);
@@ -925,11 +925,11 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
-        vm.roll(ONE_DAY + SEVEN_DAYS);
+        vm.warp(ONE_DAY + SEVEN_DAYS);
         vm.prank(dave);
         _nabu.assignPassageContent(workId, 1, passageOneMalicious);
 
@@ -1051,7 +1051,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageMetadata(workId, 1, passageOneMetadata);
 
         // Charlie tries to reassign their own metadata even after waiting
-        vm.roll(SEVEN_DAYS);
+        vm.warp(SEVEN_DAYS);
         vm.prank(charlie);
         vm.expectRevert(abi.encodeWithSelector(CannotReassignOwnMetadata.selector));
         _nabu.assignPassageMetadata(workId, 1, passageTwoMetadata);
@@ -1068,7 +1068,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageMetadata(workId, 1, passageOneMetadata);
 
         // Dave tries before SEVEN_DAYS have elapsed; canAssignAfter = 0 + SEVEN_DAYS
-        vm.roll(SEVEN_DAYS - 1);
+        vm.warp(SEVEN_DAYS - 1);
         vm.prank(dave);
         vm.expectRevert(abi.encodeWithSelector(TooSoonToAssignMetadata.selector, SEVEN_DAYS));
         _nabu.assignPassageMetadata(workId, 1, passageTwoMetadata);
@@ -1109,11 +1109,11 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.confirmPassageContent(workId, 1);
 
-        vm.roll(ONE_DAY + SEVEN_DAYS);
+        vm.warp(ONE_DAY + SEVEN_DAYS);
         vm.prank(dave);
         _nabu.confirmPassageContent(workId, 1);
 
@@ -1132,7 +1132,7 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageMetadata(workId, 1, passageOneMetadata);
 
         // Dave tries to assign identical metadata after the cooldown
-        vm.roll(SEVEN_DAYS);
+        vm.warp(SEVEN_DAYS);
         vm.prank(dave);
         vm.expectRevert(abi.encodeWithSelector(NoChangeInMetadata.selector));
         _nabu.assignPassageMetadata(workId, 1, passageOneMetadata);
@@ -1145,11 +1145,11 @@ contract NabuTest is Ownable, Test {
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
 
-        vm.roll(ONE_DAY);
+        vm.warp(ONE_DAY);
         vm.prank(charlie);
         _nabu.confirmPassageContent(workId, 1);
 
-        vm.roll(ONE_DAY + SEVEN_DAYS);
+        vm.warp(ONE_DAY + SEVEN_DAYS);
         vm.prank(dave);
         _nabu.confirmPassageContent(workId, 1);
 
@@ -1179,7 +1179,7 @@ contract NabuTest is Ownable, Test {
 
         // A new independent confirmer (frank, who hasn't participated) can re-finalize the passage,
         // implicitly endorsing the existing content and admin-assigned metadata
-        vm.roll(ONE_DAY + SEVEN_DAYS + SEVEN_DAYS);
+        vm.warp(ONE_DAY + SEVEN_DAYS + SEVEN_DAYS);
         vm.prank(frank);
         _nabu.confirmPassageContent(workId, 1);
 
@@ -1279,7 +1279,7 @@ contract NabuTest is Ownable, Test {
 
     function test_assignPassageContent_reverts_whenPassCooldownIsActive() public {
         // Create work at block 1, then transfer a pass to bob at block 1
-        vm.roll(1);
+        vm.warp(1);
         vm.startPrank(alice);
         uint256 workId = createWork(alice);
         _ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
@@ -1292,20 +1292,20 @@ contract NabuTest is Ownable, Test {
     }
 
     function test_assignPassageContent_succeeds_afterPassCooldownExpires() public {
-        vm.roll(1);
+        vm.warp(1);
         vm.startPrank(alice);
         uint256 workId = createWork(alice);
         _ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
         vm.stopPrank();
 
-        vm.roll(1 + ONE_DAY);
+        vm.warp(1 + ONE_DAY);
         vm.prank(bob);
         _nabu.assignPassageContent(workId, 1, passageOne);
     }
 
     function test_confirmPassageContent_reverts_whenPassCooldownIsActive() public {
         // Alice assigns content (she minted, so no cooldown)
-        vm.roll(1);
+        vm.warp(1);
         vm.prank(alice);
         uint256 workId = createWork(alice);
 
@@ -1313,12 +1313,12 @@ contract NabuTest is Ownable, Test {
         _nabu.assignPassageContent(workId, 1, passageOne);
 
         // Transfer a pass to bob after content is assigned
-        vm.roll(2);
+        vm.warp(2);
         vm.prank(alice);
         _ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
 
         // Bob is in the confirmation window (ONE_DAY has passed since content) but still in cooldown
-        vm.roll(1 + ONE_DAY);
+        vm.warp(1 + ONE_DAY);
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(PassCooldown.selector, 2 + ONE_DAY));
         _nabu.confirmPassageContent(workId, 1);
@@ -1326,7 +1326,7 @@ contract NabuTest is Ownable, Test {
 
     function test_assignPassageMetadata_reverts_whenPassCooldownIsActive() public {
         // Alice creates work and assigns content (mint recipient — no cooldown)
-        vm.roll(1);
+        vm.warp(1);
         vm.startPrank(alice);
         uint256 workId = createWork(alice);
         _nabu.assignPassageContent(workId, 1, passageOne);
@@ -1335,14 +1335,14 @@ contract NabuTest is Ownable, Test {
         vm.stopPrank();
 
         // Charlie is still within the one-day holding period
-        vm.roll(2);
+        vm.warp(2);
         vm.prank(charlie);
         vm.expectRevert(abi.encodeWithSelector(PassCooldown.selector, 1 + ONE_DAY));
         _nabu.assignPassageMetadata(workId, 1, passageOneMetadata);
     }
 
     function test_passReceivedAt_resetsWhenBalanceReplenishedFromZero() public {
-        vm.roll(1);
+        vm.warp(1);
         vm.startPrank(alice);
         uint256 workId = createWork(alice);
         _ashurbanipal.safeTransferFrom(alice, bob, workId, 1_000, "");
@@ -1351,12 +1351,12 @@ contract NabuTest is Ownable, Test {
         assertEq(_ashurbanipal.passReceivedAt(workId, bob), 1, "passReceivedAt should be block 1 after first transfer");
 
         // Bob transfers all passes away — balance goes to zero
-        vm.roll(2);
+        vm.warp(2);
         vm.prank(bob);
         _ashurbanipal.safeTransferFrom(bob, charlie, workId, 1_000, "");
 
         // Alice transfers passes back to bob — balance replenished from zero
-        vm.roll(3);
+        vm.warp(3);
         vm.prank(alice);
         _ashurbanipal.safeTransferFrom(alice, bob, workId, 500, "");
 
@@ -1365,7 +1365,7 @@ contract NabuTest is Ownable, Test {
 
     function test_passCooldown_doesNotApplyToMintRecipient() public {
         // Alice mints at block 1 — passReceivedAt stays at 0 (mint excluded from hook)
-        vm.roll(1);
+        vm.warp(1);
         vm.prank(alice);
         uint256 workId = createWork(alice);
 
