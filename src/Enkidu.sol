@@ -8,7 +8,9 @@ import {Receiver} from "lib/solady/src/accounts/Receiver.sol";
 
 import {Ashurbanipal} from "./Ashurbanipal.sol";
 
-/// ERRORS ///
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                          ERRORS                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 /// @dev Can't mint inactive ids
 error Inactive();
@@ -19,7 +21,9 @@ error OverLimit();
 /// @dev Can't mint zero passes
 error ZeroCount();
 
-/// EVENTS ///
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                          EVENTS                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 event ActiveUpdated(uint256 id, bool isActive);
 
