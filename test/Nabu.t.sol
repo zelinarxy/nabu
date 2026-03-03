@@ -29,6 +29,7 @@ import {
     TooSoonToAssignMetadata,
     TooSoonToConfirmContent,
     Work,
+    ZeroAddress,
     ZeroPassagesCount,
     ZeroSupply
 } from "../src/Nabu.sol";
@@ -666,7 +667,7 @@ contract NabuTest is Ownable, Test {
     function test_updateWorkAdmin_reverts_whenNewAdminIsZeroAddress() public {
         uint256 workId = createWorkAndDistributePassesAsAlice();
         vm.prank(alice);
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSelector(ZeroAddress.selector));
         _nabu.updateWorkAdmin(workId, address(0));
     }
 

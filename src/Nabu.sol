@@ -49,6 +49,8 @@ error TooSoonToAssignContent(uint256 canAssignAfter);
 error TooSoonToAssignMetadata(uint256 canAssignAfter);
 /// @dev There is a seven-day cooling-off period between first and second content confirmations
 error TooSoonToConfirmContent(uint256 canConfirmAfter);
+/// @dev Work admin address must not be address(0)
+error ZeroAddress();
 /// @dev A work's `totalPassagesCount` must be at least 1
 error ZeroPassagesCount();
 /// @dev A work's pass supply must be at least 1; a work with no passes can never have content assigned
@@ -714,7 +716,8 @@ contract Nabu is Ownable {
     /// @param workId The id of the work
     /// @param newAdminAddress The address of the work's new admin
     function updateWorkAdmin(uint256 workId, address newAdminAddress) external onlyWorkAdmin(workId) {
-        require(newAdminAddress != address(0));
+        if (newAdminAddress == address(0)) revert ZeroAddress();
+
         address previousAdminAddress = _works[workId].admin;
         _works[workId].admin = newAdminAddress;
         emit WorkAdminUpdated({
