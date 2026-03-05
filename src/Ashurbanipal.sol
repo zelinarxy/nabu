@@ -8,21 +8,24 @@ import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 /*                          ERRORS                            */
 /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-/// @dev User is unable to send or receive NFTs for a given work because the work's admin has blacklisted them
+/// @dev User is unable to send or receive passes for a given work because the work's admin has blacklisted them
 error IsFrozen();
-/// @dev Only the Nabu contract can call the function
+/// @dev Only the Nabu contract can call a given function
 error NotNabu();
-/// @dev Nabu address cannot be set to address(0)
+/// @dev The Nabu contract address cannot be set to address(0)
 error ZeroAddress();
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                          EVENTS                            */
 /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
+/// @dev A work admin has frozen or unfrozen a user's passes for that work
 event FreezelistUpdated(uint256 workId, address user, bool shouldFreeze);
 
+/// @dev The contract owner has updated the Nabu contract address
 event NabuAddressUpdated(address newNabuAddress);
 
+/// @dev A work admin has updated the metadata uri for that work
 event UriUpdated(uint256 workId, string newUri);
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -33,18 +36,20 @@ event UriUpdated(uint256 workId, string newUri);
 ///
 /// @author Zelinar XY
 contract Ashurbanipal is ERC1155, Ownable {
-    /// @notice Address of the Nabu contract
+    /// @notice The Nabu contract address
     address private _nabuAddress;
 
-    /// @notice Mapping of ids to metadata uris
-    mapping(uint256 id => string uri) private _uris;
+    /// @notice Mapping of work ids to metadata uris
+    mapping(uint256 workId => string uri) private _uris;
 
-    /// @notice A work's admin can ban a user from sending or receiving passes for a work
+    /// @notice Track frozen passes: a work admin can ban a given user from sending or receiving passes for that work
     mapping(uint256 workId => mapping(address user => bool isFrozen)) private _freezelist;
 
-    /// @notice The timestamp when a user's pass balance for a given work was last replenished from zero via transfer
+    /// @notice The timestamp when a user last received a pass
     ///
-    /// @dev Nabu uses this to enforce a one-day holding period before new pass recipients can participate
+    /// @dev Nabu uses these values to enforce a one-day holding period before new pass recipients can participate
+    /// @dev This gives work admins time to blacklist bad actors who rotate passes to new addresses after each attack
+    /// @dev Receiving additional passes when a user already has a non-zero balance won't update this value
     mapping(uint256 workId => mapping(address user => uint256 receivedAt)) public passReceivedAt;
 
     /// @notice Only the Nabu contract can invoke the function
@@ -55,19 +60,23 @@ contract Ashurbanipal is ERC1155, Ownable {
 
     /// @notice Initialize the contract with the Nabu contract address and the owner who can update it
     ///
+    /// @dev This contract inherits from the Solady implementation of ERC1155
+    ///
     /// @param initialNabuAddress The Nabu contract address
     constructor(address initialNabuAddress) ERC1155() {
         _initializeOwner(msg.sender);
         _nabuAddress = initialNabuAddress;
     }
 
-    /// @notice Mint passes to a newly created work's admin, or an address the admin has specified
+    /// @notice Mint passes to a newly created work's admin, or to an address the admin has specified
     ///
     /// @dev The Nabu contract automatically calls this function when a work is created
     /// @dev Only the Nabu contract can call this function
+    /// @dev Nabu work ids correspond to Ashurbanipal NFT ids
+    /// @dev Work admins can optionally deploy an Enkidu contract to receive and distribute passes for multiple works
     ///
-    /// @param account The recipient address
-    /// @param workId The id of the work, which will serve as the NFT id
+    /// @param account The address of the passes' recipient
+    /// @param workId The id of the work
     /// @param supply The total number of passes
     /// @param workUri The metadata uri
     function mint(address account, uint256 workId, uint256 supply, string calldata workUri) external onlyNabu {
@@ -77,7 +86,7 @@ contract Ashurbanipal is ERC1155, Ownable {
 
     /// @notice Get the Nabu contract address
     ///
-    /// @return The contract address
+    /// @return The Nabu contract address
     function getNabuAddress() external view returns (address) {
         return _nabuAddress;
     }
@@ -86,10 +95,11 @@ contract Ashurbanipal is ERC1155, Ownable {
     ///
     /// @dev The Nabu contract automatically calls this function when a work admin invokes `updateBlacklist`
     /// @dev Only the Nabu contract can call this function
+    /// @dev Nabu work ids correspond to Ashurbanipal NFT ids 
     ///
     /// @param workId The id of the work
     /// @param user The address of the user
-    /// @param shouldFreeze Should the user's passes be frozen or unfrozen
+    /// @param shouldFreeze Whether to freeze or unfreeze the user's passes
     function updateFreezelist(uint256 workId, address user, bool shouldFreeze) external onlyNabu {
         _freezelist[workId][user] = shouldFreeze;
         emit FreezelistUpdated({workId: workId, user: user, shouldFreeze: shouldFreeze});
@@ -99,7 +109,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     ///
     /// @dev Only the contract owner can call this function
     ///
-    /// @param newNabuAddress The new address
+    /// @param newNabuAddress The new Nabu contract address
     function updateNabuAddress(address newNabuAddress) external onlyOwner {
         if (newNabuAddress == address(0)) revert ZeroAddress();
         _nabuAddress = newNabuAddress;
@@ -109,6 +119,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @notice Update the metadata uri for a given work
     ///
     /// @dev Only the Nabu contract can call this function
+    /// @dev Nabu work ids correspond to Ashurbanipal NFT ids 
     ///
     /// @param workId The id of the work
     /// @param newUri The new metadata uri
@@ -119,7 +130,9 @@ contract Ashurbanipal is ERC1155, Ownable {
 
     /// @notice Get a work's metadata uri
     ///
-    /// @return The uri
+    /// @dev Nabu work ids correspond to Ashurbanipal NFT ids 
+    ///
+    /// @return The metadata uri
     function uri(uint256 workId) public view override returns (string memory) {
         return _uris[workId];
     }
@@ -128,7 +141,7 @@ contract Ashurbanipal is ERC1155, Ownable {
         return true;
     }
 
-    /// @notice Prevent the transfer of frozen passes
+    /// @notice Prevent the transfer of passes to or from blacklisted users
     function _beforeTokenTransfer(address from, address to, uint256[] memory ids, uint256[] memory, bytes memory)
         internal
         view
@@ -155,12 +168,15 @@ contract Ashurbanipal is ERC1155, Ownable {
 
     /// @notice Record when a user's pass balance for a work is replenished from zero via transfer
     ///
-    /// @dev Mints (from == address(0)) are excluded: initial recipients have no holding period
+    /// @dev This is necessary to enforce a one-day waiting period between receiving a pass and updating work content
+    /// @dev Mints (from == address(0)) and users who already had a non-zero balance aren't subject to a waiting period
     function _afterTokenTransfer(address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory)
         internal
         override
     {
-        if (from == address(0) || to == address(0)) return;
+        if (from == address(0) || to == address(0)) {
+            return;
+        }
 
         uint256 len = ids.length;
 

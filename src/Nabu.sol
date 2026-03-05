@@ -139,19 +139,20 @@ struct Work {
     uint96 createdAt;
 }
 
-// TODO
+// TODO: metadata
 /**
- * @notice Nabu provides a method for preserving texts on EVM blockchains by delegating the task to potentially large
- * networks. The fundamental unit of a text in Nabu is a passage, and the content of a passage is recorded via a three-
+ * @notice Nabu provides a method for preserving texts on EVM blockchains by delegating the task to a potentially large
+ * community. The basic unit of a text in Nabu is a passage, and the content of a passage is recorded via a three-
  * step process: first, a user assigns content to the empty passage; second, another user (the first user isn't able to
  * perform this step) confirms that the passage's content is correct, either by assigning it identical content or
  * calling a lighter confirm function; third, yet another user (who can't be either of the first two) performs a second
- * confirmation. At this point the passage's content is considered finalized. Only the work's admin (the user who
- * created the work or has been assigned admin status by the creator) can overwrite a passage at this point. Then the
- * confirmation count is reset to zero and the process repeats. The goal is to prevent any given user or group of users
- * from vandalizing a work by assigning it incorrect content, while providing a mechanism for honest users to record
- * their text permanently on the blockchain. Ideally, once every passage of a work is finalized with correct content,
- * the admin renounces their status and the text is set in stone.
+ * confirmation. At this point the passage's content is considered finalized. If a user overwrites a passage's content
+ * with something different, the confirmation count resets to zero. Once a passage is finalized, only the work's admin
+ * (the user who created the work or has been assigned admin status by the creator) can overwrite the content. This
+ * also resets the confirmation count to zero. The goal is to prevent any given user or group of users from vandalizing
+ * a work by assigning it incorrect content, while providing a mechanism for honest users to record their text
+ * permanentlyon the blockchain. Ideally, once every passage of a work is finalized with correct content, the admin
+ * renounces their status and the text is set in stone.
  */
 struct Passage {
     /// @dev The address pointer for the passage's content

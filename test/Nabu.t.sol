@@ -34,6 +34,8 @@ import {
     ZeroSupply
 } from "../src/Nabu.sol";
 
+// TODO: test that admin can't finalize by themselves
+
 contract NabuTest is Ownable, Test {
     Ashurbanipal private _ashurbanipal;
     Nabu private _nabu;
