@@ -18,6 +18,7 @@ import {
     RADBRO,
     REMILIO,
     SCHIZOPOSTER,
+    TransferFailed,
     WhitelistedToken,
     ZeroCount
 } from "../src/Enkidu.sol";
@@ -388,7 +389,7 @@ contract EnkiduTest is Ownable, Test {
         MockReverter reverter = new MockReverter();
 
         vm.prank(alice);
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSelector(TransferFailed.selector));
         _enkidu.withdraw(0.05 ether, address(reverter));
     }
 

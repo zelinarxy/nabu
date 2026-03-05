@@ -18,6 +18,8 @@ error Inactive();
 error InsufficientFunds();
 /// @dev The attempted mint puts the user over the per-address limit on total mints per id
 error OverLimit();
+/// @dev ETH transfer failed during withdrawal
+error TransferFailed();
 /// @dev Can't mint zero passes
 error ZeroCount();
 
@@ -313,6 +315,6 @@ contract Enkidu is Ownable, Receiver {
         }
 
         (bool success,) = payable(recipient).call{value: amountToWithdraw}("");
-        require(success);
+        if (!success) revert TransferFailed();
     }
 }
