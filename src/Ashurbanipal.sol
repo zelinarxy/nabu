@@ -95,7 +95,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     ///
     /// @dev The Nabu contract automatically calls this function when a work admin invokes `updateBlacklist`
     /// @dev Only the Nabu contract can call this function
-    /// @dev Nabu work ids correspond to Ashurbanipal NFT ids 
+    /// @dev Nabu work ids correspond to Ashurbanipal NFT ids
     ///
     /// @param workId The id of the work
     /// @param user The address of the user
@@ -119,7 +119,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @notice Update the metadata uri for a given work
     ///
     /// @dev Only the Nabu contract can call this function
-    /// @dev Nabu work ids correspond to Ashurbanipal NFT ids 
+    /// @dev Nabu work ids correspond to Ashurbanipal NFT ids
     ///
     /// @param workId The id of the work
     /// @param newUri The new metadata uri
@@ -130,7 +130,7 @@ contract Ashurbanipal is ERC1155, Ownable {
 
     /// @notice Get a work's metadata uri
     ///
-    /// @dev Nabu work ids correspond to Ashurbanipal NFT ids 
+    /// @dev Nabu work ids correspond to Ashurbanipal NFT ids
     ///
     /// @return The metadata uri
     function uri(uint256 workId) public view override returns (string memory) {
