@@ -6,10 +6,11 @@ import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 import {Ashurbanipal} from "./Ashurbanipal.sol";
 
+uint256 constant MAX_CONTENT_SIZE = 24_576;
+
 uint256 constant ONE_DAY = 86_400;
 uint256 constant SEVEN_DAYS = 604_800;
 uint256 constant THIRTY_DAYS = 2_592_000;
-uint256 constant MAX_CONTENT_SIZE = 24_576;
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                          ERRORS                            */
@@ -33,14 +34,14 @@ error MetadataTooLarge();
 error NoChangeInMetadata();
 /// @dev User must hold a "pass" (Ashurbanipal NFT) corresponding to the work in order to assign or confirm content
 error NoPass();
-/// @dev Passes received via transfer must be held for one day before they can be used; does not apply if the user's balance was already above zero
-error PassCooldown(uint256 until);
 /// @dev Can't confirm an empty passage
 error NoPassageContent();
 /// @dev Function is restricted to the work's admin
 error NotWorkAdmin(address workAdmin);
 /// @dev Can't assign or confirm a passage's content once it's finalized
 error PassageAlreadyFinalized();
+/// @dev Passes received via transfer must be held for one day before they can be used (only if prior balance was zero)
+error PassCooldown(uint256 until);
 /// @dev Function can only be called within 30 days of a work's creation
 error TooLate(uint256 expiredAt);
 /// @dev There is a cooling-off period before first confirmation (one day) and second confirmation (seven days)
@@ -70,17 +71,17 @@ event PassageContentAssigned(
     uint256 workId, uint256 passageId, address by, address contentPointer, uint8 confirmationIndex
 );
 
-/// @dev Content pointer is the SSTORE2 location
-event PassageMetadataAssigned(uint256 workId, uint256 passageId, address by, address metadataPointer);
-
 /// @dev Content pointer is the SSTORE2 location, whether new or existing
 event PassageContentAssignedByAdmin(uint256 workId, uint256 passageId, address by, address contentPointer);
 
-/// @dev Content pointer is the SSTORE2 location
-event PassageMetadataAssignedByAdmin(uint256 workId, uint256 passageId, address by, address metadataPointer);
-
 /// @dev Confirmation index is 1 for the first confirmation (`byOne`), 2 for the second (`byTwo`)
 event PassageContentConfirmed(uint256 workId, uint256 passageId, address by, uint8 confirmationIndex);
+
+/// @dev Content pointer is the SSTORE2 location
+event PassageMetadataAssigned(uint256 workId, uint256 passageId, address by, address metadataPointer);
+
+/// @dev Content pointer is the SSTORE2 location
+event PassageMetadataAssignedByAdmin(uint256 workId, uint256 passageId, address by, address metadataPointer);
 
 event WorkAdminUpdated(uint256 workId, address previousAdminAddress, address newAdminAddress);
 
@@ -115,7 +116,8 @@ event WorkUriUpdated(uint256 workId, string newUri);
  * a work by calling `createWork`, they must specify how many passages the work has (this can be updated, along with
  * author and title, for 30 days after creating the work). This user, who becomes the work's admin, should
  * decide ahead of time what each passage's content should be, and provide other users an interface where they can
- * populate each passage's content correctly. For the Bible, for example, passage 1 would be Genesis 1:1. Works that aren't scripture or classics will need to be broken up into passages by admins.
+ * populate each passage's content correctly. For the Bible, for example, passage 1 would be Genesis 1:1. Works that
+ * aren't scripture or classics will need to be broken up into passages by admins.
  */
 struct Work {
     /// @dev The real-world author of the work, e.g. Homer or Shakespeare
@@ -133,7 +135,7 @@ struct Work {
     address admin;
     /// @dev The total number of passages in the work
     uint96 totalPassagesCount;
-    /// @dev The timestamp at which the work was created (instantiated onchain using Nabu, not written in the real world)
+    /// @dev The timestamp when the work was created (initialized onchain using Nabu, not written in the real world)
     uint96 createdAt;
 }
 
@@ -208,20 +210,33 @@ contract Nabu is Ownable {
     uint256 private _worksTip;
 
     /// @notice Only a work's admin can update the work's metadata, e.g. title and author
+    ///
+    /// @param workId The id of the work being modified
     modifier onlyWorkAdmin(uint256 workId) {
         address admin = _works[workId].admin;
-        if (msg.sender != admin) revert NotWorkAdmin(admin);
+
+        if (msg.sender != admin) {
+            revert NotWorkAdmin(admin);
+        }
         _;
     }
 
     /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
+    ///
+    /// @param workId The id of the work being modified
     modifier onlyWorkAdminNotTooLate(uint256 workId) {
         Work storage work = _works[workId];
         address admin = work.admin;
-        if (msg.sender != admin) revert NotWorkAdmin(admin);
+
+        if (msg.sender != admin) {
+            revert NotWorkAdmin(admin);
+        }
+
         uint256 expiredAt = work.createdAt + THIRTY_DAYS;
-        // Admin can still make changes in the `expiredAt` block itself
-        if (block.timestamp > expiredAt) revert TooLate(expiredAt);
+
+        if (block.timestamp > expiredAt) {
+            revert TooLate(expiredAt);
+        }
         _;
     }
 
@@ -275,6 +290,7 @@ contract Nabu is Ownable {
     }
 
     /// @notice A work's admin can update the metadata of a passage even if that passage has been finalized
+    ///
     /// @dev Unlike other admin-only functions, this one has no time limitation (no `notTooLate` modifier)
     ///
     /// @param workId The id of the work being updated

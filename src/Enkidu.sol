@@ -138,13 +138,22 @@ contract Enkidu is Ownable, Receiver {
     /// @notice Update the Humbaba address and contract instance
     ///
     /// @dev Only the contract owner can call this function
+    ///
+    /// @param newHumbabaAddress The new Humbaba contract address
     function updateHumbaba(address newHumbabaAddress) external onlyOwner {
         _humbaba = ERC721(newHumbabaAddress);
         emit HumbabaUpdated(newHumbabaAddress);
     }
 
-    /// @dev Returns true if `account` holds any balance of the specified whitelisted token.
-    /// @dev For `Any`, exhaustively checks all collections (short-circuits on the first match).
+    /// @notice Check if the user is eligible for free mints
+    ///
+    /// @dev Returns true if `account` holds any balance of the specified whitelisted token
+    /// @dev For `Any`, exhaustively checks all collections (short-circuits on the first match)
+    ///
+    /// @param account The user's address
+    /// @param token The eligible token the user is expected to hold, or `Any` (checks all)
+    ///
+    /// @return Whether the user is whitelisted
     function _isWhitelisted(address account, WhitelistedToken token) private view returns (bool) {
         if (token == WhitelistedToken.Cult) return ERC20(CULT).balanceOf(account) > 0;
         if (token == WhitelistedToken.Aura) return ERC721(AURA).balanceOf(account) > 0;
@@ -315,6 +324,9 @@ contract Enkidu is Ownable, Receiver {
         }
 
         (bool success,) = payable(recipient).call{value: amountToWithdraw}("");
-        if (!success) revert TransferFailed();
+
+        if (!success) {
+            revert TransferFailed();
+        }
     }
 }
