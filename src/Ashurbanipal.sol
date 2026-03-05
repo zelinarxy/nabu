@@ -4,7 +4,9 @@ pragma solidity 0.8.28;
 import {ERC1155} from "lib/solady/src/tokens/ERC1155.sol";
 import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 
-/// ERRORS ///
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                          ERRORS                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 /// @dev User is unable to send or receive NFTs for a given work because the work's admin has blacklisted them
 error IsFrozen();
@@ -13,7 +15,9 @@ error NotNabu();
 /// @dev Nabu address cannot be set to address(0)
 error ZeroAddress();
 
-/// EVENTS ///
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                          EVENTS                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 event FreezelistUpdated(uint256 workId, address user, bool shouldFreeze);
 
@@ -38,9 +42,10 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @notice A work's admin can ban a user from sending or receiving passes for a work
     mapping(uint256 workId => mapping(address user => bool isFrozen)) private _freezelist;
 
-    /// @notice The timestamp at which a user's pass balance for a work was most recently replenished from zero via transfer
+    /// @notice The timestamp when a user's pass balance for a given work was last replenished from zero via transfer
+    ///
     /// @dev Nabu uses this to enforce a one-day holding period before new pass recipients can participate
-    mapping(uint256 id => mapping(address user => uint256 receivedAt)) public passReceivedAt;
+    mapping(uint256 workId => mapping(address user => uint256 receivedAt)) public passReceivedAt;
 
     /// @notice Only the Nabu contract can invoke the function
     modifier onlyNabu() {
@@ -149,6 +154,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     }
 
     /// @notice Record when a user's pass balance for a work is replenished from zero via transfer
+    ///
     /// @dev Mints (from == address(0)) are excluded: initial recipients have no holding period
     function _afterTokenTransfer(address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory)
         internal
