@@ -17,7 +17,7 @@ contract ConfigureEnkiduMintSepolia is Script {
         vm.startBroadcast();
         enkidu = Enkidu(ENKIDU);
 
-        enkidu.updatePrice({id: WORK_ID, price: PRICE});
+        enkidu.updatePrice({id: WORK_ID, newPrice: PRICE});
 
         enkidu.updateActive({id: WORK_ID, isActive: true});
 

@@ -48,16 +48,16 @@ contract HumbabaTest is Ownable, Test {
         _humbaba.tokenURI(2);
     }
 
-    function test_updateBaseURI_updatesCorrectly() public {
-        assertEq(_humbaba.baseURI(), "https://foo.bar/", "Before URI mismatch");
+    function test_updateBaseUri_updatesCorrectly() public {
+        assertEq(_humbaba.baseUri(), "https://foo.bar/", "Before URI mismatch");
         vm.prank(alice);
-        _humbaba.updateBaseURI("https://baz.qux/");
-        assertEq(_humbaba.baseURI(), "https://baz.qux/", "After URI mismatch");
+        _humbaba.updateBaseUri("https://baz.qux/");
+        assertEq(_humbaba.baseUri(), "https://baz.qux/", "After URI mismatch");
     }
 
-    function test_updateBaseURI_reverts_whenCallerIsNotOwner() public {
+    function test_updateBaseUri_reverts_whenCallerIsNotOwner() public {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
-        _humbaba.updateBaseURI("https://baz.qux/");
+        _humbaba.updateBaseUri("https://baz.qux/");
     }
 }

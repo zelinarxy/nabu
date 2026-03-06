@@ -6,33 +6,37 @@ import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
 import {Ashurbanipal} from "./Ashurbanipal.sol";
 
+/// @dev SSTORE2 has a max data size 24,576 bytes
 uint256 constant MAX_CONTENT_SIZE = 24_576;
 
+/// @dev One day in seconds
 uint256 constant ONE_DAY = 86_400;
+/// @dev Seven days in seconds
 uint256 constant SEVEN_DAYS = 604_800;
+/// @dev Thirty days in seconds
 uint256 constant THIRTY_DAYS = 2_592_000;
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                          ERRORS                            */
 /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-/// @dev User is blacklisted by the work's admin from assigning or confirming passage content for that work
+/// @dev The user is blacklisted by the work's admin from assigning or confirming passage content for that work
 error Blacklisted();
 /// @dev A given user is limited to assigning a passage's content or confirming it once
 error CannotDoubleConfirmPassage();
 /// @dev A user can't assign a passage's metadata if they were the last one to do so
 error CannotReassignOwnMetadata();
-/// @dev SSTORE2 has a max data size of MAX_CONTENT_SIZE (24_576) bytes
+/// @dev Content exceeds SSTORE2's max data size (see MAX_CONTENT_SIZE)
 error ContentTooLarge();
 /// @dev Works require a title
 error EmptyTitle();
-/// @dev Passage doesn't exist
+/// @dev No passage with the given id exists
 error InvalidPassageId();
-/// @dev SSTORE2 has a max data size of MAX_CONTENT_SIZE (24_576) bytes
+/// @dev Metadata exceeds SSTORE2's max data size (see MAX_CONTENT_SIZE)
 error MetadataTooLarge();
 /// @dev Attempting to write the same metadata twice doesn't perform a confirmation; revert to avoid wasting gas
 error NoChangeInMetadata();
-/// @dev User must hold a "pass" (Ashurbanipal NFT) corresponding to the work in order to assign or confirm content
+/// @dev User must hold an Ashurbanipal pass corresponding to the work in order to assign or confirm content
 error NoPass();
 /// @dev Can't confirm an empty passage
 error NoPassageContent();
@@ -42,51 +46,61 @@ error NotWorkAdmin(address workAdmin);
 error PassageAlreadyFinalized();
 /// @dev Passes received via transfer must be held for one day before they can be used (only if prior balance was zero)
 error PassCooldown(uint256 until);
-/// @dev Function can only be called within 30 days of a work's creation
+/// @dev The function can only be called within 30 days of a work's creation
 error TooLate(uint256 expiredAt);
-/// @dev There is a cooling-off period before first confirmation (one day) and second confirmation (seven days)
+/// @dev There is a one-day cooling-off period after initial content assignment; seven days after first confirmation
 error TooSoonToAssignContent(uint256 canAssignAfter);
-/// @dev There is a cooling-off period after first confirmation (one day)
+/// @dev There is a one-day cooling-off period after metadata (re-)assignment
 error TooSoonToAssignMetadata(uint256 canAssignAfter);
 /// @dev There is a seven-day cooling-off period between first and second content confirmations
 error TooSoonToConfirmContent(uint256 canConfirmAfter);
-/// @dev Work admin address must not be address(0); same with Ashurbanipal address
+/// @dev A work admin address can't be address(0); neither can the Ashurbanipal address
 error ZeroAddress();
-/// @dev A work's `totalPassagesCount` must be at least 1
+/// @dev A work's total passage count must be at least 1
 error ZeroPassagesCount();
-/// @dev A work's pass supply must be at least 1; a work with no passes can never have content assigned
+/// @dev A work's pass supply must be at least 1
 error ZeroSupply();
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                          EVENTS                            */
 /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
+/// @dev The Ashurbanipal contract address was updated
 event AshurbanipalUpdated(address newAshurbanipalAddress);
 
+/// @dev A work's admin added or removed a user to the blacklist for that work
 event BlacklistUpdated(uint256 workId, address user, bool shouldBan);
 
+/// @dev A user assigned content to a passage
 /// @dev Content pointer is the SSTORE2 location, whether new or existing
-/// @dev Confirmation index is 0 for freshly assigned/updated content, 1 for the first confirmation, 2 for the second
+/// @dev Confirmation index is 0 for newly assigned or updated content, 1 for the first confirmation, 2 for the second
 event PassageContentAssigned(
     uint256 workId, uint256 passageId, address by, address contentPointer, uint8 confirmationIndex
 );
 
+/// @dev A work admin assigned content to a passage
 /// @dev Content pointer is the SSTORE2 location, whether new or existing
 event PassageContentAssignedByAdmin(uint256 workId, uint256 passageId, address by, address contentPointer);
 
+/// @dev A user confirmed the content of a passage
 /// @dev Confirmation index is 1 for the first confirmation (`byOne`), 2 for the second (`byTwo`)
 event PassageContentConfirmed(uint256 workId, uint256 passageId, address by, uint8 confirmationIndex);
 
+/// @dev A user assigned metadata to a passage
 /// @dev Content pointer is the SSTORE2 location
 event PassageMetadataAssigned(uint256 workId, uint256 passageId, address by, address metadataPointer);
 
+/// @dev A work admin assigned metadata to a passage
 /// @dev Content pointer is the SSTORE2 location
 event PassageMetadataAssignedByAdmin(uint256 workId, uint256 passageId, address by, address metadataPointer);
 
+/// @dev A work admin transferred ownership over the work
 event WorkAdminUpdated(uint256 workId, address previousAdminAddress, address newAdminAddress);
 
+/// @dev A work admin updated the work's author
 event WorkAuthorUpdated(uint256 workId, string newAuthor);
 
+/// @dev A user created a new work (the user becomes the work's admin)
 event WorkCreated(
     string author,
     string metadata,
@@ -98,12 +112,16 @@ event WorkCreated(
     uint256 id
 );
 
+/// @dev A work admin updated the work's metadata
 event WorkMetadataUpdated(uint256 workId, string newMetadata);
 
+/// @dev A work admin updated the work's title
 event WorkTitleUpdated(uint256 workId, string newTitle);
 
+/// @dev A work admin updated the work's total passage count
 event WorkTotalPassagesCountUpdated(uint256 workId, uint96 newTotalPassagesCount);
 
+/// @dev A work admin updated the work's metadata uri
 event WorkUriUpdated(uint256 workId, string newUri);
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -139,27 +157,38 @@ struct Work {
     uint96 createdAt;
 }
 
-// TODO: metadata
 /**
  * @notice Nabu provides a method for preserving texts on EVM blockchains by delegating the task to a potentially large
- * community. The basic unit of a text in Nabu is a passage, and the content of a passage is recorded via a three-
- * step process: first, a user assigns content to the empty passage; second, another user (the first user isn't able to
+ * community. The basic unit of a text in Nabu is a passage, and the content of a passage is recorded via a three-step
+ * process: first, a user assigns content to the empty passage; second, another user (the first user isn't able to
  * perform this step) confirms that the passage's content is correct, either by assigning it identical content or
  * calling a lighter confirm function; third, yet another user (who can't be either of the first two) performs a second
  * confirmation. At this point the passage's content is considered finalized. If a user overwrites a passage's content
- * with something different, the confirmation count resets to zero. Once a passage is finalized, only the work's admin
- * (the user who created the work or has been assigned admin status by the creator) can overwrite the content. This
- * also resets the confirmation count to zero. The goal is to prevent any given user or group of users from vandalizing
- * a work by assigning it incorrect content, while providing a mechanism for honest users to record their text
- * permanentlyon the blockchain. Ideally, once every passage of a work is finalized with correct content, the admin
- * renounces their status and the text is set in stone.
+ * with something different, the confirmation count resets to zero. There is a one-day waiting period before content
+ * assignment and first confirmation, and a seven-day waiting period between first confirmation and second confirmation
+ * (finalization).
+ *
+ * Once a passage is finalized, only the work's admin (the user who created the work or was subsequently assigned admin
+ * status by its creator) can overwrite the content. This action also resets the confirmation count to zero. The goal
+ * is to prevent any given user or group of users from vandalizing a work by assigning it incorrect content, while
+ * providing a mechanism for honest users to record their text permanently on the blockchain. Ideally, once every
+ * passage of a work is finalized with correct content, the admin renounces their status and the text is set in stone.
+ *
+ * Passages can also, optionally, have metadata. This can be any string the admin and community find useful, for
+ * example the book, chapter and number of a Bible verse. Similarly to content, the admin should decide in advance what
+ * metadata a given passage should have, if any, and provide the community a means to populate it correctly. Metadata
+ * is treated slightly differently from content, reflecting its secondary importance. There is no need to confirm
+ * metadata separately from content. When a passage receives two confirmations, the whole passage--metadata and content
+ * --is considered finalized, and only the admin can rewrite either field. To discourage vandalism, the same user can't
+ * (re-)write metadata twice in a row, and there is a seven-day waiting period between metadata (re-)writes. If an
+ * admin rewrites the metadata of a finalized passage, the confirmation count decrements to one (`byTwo` is cleared).
  */
 struct Passage {
-    /// @dev The address pointer for the passage's content
+    /// @dev The SSTORE2 address pointer for the passage's content
     address content;
     /// @dev The timestamp at which the most recent content assignment or confirmation was performed
     uint96 at;
-    /// @dev The address pointer for the passage's metadata
+    /// @dev The SSTORE2 address pointer for the passage's metadata
     address metadata;
     /// @dev The timestamp at which the most recent metadata assignment was performed
     uint96 metadataAt;
@@ -173,6 +202,7 @@ struct Passage {
     address metadataBy;
 }
 
+/// @notice A passage, with content and metadata read from their SSTORE2 pointers and decompressed for readability
 struct ReadablePassage {
     /// @dev The decompressed, human readable content
     bytes readableContent;

@@ -27,25 +27,31 @@ error ZeroCount();
 /*                          EVENTS                            */
 /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
+/// @dev The contract owner has toggled the active flag for a specific id
 event ActiveUpdated(uint256 id, bool isActive);
 
+/// @dev The contract owner has "minted" Ashubranipal passes
 event AdminMinted(uint256 id, uint256 count, address to);
 
+/// @dev The contract owner has updated the Ashurbanipal contract address
 event AshurbanipalUpdated(address newAshurbanipalAddress);
 
+/// @dev The contract owner has updated the Humbaba contract address
 event HumbabaUpdated(address newHumbabaAddress);
 
+/// @dev A user has "minted" Ashurbanipal passes
 event Minted(uint256 id, uint256 count, address to, uint256 price, WhitelistedToken whitelistedToken);
 
+/// @dev The contract owner has updated the price to "mint" a specific id
 event PriceUpdated(uint256 id, uint256 price);
 
 /**
- * @dev Owners of a number of Remilia assets are whitelisted: they can mint up to a certain number of passes per id
+ * @dev Owners of a number of Remilia assets are whitelisted: they can "mint" up to a certain number of passes per id
  * for free. The same is the case for owners of Humbaba NFTs, assuming a Humbaba contract has been deployed and
- * associated with this Enkidu instance. To save gas, it's the responsibility of the caller of the `mint` function to
+ * associated with this Enkidu deployment. To save gas, it's the responsibility of the caller of the `mint` function to
  * be aware of the user's portfolio and specify the asset, if any, that grants them whitelisted status. If none, the
  * caller can specify `None` and avoid a series of balance checks. If the caller is uncertain, `Any` will check all
- * eligible assets.
+ * eligible assets, expensively.
  */
 enum WhitelistedToken {
     /* Meta */
@@ -53,7 +59,7 @@ enum WhitelistedToken {
     None, // 1
     /* Fungible */
     Cult, // 2
-    /* Remilia NFTs */
+    /* NFTs */
     Aura, // 3
     Cigawrette, // 4
     Milady, // 5
@@ -101,13 +107,19 @@ contract Enkidu is Ownable, Receiver {
 
     ERC721 private _humbaba;
 
-    /// @notice Map Ashurbanipal ids (corresponding to a Nabu works) to their prices
+    /// @notice Map Ashurbanipal ids to their prices
+    ///
+    /// @dev Ashurbanipal NFT ids correspond to Nabu work ids
     mapping(uint256 id => uint256 price) public prices;
 
-    /// @notice Map Ashurbanipal ids (corresponding to a Nabu works) to whether they are active (i.e., can be minted)
+    /// @notice Map Ashurbanipal ids to whether they are active (i.e., can be minted)
+    ///
+    /// @dev Ashurbanipal NFT ids correspond to Nabu work ids
     mapping(uint256 id => bool isActive) public active;
 
     /// @notice How many free mints have been used up per id
+    ///
+    /// @dev Ashurbanipal NFT ids correspond to Nabu work ids
     mapping(uint256 id => mapping(address user => uint256 mintsCount)) public usedFreeMints;
 
     /// @notice Initialize the contract with Ashurbanipal and Humbaba addresses and an owner who can update them
@@ -123,19 +135,29 @@ contract Enkidu is Ownable, Receiver {
 
     /// @notice Get the Ashurbanipal contract address
     ///
-    /// @return The contract address
+    /// @return The Ashurbanipal contract address
     function getAshurbanipalAddress() external view returns (address) {
         return address(_ashurbanipal);
     }
 
     /// @notice Get the Humbaba contract address
     ///
-    /// @return The contract address
+    /// @return The Humbaba contract address
     function getHumbabaAddress() external view returns (address) {
         return address(_humbaba);
     }
 
-    /// @notice Update the Humbaba address and contract instance
+    /// @notice Update the Ashurbanipal address
+    ///
+    /// @dev Only the contract owner can call this function
+    ///
+    /// @param newAshurbanipalAddress The new Ashurbanipal contract address
+    function updateAshurbanipal(address newAshurbanipalAddress) external onlyOwner {
+        _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
+        emit AshurbanipalUpdated(newAshurbanipalAddress);
+    }
+
+    /// @notice Update the Humbaba contract address
     ///
     /// @dev Only the contract owner can call this function
     ///
@@ -145,17 +167,18 @@ contract Enkidu is Ownable, Receiver {
         emit HumbabaUpdated(newHumbabaAddress);
     }
 
-    /// @notice Check if the user is eligible for free mints
+    /// @notice Check if a user is eligible for free mints
     ///
     /// @dev Returns true if `account` holds any balance of the specified whitelisted token
-    /// @dev For `Any`, exhaustively checks all collections (short-circuits on the first match)
+    /// @dev For `Any`, exhaustively checks all collections, short-circuiting on the first match
     ///
     /// @param account The user's address
-    /// @param token The eligible token the user is expected to hold, or `Any` (checks all)
+    /// @param token The eligible token the user is expected to hold, or `Any` (checks all), or `None` (returns false)
     ///
     /// @return Whether the user is whitelisted
     function _isWhitelisted(address account, WhitelistedToken token) private view returns (bool) {
         if (token == WhitelistedToken.Cult) return ERC20(CULT).balanceOf(account) > 0;
+
         if (token == WhitelistedToken.Aura) return ERC721(AURA).balanceOf(account) > 0;
         if (token == WhitelistedToken.Cigawrette) return ERC721(CIGAWRETTE).balanceOf(account) > 0;
         if (token == WhitelistedToken.Milady) return ERC721(MILADY).balanceOf(account) > 0;
@@ -163,6 +186,7 @@ contract Enkidu is Ownable, Receiver {
         if (token == WhitelistedToken.Radbro) return ERC721(RADBRO).balanceOf(account) > 0;
         if (token == WhitelistedToken.Remilio) return ERC721(REMILIO).balanceOf(account) > 0;
         if (token == WhitelistedToken.Schizoposter) return ERC721(SCHIZOPOSTER).balanceOf(account) > 0;
+
         if (token == WhitelistedToken.Humbaba) return _humbaba.balanceOf(account) > 0;
 
         if (token == WhitelistedToken.Any) {
@@ -206,7 +230,8 @@ contract Enkidu is Ownable, Receiver {
     /// @notice Public "mint" function to transfer a quantity of Ashurbanipal NFTs to a recipient
     ///
     /// @dev The NFTs already exist and are held by the Ashurbanipal contract; "mint" reflects the end-user experience
-    /// @dev The caller should specify what whitelisted token they hold (see comment on the `WhitelistedToken` enum)
+    /// @dev If the user holds a whitelisted token, caller should specify (see comment on the `WhitelistedToken` enum)
+    /// @dev Ashurbanipal NFT ids correspond to Nabu work ids
     ///
     /// @param id The id of the Ashurbanipal NFT
     /// @param count The quantity of NFTs to transfer
@@ -219,13 +244,13 @@ contract Enkidu is Ownable, Receiver {
 
         uint256 existingBalance = _ashurbanipal.balanceOf({owner: to, id: id});
 
-        // Users can only mint a certain total count per id, regardless of whitelist status
+        // Users can only mint a certain total count per id, regardless of whitelisted status
         if (count + existingBalance > MINT_LIMIT) {
             revert OverLimit();
         }
 
         // Track the number of free mints expended per user per id. Otherwise holders of whitelisted collections could
-        // mint endless free Ashurbanipal passes by calling the function multiple times.
+        // mint endless free Ashurbanipal passes by calling the function multiple times
         uint256 usedFree = usedFreeMints[id][to];
         uint256 remainingFreeMints;
 
@@ -287,20 +312,10 @@ contract Enkidu is Ownable, Receiver {
     /// @dev Only the contract owner can call this function
     ///
     /// @param id The id of the Ashurbanipal NFT
-    /// @param price The new price
-    function updatePrice(uint256 id, uint256 price) external onlyOwner {
-        prices[id] = price;
-        emit PriceUpdated({id: id, price: price});
-    }
-
-    /// @notice Update the Ashurbanipal address and contract instance
-    ///
-    /// @dev Only the contract owner can call this function
-    ///
-    /// @param newAshurbanipalAddress The new contract address
-    function updateAshurbanipal(address newAshurbanipalAddress) external onlyOwner {
-        _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
-        emit AshurbanipalUpdated(newAshurbanipalAddress);
+    /// @param newPrice The new price
+    function updatePrice(uint256 id, uint256 newPrice) external onlyOwner {
+        prices[id] = newPrice;
+        emit PriceUpdated({id: id, price: newPrice});
     }
 
     /// @notice Withdraw mint proceeds

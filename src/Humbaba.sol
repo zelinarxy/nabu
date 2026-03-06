@@ -8,7 +8,8 @@ import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 /// @dev The token doesn't exist
 error NonExistentToken();
 
-event BaseURIUpdated(string newBaseURI);
+/// @dev The contract owner has updated the base uri
+event BaseUriUpdated(string newBaseUri);
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                         𒄷𒌝𒁀𒁀                           */
@@ -18,19 +19,19 @@ event BaseURIUpdated(string newBaseURI);
 ///
 /// @author Zelinar XY
 contract Humbaba is ERC721, Ownable {
-    /// @notice The base metadata URI
-    string public baseURI;
+    /// @notice The base metadata uri
+    string public baseUri;
 
     uint256 private nextTokenId = 1;
 
-    /// @notice Initialize the contract with a base metadata URI and an owner
+    /// @notice Initialize the contract with a base metadata uri and an owner
     ///
-    /// @dev The metadata URI should have a trailing slash, e.g. "ipfs://<hash>/"
+    /// @dev The metadata uri should have a trailing slash, e.g. "ipfs://<hash>/"
     ///
-    /// @param _baseURI The base metadata URI
-    constructor(string memory _baseURI) {
+    /// @param _baseUri The base metadata uri
+    constructor(string memory _baseUri) {
         _initializeOwner(msg.sender);
-        baseURI = _baseURI;
+        baseUri = _baseUri;
     }
 
     /// @notice Get the collection name (it's Humbaba)
@@ -66,17 +67,17 @@ contract Humbaba is ERC721, Ownable {
             revert NonExistentToken();
         }
 
-        uri = string.concat(baseURI, LibString.toString(id));
+        uri = string.concat(baseUri, LibString.toString(id));
     }
 
-    /// @notice Update the base metadata URI
+    /// @notice Update the base metadata uri
     ///
     /// @dev Restricted to the contract owner
-    /// @dev Should have a trailing slash, e.g. "ipfs://<hash>/"
+    /// @dev Requires a trailing slash, e.g. "ipfs://<hash>/"
     ///
-    /// @param newBaseURI The new base URI
-    function updateBaseURI(string calldata newBaseURI) external onlyOwner {
-        baseURI = newBaseURI;
-        emit BaseURIUpdated(newBaseURI);
+    /// @param newBaseUri The new base uri
+    function updateBaseUri(string calldata newBaseUri) external onlyOwner {
+        baseUri = newBaseUri;
+        emit BaseUriUpdated(newBaseUri);
     }
 }
