@@ -8,7 +8,9 @@ import {Receiver} from "lib/solady/src/accounts/Receiver.sol";
 
 import {Ashurbanipal} from "./Ashurbanipal.sol";
 
-/// ERRORS ///
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                          ERRORS                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
 /// @dev Can't mint inactive ids
 error Inactive();
@@ -16,26 +18,40 @@ error Inactive();
 error InsufficientFunds();
 /// @dev The attempted mint puts the user over the per-address limit on total mints per id
 error OverLimit();
+/// @dev ETH transfer failed during withdrawal
+error TransferFailed();
 /// @dev Can't mint zero passes
 error ZeroCount();
 
-/// EVENTS ///
+/*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+/*                          EVENTS                            */
+/*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
+/// @dev The contract owner has toggled the active flag for a specific id
 event ActiveUpdated(uint256 id, bool isActive);
 
+/// @dev The contract owner has "minted" Ashubranipal passes
+event AdminMinted(uint256 id, uint256 count, address to);
+
+/// @dev The contract owner has updated the Ashurbanipal contract address
 event AshurbanipalUpdated(address newAshurbanipalAddress);
 
+/// @dev The contract owner has updated the Humbaba contract address
 event HumbabaUpdated(address newHumbabaAddress);
 
+/// @dev A user has "minted" Ashurbanipal passes
+event Minted(uint256 id, uint256 count, address to, uint256 price, WhitelistedToken whitelistedToken);
+
+/// @dev The contract owner has updated the price to "mint" a specific id
 event PriceUpdated(uint256 id, uint256 price);
 
 /**
- * @dev Owners of a number of Remilia assets are whitelisted: they can mint up to a certain number of passes per id
+ * @dev Owners of a number of Remilia assets are whitelisted: they can "mint" up to a certain number of passes per id
  * for free. The same is the case for owners of Humbaba NFTs, assuming a Humbaba contract has been deployed and
- * associated with this Enkidu instance. To save gas, it's the responsibility of the caller of the `mint` function to
+ * associated with this Enkidu deployment. To save gas, it's the responsibility of the caller of the `mint` function to
  * be aware of the user's portfolio and specify the asset, if any, that grants them whitelisted status. If none, the
  * caller can specify `None` and avoid a series of balance checks. If the caller is uncertain, `Any` will check all
- * eligible assets.
+ * eligible assets, expensively.
  */
 enum WhitelistedToken {
     /* Meta */
@@ -43,7 +59,7 @@ enum WhitelistedToken {
     None, // 1
     /* Fungible */
     Cult, // 2
-    /* Remilia NFTs */
+    /* NFTs */
     Aura, // 3
     Cigawrette, // 4
     Milady, // 5
@@ -85,36 +101,31 @@ uint256 constant MINT_LIMIT = 69;
 
 /// @title A mint contract for distributing Ashurbanipal NFTs
 ///
+/// @notice Passes are not minted here. They already exist in the Ashurbanipal contract. A work admin transfers passes
+/// to this contract when creating a work (see the `mintTo` param of Nabu's `createWork` function), then configures
+/// pricing and activates the id so the public can "mint."
+///
+/// @dev Inherits Solady's Receiver to allow this contract to hold ETH and ERC1155 tokens
+///
 /// @author Zelinar XY
 contract Enkidu is Ownable, Receiver {
     Ashurbanipal private _ashurbanipal;
 
-    /// @notice Address of the contract used to mint NFTs granting permission to write or confirm Nabu works' content
-    address private _ashurbanipalAddress;
-
-    // Contract instances: whitelisted token and NFTs (including Humbaba, if provided)
-    ERC20 private _cult;
-
-    ERC721 private _aura;
-    ERC721 private _cigawrette;
-    ERC721 private _milady;
-    ERC721 private _pixelady;
-    ERC721 private _radbro;
-    ERC721 private _remilio;
-    ERC721 private _schizoposter;
-
     ERC721 private _humbaba;
 
-    /// @notice Address of the contract used to grant free mints to users who don't own any of the whitelisted assets
-    address private _humbabaAddress;
-
-    /// @notice Map Ashurbanipal ids (corresponding to a Nabu works) to their prices
+    /// @notice Map Ashurbanipal ids to their prices
+    ///
+    /// @dev Ashurbanipal NFT ids correspond to Nabu work ids
     mapping(uint256 id => uint256 price) public prices;
 
-    /// @notice Map Ashurbanipal ids (corresponding to a Nabu works) to whether they are active (i.e., can be minted)
+    /// @notice Map Ashurbanipal ids to whether they are active (i.e., can be minted)
+    ///
+    /// @dev Ashurbanipal NFT ids correspond to Nabu work ids
     mapping(uint256 id => bool isActive) public active;
 
     /// @notice How many free mints have been used up per id
+    ///
+    /// @dev Ashurbanipal NFT ids correspond to Nabu work ids
     mapping(uint256 id => mapping(address user => uint256 mintsCount)) public usedFreeMints;
 
     /// @notice Initialize the contract with Ashurbanipal and Humbaba addresses and an owner who can update them
@@ -124,43 +135,77 @@ contract Enkidu is Ownable, Receiver {
     constructor(address initialAshurbanipalAddress, address initialHumbabaAddress) {
         _initializeOwner(msg.sender);
 
-        _ashurbanipalAddress = initialAshurbanipalAddress;
         _ashurbanipal = Ashurbanipal(initialAshurbanipalAddress);
-
-        _humbabaAddress = initialHumbabaAddress;
         _humbaba = ERC721(initialHumbabaAddress);
-
-        _aura = ERC721(AURA);
-        _cigawrette = ERC721(CIGAWRETTE);
-        _cult = ERC20(CULT);
-        _milady = ERC721(MILADY);
-        _pixelady = ERC721(PIXELADY);
-        _radbro = ERC721(RADBRO);
-        _remilio = ERC721(REMILIO);
-        _schizoposter = ERC721(SCHIZOPOSTER);
     }
 
     /// @notice Get the Ashurbanipal contract address
     ///
-    /// @return ashurbanipalAddress The contract address
-    function getAshurbanipalAddress() public view returns (address ashurbanipalAddress) {
-        ashurbanipalAddress = _ashurbanipalAddress;
+    /// @return The Ashurbanipal contract address
+    function getAshurbanipalAddress() external view returns (address) {
+        return address(_ashurbanipal);
     }
 
     /// @notice Get the Humbaba contract address
     ///
-    /// @return humbabaAddress The contract address
-    function getHumbabaAddress() public view returns (address humbabaAddress) {
-        humbabaAddress = _humbabaAddress;
+    /// @return The Humbaba contract address
+    function getHumbabaAddress() external view returns (address) {
+        return address(_humbaba);
     }
 
-    /// @notice Update the Humbaba address and contract instance
+    /// @notice Update the Ashurbanipal address
     ///
     /// @dev Only the contract owner can call this function
-    function updateHumbaba(address newHumbabaAddress) public onlyOwner {
-        _humbabaAddress = newHumbabaAddress;
+    ///
+    /// @param newAshurbanipalAddress The new Ashurbanipal contract address
+    function updateAshurbanipal(address newAshurbanipalAddress) external onlyOwner {
+        _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
+        emit AshurbanipalUpdated(newAshurbanipalAddress);
+    }
+
+    /// @notice Update the Humbaba contract address
+    ///
+    /// @dev Only the contract owner can call this function
+    ///
+    /// @param newHumbabaAddress The new Humbaba contract address
+    function updateHumbaba(address newHumbabaAddress) external onlyOwner {
         _humbaba = ERC721(newHumbabaAddress);
         emit HumbabaUpdated(newHumbabaAddress);
+    }
+
+    /// @notice Check if a user is eligible for free mints
+    ///
+    /// @dev Returns true if `account` holds any balance of the specified whitelisted token
+    /// @dev For `Any`, exhaustively checks all collections, short-circuiting on the first match
+    ///
+    /// @param account The user's address
+    /// @param token The eligible token the user is expected to hold, or `Any` (checks all), or `None` (returns false)
+    ///
+    /// @return Whether the user is whitelisted
+    function _isWhitelisted(address account, WhitelistedToken token) private view returns (bool) {
+        if (token == WhitelistedToken.Cult) return ERC20(CULT).balanceOf(account) > 0;
+
+        if (token == WhitelistedToken.Aura) return ERC721(AURA).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Cigawrette) return ERC721(CIGAWRETTE).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Milady) return ERC721(MILADY).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Pixelady) return ERC721(PIXELADY).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Radbro) return ERC721(RADBRO).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Remilio) return ERC721(REMILIO).balanceOf(account) > 0;
+        if (token == WhitelistedToken.Schizoposter) return ERC721(SCHIZOPOSTER).balanceOf(account) > 0;
+
+        if (token == WhitelistedToken.Humbaba) return _humbaba.balanceOf(account) > 0;
+
+        if (token == WhitelistedToken.Any) {
+            return _isWhitelisted(account, WhitelistedToken.Cult) || _isWhitelisted(account, WhitelistedToken.Aura)
+                || _isWhitelisted(account, WhitelistedToken.Cigawrette)
+                || _isWhitelisted(account, WhitelistedToken.Milady)
+                || _isWhitelisted(account, WhitelistedToken.Pixelady)
+                || _isWhitelisted(account, WhitelistedToken.Radbro) || _isWhitelisted(account, WhitelistedToken.Remilio)
+                || _isWhitelisted(account, WhitelistedToken.Schizoposter)
+                || _isWhitelisted(account, WhitelistedToken.Humbaba);
+        }
+
+        return false; // WhitelistedToken.None
     }
 
     /// @notice Transfer a quantity of Ashurbanipal NFTS to the caller or specified recipient
@@ -168,7 +213,7 @@ contract Enkidu is Ownable, Receiver {
     /// @param id The id of the Ashurbanipal NFT
     /// @param count The quantity of NFTs to transfer
     /// @param to The recipient
-    function _mint(uint256 id, uint256 count, address to) private {
+    function _distribute(uint256 id, uint256 count, address to) private {
         if (count == 0) {
             revert ZeroCount();
         }
@@ -179,43 +224,48 @@ contract Enkidu is Ownable, Receiver {
     /// @notice Transfer Ashurbanipal NFTs to a recipient for free
     ///
     /// @dev Only the contract owner can call this function
+    /// @dev For distributing passes directly to specific addresses outside the public mint flow
     ///
     /// @param id The id of the Ashurbanipal NFT
     /// @param count The quantity of NFTs to transfer
     /// @param to The recipient
-    function adminMint(uint256 id, uint256 count, address to) public onlyOwner {
-        _mint({id: id, count: count, to: to});
+    function adminMint(uint256 id, uint256 count, address to) external onlyOwner {
+        _distribute({id: id, count: count, to: to});
+        emit AdminMinted({id: id, count: count, to: to});
     }
 
     /// @notice Public "mint" function to transfer a quantity of Ashurbanipal NFTs to a recipient
     ///
     /// @dev The NFTs already exist and are held by the Ashurbanipal contract; "mint" reflects the end-user experience
-    /// @dev The caller should specify what whitelisted token they hold (see comment on the `WhitelistedToken` enum)
+    /// @dev If the user holds a whitelisted token, the caller (typically a frontend that has checked the user's
+    /// portfolio) should specify it to avoid unnecessary balance checks (see comment on the `WhitelistedToken` enum)
+    /// @dev Ashurbanipal NFT ids correspond to Nabu work ids
     ///
     /// @param id The id of the Ashurbanipal NFT
     /// @param count The quantity of NFTs to transfer
     /// @param to The recipient
     /// @param whitelistedToken A specific whitelistedToken the recipient holds (or `Any` or `None`)
-    function mint(uint256 id, uint256 count, address to, WhitelistedToken whitelistedToken) public payable {
+    function mint(uint256 id, uint256 count, address to, WhitelistedToken whitelistedToken) external payable {
         if (!active[id]) {
             revert Inactive();
         }
 
         uint256 existingBalance = _ashurbanipal.balanceOf({owner: to, id: id});
 
-        // Users can only mint a certain total count per id, regardless of whitelist status
+        // Users can only mint a certain total count per id, regardless of whitelisted status
         if (count + existingBalance > MINT_LIMIT) {
             revert OverLimit();
         }
 
         // Track the number of free mints expended per user per id. Otherwise holders of whitelisted collections could
-        // mint endless free Ashurbanipal passes by calling the function multiple times.
+        // mint endless free Ashurbanipal passes by calling the function multiple times
+        uint256 usedFree = usedFreeMints[id][to];
         uint256 remainingFreeMints;
 
-        if (usedFreeMints[id][to] >= FREE_MINTS) {
+        if (usedFree >= FREE_MINTS) {
             remainingFreeMints = 0;
         } else {
-            remainingFreeMints = FREE_MINTS - usedFreeMints[id][to];
+            remainingFreeMints = FREE_MINTS - usedFree;
         }
 
         // Does the user hold a whitelisted collection?
@@ -223,37 +273,7 @@ contract Enkidu is Ownable, Receiver {
 
         // No need to perform any checks if the user has maxed out on free mints
         if (remainingFreeMints > 0) {
-            if (whitelistedToken == WhitelistedToken.Cult) {
-                isWhitelisted = _cult.balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Aura) {
-                isWhitelisted = _aura.balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Cigawrette) {
-                isWhitelisted = _cigawrette.balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Milady) {
-                isWhitelisted = _milady.balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Pixelady) {
-                isWhitelisted = _pixelady.balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Radbro) {
-                isWhitelisted = _radbro.balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Remilio) {
-                isWhitelisted = _remilio.balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Schizoposter) {
-                isWhitelisted = _schizoposter.balanceOf(to) > 0;
-            } else if (whitelistedToken == WhitelistedToken.Humbaba) {
-                isWhitelisted = _humbaba.balanceOf(to) > 0;
-            }
-
-            /**
-             * The contract performs an exhaustive check against all whitelisted collections if explicitly instructed
-             * to. Gas-sensitive users should avoid this scenario if possible. Consuming applications should check
-             * users' portfolios ahead of time so they know whether to specify a whitelisted collection or to just
-             * pass `WhitelistedToken.None`.
-             */
-            if (whitelistedToken == WhitelistedToken.Any) {
-                isWhitelisted = _cult.balanceOf(to) > 0 || _aura.balanceOf(to) > 0 || _cigawrette.balanceOf(to) > 0
-                    || _milady.balanceOf(to) > 0 || _pixelady.balanceOf(to) > 0 || _radbro.balanceOf(to) > 0
-                    || _remilio.balanceOf(to) > 0 || _schizoposter.balanceOf(to) > 0 || _humbaba.balanceOf(to) > 0;
-            }
+            isWhitelisted = _isWhitelisted(to, whitelistedToken);
         }
 
         // Calculate the total cost of the transaction
@@ -274,13 +294,14 @@ contract Enkidu is Ownable, Receiver {
             revert InsufficientFunds();
         }
 
-        // Transfer the passes
-        _mint({id: id, count: count, to: to});
-
-        // Track any free mints used
+        // Prevent reentrancy
         if (countForPrice < count) {
-            usedFreeMints[id][to] = usedFreeMints[id][to] + count - countForPrice;
+            usedFreeMints[id][to] = usedFree + count - countForPrice;
         }
+
+        // Transfer the passes
+        _distribute({id: id, count: count, to: to});
+        emit Minted({id: id, count: count, to: to, price: price, whitelistedToken: whitelistedToken});
     }
 
     /// @notice Update the `active` status for an id
@@ -289,9 +310,9 @@ contract Enkidu is Ownable, Receiver {
     ///
     /// @param id The id of the Ashurbanipal NFT
     /// @param isActive The new value for `active`
-    function updateActive(uint256 id, bool isActive) public onlyOwner {
+    function updateActive(uint256 id, bool isActive) external onlyOwner {
         active[id] = isActive;
-        emit ActiveUpdated(id, isActive);
+        emit ActiveUpdated({id: id, isActive: isActive});
     }
 
     /// @notice Update the price for an id
@@ -299,21 +320,10 @@ contract Enkidu is Ownable, Receiver {
     /// @dev Only the contract owner can call this function
     ///
     /// @param id The id of the Ashurbanipal NFT
-    /// @param price The new price
-    function updatePrice(uint256 id, uint256 price) public onlyOwner {
-        prices[id] = price;
-        emit PriceUpdated(id, price);
-    }
-
-    /// @notice Update the Ashurbanipal address and contract instance
-    ///
-    /// @dev Only the contract owner can call this function
-    ///
-    /// @param newAshurbanipalAddress The new contract address
-    function updateAshurbanipal(address newAshurbanipalAddress) public onlyOwner {
-        _ashurbanipalAddress = newAshurbanipalAddress;
-        _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
-        emit AshurbanipalUpdated(newAshurbanipalAddress);
+    /// @param newPrice The new price
+    function updatePrice(uint256 id, uint256 newPrice) external onlyOwner {
+        prices[id] = newPrice;
+        emit PriceUpdated({id: id, price: newPrice});
     }
 
     /// @notice Withdraw mint proceeds
@@ -322,20 +332,24 @@ contract Enkidu is Ownable, Receiver {
     /// @dev This function has no reentrancy guard: do not withdraw to an unvetted address
     ///
     /// @param amount The amount to withdraw; if zero, falls back to the entire balance
-    /// @param _to The recipient of the withdrawn funds; falls back to msg.sender
-    function withdraw(uint256 amount, address _to) public onlyOwner {
+    /// @param to The recipient of the withdrawn funds; falls back to msg.sender
+    function withdraw(uint256 amount, address to) external onlyOwner {
         uint256 amountToWithdraw = amount;
 
         if (amountToWithdraw == 0) {
             amountToWithdraw = address(this).balance;
         }
 
-        address to = _to;
+        address recipient = to;
 
-        if (_to == address(0)) {
-            to = msg.sender;
+        if (to == address(0)) {
+            recipient = msg.sender;
         }
 
-        payable(to).transfer(amountToWithdraw);
+        (bool success,) = payable(recipient).call{value: amountToWithdraw}("");
+
+        if (!success) {
+            revert TransferFailed();
+        }
     }
 }

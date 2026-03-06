@@ -27,8 +27,8 @@ struct Work {
     string metadata;
     string title;
     address admin;
-    uint256 totalPassagesCount;
-    uint256 createdAt;
+    uint96 totalPassagesCount;
+    uint96 createdAt;
     string uri;
 }
 ```
@@ -42,7 +42,7 @@ Like so:
     title: "The Great Book",
     admin: "0xabc...123", // Alice's address
     totalPassagesCount: 100_000,
-    createdAt: 123456, // the block at which Alice initializes the Work
+    createdAt: 1741219200, // the timestamp at which Alice initializes the Work
     uri: "https://foo.bar/great-book-metadata.json",
 }
 ```
@@ -71,7 +71,7 @@ In an ideal world the Nabu protocol would live in one canonical contract deploym
 
 There are two other contracts that work admins can optionally deploy to aid in distributing Ashurbanipal passes. Enkidu exposes `mint` and `adminMint` functions, price controls and the ability to pause minting. In other words, while not ERC721- or ERC1155-compliant, it simulates a traditional NFT mint contract. Each work admin will need their own contract deployment, because so much of the functionality is `onlyOwner`, but one deployment can handle an arbitrary number of works. Simply pass the Enkidu deployment's address as `mintTo` when calling Nabu's `createWork` function, and the newly minted Ashurbanipal passes will be transferred there.
 
-The final contract, Humbaba, allows an Enkidu deployer to easily whitelist users, letting them mint a limited number of Ashurbanipal passes (via Enkidu) for free. It's a minimal ERC721 contract with an `adminMint` function and not much else. The Enkidu owner will need to point `_humbabaAddress` to their Humbaba deployment. In addition to Humbaba holders, Enkidu is hard-coded to whitelist holders of a number of Remilia assets. As with Enkidu, each work admin will need to deploy their own Humbaba contract, but this can be reused for an arbitrary number of works.
+The final contract, Humbaba, allows an Enkidu deployer to easily whitelist users, letting them mint a limited number of Ashurbanipal passes (via Enkidu) for free. It's a minimal ERC721 contract with an `adminMintTo` function and not much else. The Enkidu owner will need to point `_humbabaAddress` to their Humbaba deployment. In addition to Humbaba holders, Enkidu is hard-coded to whitelist holders of a number of Remilia assets. As with Enkidu, each work admin will need to deploy their own Humbaba contract, but this can be reused for an arbitrary number of works.
 
 ### Nabu 𒀭𒀝
 
@@ -129,7 +129,7 @@ To preserve a text with Nabu:
 
 5. (Required.) Decide how many Ashurbanipal passes you want to create to give users permission to populate the work. I have no useful insights into tokenomics, if profit is a motive. I will say that while you can burn passes (the ones you've retained or repurchased, at least), you can't create more.
 
-6. (Required.) Call Nabu's `createWork` function. Specify the work's `author` ("Miguel de Cervantes"), `title` ("Don Quijote"), `metadata` (an optional string giving some additional information about the work), `totalPassagesCount` (the number of passages from step 3), `uri` (an optional endpoint serving metadata for NFT marketplaces), `supply` (the number of Ashurbanipal passes from step 5), and `mintTo` (the Enkidu address from step 2, if you went that route, or whatever address you want, if not: it falls back to `msg.sender`). You (`msg.sender`) will be the work's admin. This allows you to overwrite passage content indefinitely, but not freeze it. It allows you to update `uri` indefinitely. It allows you to ban (or un-ban) users from writing passage content or transfering Ashurbanipal passes (pertaining to this work) indefinitely. It allows you to update the work's `title`, `author`, `metadata` and `totalPassagesCount` for "30 days" (216_000 blocks). This is a grace period to allow for correcting typos and their arithmetic analogs.
+6. (Required.) Call Nabu's `createWork` function. Specify the work's `author` ("Miguel de Cervantes"), `title` ("Don Quijote"), `metadata` (an optional string giving some additional information about the work), `totalPassagesCount` (the number of passages from step 3), `uri` (an optional endpoint serving metadata for NFT marketplaces), `supply` (the number of Ashurbanipal passes from step 5), and `mintTo` (the Enkidu address from step 2, if you went that route, or whatever address you want, if not: it falls back to `msg.sender`). You (`msg.sender`) will be the work's admin. This allows you to overwrite passage content indefinitely, but not freeze it. It allows you to update `uri` indefinitely. It allows you to ban (or un-ban) users from writing passage content or transfering Ashurbanipal passes (pertaining to this work) indefinitely. It allows you to update the work's `title`, `author`, `metadata` and `totalPassagesCount` for 30 days. This is a grace period to allow for correcting typos and their arithmetic analogs.
 
 7. (Required.) Distribute passes. If you're using Enkidu and Humbaba, admin-mint Humbaba NFTs to your favorites, set a price through Enkidu, set the mint to active, and retire.
 

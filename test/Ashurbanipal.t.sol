@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 import {Test, console2} from "lib/forge-std/src/Test.sol";
 
-import {Ashurbanipal, IsFrozen, NotNabu} from "../src/Ashurbanipal.sol";
+import {Ashurbanipal, IsFrozen, NotNabu, ZeroAddress} from "../src/Ashurbanipal.sol";
 import {Nabu} from "../src/Nabu.sol";
 
 contract AshurbanipalTest is Ownable, Test {
@@ -25,7 +25,7 @@ contract AshurbanipalTest is Ownable, Test {
     }
 
     function setUp() public {
-        vm.roll(0);
+        vm.warp(0);
         _nabu = new Nabu();
         address nabuAddress = address(_nabu);
         _ashurbanipal = new Ashurbanipal(nabuAddress);
@@ -247,5 +247,10 @@ contract AshurbanipalTest is Ownable, Test {
     function test_updateNabuAddress_reverts_whenCallerIsNotOwner() public prank(mallory) {
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         _ashurbanipal.updateNabuAddress(address(420));
+    }
+
+    function test_updateNabuAddress_reverts_whenNewAddressIsZero() public {
+        vm.expectRevert(abi.encodeWithSelector(ZeroAddress.selector));
+        _ashurbanipal.updateNabuAddress(address(0));
     }
 }

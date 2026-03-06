@@ -4,29 +4,40 @@ pragma solidity 0.8.28;
 import {LibZip} from "lib/solady/src/utils/LibZip.sol";
 import {Ownable} from "lib/solady/src/auth/Ownable.sol";
 import {SSTORE2} from "lib/solady/src/utils/SSTORE2.sol";
-import {console2} from "lib/forge-std/src/console2.sol";
-import {LibString} from "lib/solady/src/utils/LibString.sol";
 import {Ashurbanipal} from "./Ashurbanipal.sol";
 
-uint256 constant ONE_DAY = 7_200;
-uint256 constant SEVEN_DAYS = 50_400;
-uint256 constant THIRTY_DAYS = 216_000;
+/// @dev SSTORE2 has a max data size 24,576 bytes
+uint256 constant MAX_CONTENT_SIZE = 24_576;
+
+/// @dev One day in seconds
+uint256 constant ONE_DAY = 86_400;
+/// @dev Seven days in seconds
+uint256 constant SEVEN_DAYS = 604_800;
+/// @dev Thirty days in seconds
+uint256 constant THIRTY_DAYS = 2_592_000;
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                          ERRORS                            */
 /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-/// @dev User is blacklisted by the work's admin from assigning or confirming passage content for that work
+/// @dev The user is blacklisted by the work's admin from assigning or confirming passage content for that work
 error Blacklisted();
 /// @dev A given user is limited to assigning a passage's content or confirming it once
 error CannotDoubleConfirmPassage();
-/// @dev SSTORE2 has a max length of 24576
+/// @dev A user can't assign a passage's metadata if they were the last one to do so
+error CannotReassignOwnMetadata();
+/// @dev Content exceeds SSTORE2's max data size (see MAX_CONTENT_SIZE)
 error ContentTooLarge();
 /// @dev Works require a title
 error EmptyTitle();
-/// @dev Passage doesn't exist
+/// @dev No passage with the given id exists
 error InvalidPassageId();
-/// @dev User must hold a "pass" (Ashurbanipal NFT) corresponding to the work in order to assign or confirm content
+/// @dev Metadata exceeds SSTORE2's max data size (see MAX_CONTENT_SIZE)
+error MetadataTooLarge();
+/// @dev Attempting to write the same metadata twice doesn't perform a confirmation; revert to avoid wasting gas
+/// @dev Unlike content, metadata has no confirmation mechanism: duplicate metadata writes always revert
+error NoChangeInMetadata();
+/// @dev User must hold an Ashurbanipal pass corresponding to the work in order to assign or confirm content
 error NoPass();
 /// @dev Can't confirm an empty passage
 error NoPassageContent();
@@ -34,56 +45,84 @@ error NoPassageContent();
 error NotWorkAdmin(address workAdmin);
 /// @dev Can't assign or confirm a passage's content once it's finalized
 error PassageAlreadyFinalized();
-/// @dev Function can only be called within 30 days of a work's creation
+/// @dev Passes received via transfer must be held for one day before they can be used (only if prior balance was zero)
+error PassCooldown(uint256 until);
+/// @dev The function can only be called within 30 days of a work's creation
 error TooLate(uint256 expiredAt);
-/// @dev There is a one-day cooling-off period between initial content assignment and first confirmation
+/// @dev There is a one-day cooling-off period after initial content assignment; seven days after first confirmation
 error TooSoonToAssignContent(uint256 canAssignAfter);
+/// @dev There is a one-day cooling-off period after metadata (re-)assignment
+error TooSoonToAssignMetadata(uint256 canAssignAfter);
 /// @dev There is a seven-day cooling-off period between first and second content confirmations
 error TooSoonToConfirmContent(uint256 canConfirmAfter);
-/// @dev A work's `totalPassagesCount` must be at least 1
+/// @dev A work admin address can't be address(0); neither can the Ashurbanipal address
+error ZeroAddress();
+/// @dev A work's total passage count must be at least 1
 error ZeroPassagesCount();
+/// @dev A work's pass supply must be at least 1
+error ZeroSupply();
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
 /*                          EVENTS                            */
 /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
+/// @dev The Ashurbanipal contract address was updated
 event AshurbanipalUpdated(address newAshurbanipalAddress);
 
+/// @dev A work's admin added or removed a user to the blacklist for that work
 event BlacklistUpdated(uint256 workId, address user, bool shouldBan);
 
+/// @dev A user assigned content to a passage
 /// @dev Content pointer is the SSTORE2 location, whether new or existing
-/// @dev Confirmation index is 0 for freshly assigned/updated content, 1 for the first confirmation, 2 for the second
+/// @dev Confirmation index is 0 for newly assigned or updated content, 1 for the first confirmation, 2 for the second
 event PassageContentAssigned(
     uint256 workId, uint256 passageId, address by, address contentPointer, uint8 confirmationIndex
 );
 
+/// @dev A work admin assigned content to a passage
 /// @dev Content pointer is the SSTORE2 location, whether new or existing
 event PassageContentAssignedByAdmin(uint256 workId, uint256 passageId, address by, address contentPointer);
 
+/// @dev A user confirmed the content of a passage
 /// @dev Confirmation index is 1 for the first confirmation (`byOne`), 2 for the second (`byTwo`)
 event PassageContentConfirmed(uint256 workId, uint256 passageId, address by, uint8 confirmationIndex);
 
-event WorkAdminUpdated(uint256 workId, address newAdminAddress);
+/// @dev A user assigned metadata to a passage
+/// @dev Metadata pointer is the SSTORE2 location
+event PassageMetadataAssigned(uint256 workId, uint256 passageId, address by, address metadataPointer);
 
+/// @dev A work admin assigned metadata to a passage
+/// @dev Metadata pointer is the SSTORE2 location
+event PassageMetadataAssignedByAdmin(uint256 workId, uint256 passageId, address by, address metadataPointer);
+
+/// @dev A work admin transferred ownership over the work
+event WorkAdminUpdated(uint256 workId, address previousAdminAddress, address newAdminAddress);
+
+/// @dev A work admin updated the work's author
 event WorkAuthorUpdated(uint256 workId, string newAuthor);
 
+/// @dev A user created a new work (the user becomes the work's admin)
 event WorkCreated(
     string author,
     string metadata,
     string title,
-    uint256 totalPassagesCount,
+    uint96 totalPassagesCount,
     string uri,
     uint256 supply,
     address mintTo,
     uint256 id
 );
 
+/// @dev A work admin updated the work's metadata
 event WorkMetadataUpdated(uint256 workId, string newMetadata);
 
+/// @dev A work admin updated the work's title
 event WorkTitleUpdated(uint256 workId, string newTitle);
 
-event WorkTotalPassagesCountUpdated(uint256 workId, uint256 newTotalPassagesCount);
+/// @dev A work admin updated the work's total passage count
+event WorkTotalPassagesCountUpdated(uint256 workId, uint96 newTotalPassagesCount);
 
+/// @dev A work admin updated the work's metadata uri
 event WorkUriUpdated(uint256 workId, string newUri);
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -96,7 +135,8 @@ event WorkUriUpdated(uint256 workId, string newUri);
  * a work by calling `createWork`, they must specify how many passages the work has (this can be updated, along with
  * author and title, for 30 days after creating the work). This user, who becomes the work's admin, should
  * decide ahead of time what each passage's content should be, and provide other users an interface where they can
- * populate each passage's content correctly. For the Bible, for example, passage 1 would be Genesis 1:1. Works that aren't scripture or classics will need to be broken up into passages by admins.
+ * populate each passage's content correctly. For the Bible, for example, passage 1 would be Genesis 1:1. Works that
+ * aren't scripture or classics will need to be broken up into passages by admins.
  */
 struct Work {
     /// @dev The real-world author of the work, e.g. Homer or Shakespeare
@@ -105,56 +145,82 @@ struct Work {
     string metadata;
     /// @dev The title of the work, e.g. The Odyssey or Hamlet
     string title;
+    /// @dev The metadata URI for the ERC-1155 token id associated with the work (see the Ashurbanipal contract)
+    string uri;
     /// @dev The address of the user who initialized the work
     /// @dev The admin can update the work's metadata for a limited amount of time
     /// @dev The admin can overwrite the content of finalized passages indefinitely
     /// @dev To renounce the ability to overwrite content, the admin can update the work's admin to a burn address
     address admin;
     /// @dev The total number of passages in the work
-    uint256 totalPassagesCount;
-    /// @dev The block at which the work was created (instantiated onchain using Nabu, not written in the real world)
-    uint256 createdAt;
-    /// @dev The metadata URI for the ERC-1155 token id associated with the work (see the Ashurbanipal contract)
-    string uri;
+    uint96 totalPassagesCount;
+    /// @dev The timestamp when the work was created (initialized onchain using Nabu, not written in the real world)
+    uint96 createdAt;
 }
 
 /**
- * @notice Nabu provides a method for preserving texts on EVM blockchains by delegating the task to potentially large
- * networks. The fundamental unit of a text in Nabu is a passage, and the content of a passage is recorded via a three-
- * step process: first, a user assigns content to the empty passage; second, another user (the first user isn't able to
+ * @notice Nabu provides a method for preserving texts on EVM blockchains by delegating the task to a potentially large
+ * community. The basic unit of a text in Nabu is a passage, and the content of a passage is recorded via a three-step
+ * process: first, a user assigns content to the empty passage; second, another user (the first user isn't able to
  * perform this step) confirms that the passage's content is correct, either by assigning it identical content or
  * calling a lighter confirm function; third, yet another user (who can't be either of the first two) performs a second
- * confirmation. At this point the passage's content is considered finalized. Only the work's admin (the user who
- * created the work or has been assigned admin status by the creator) can overwrite a passage at this point. Then the
- * confirmation count is reset to zero and the process repeats. The goal is to prevent any given user or group of users
- * from vandalizing a work by assigning it incorret content, while providing a mechanism for honest users to record
- * their text permanently on the blockchain. Ideally, once every passage of a work is finalized with correct content,
- * the admin renounces their status and the text is set in stone.
+ * confirmation. At this point the passage's content is considered finalized. If a user overwrites a passage's content
+ * with something different, the confirmation count resets to zero. There is a one-day waiting period before content
+ * assignment and first confirmation, and a seven-day waiting period between first confirmation and second confirmation
+ * (finalization).
+ *
+ * Once a passage is finalized, only the work's admin (the user who created the work or was subsequently assigned admin
+ * status by its creator) can overwrite the content. This action also resets the confirmation count to zero. The goal
+ * is to prevent any given user or group of users from vandalizing a work by assigning it incorrect content, while
+ * providing a mechanism for honest users to record their text permanently on the blockchain. Ideally, once every
+ * passage of a work is finalized with correct content, the admin renounces their status and the text is set in stone.
+ *
+ * Passages can also, optionally, have metadata. This can be any string the admin and community find useful, for
+ * example the book, chapter and number of a Bible verse. Similarly to content, the admin should decide in advance what
+ * metadata a given passage should have, if any, and provide the community a means to populate it correctly. Metadata
+ * is treated slightly differently from content, reflecting its secondary importance. There is no need to confirm
+ * metadata separately from content. When a passage receives two confirmations, the whole passage--metadata and content
+ * --is considered finalized, and only the admin can rewrite either field. To discourage vandalism, the same user can't
+ * (re-)write metadata twice in a row, and there is a seven-day waiting period between metadata (re-)writes. If an
+ * admin rewrites the metadata of a finalized passage, the confirmation count decrements to one (`byTwo` is cleared).
  */
 struct Passage {
-    /// @dev The address pointer for the passage's content
+    /// @dev The SSTORE2 address pointer for the passage's content
     address content;
+    /// @dev The timestamp at which the most recent content assignment or confirmation was performed
+    uint96 at;
+    /// @dev The SSTORE2 address pointer for the passage's metadata
+    address metadata;
+    /// @dev The timestamp at which the most recent metadata assignment was performed
+    uint96 metadataAt;
     /// @dev The address of the user who performed the initial content assignment (possibly an overwrite)
     address byZero;
     /// @dev The address of the user who performed the first content confirmation
     address byOne;
     /// @dev The address of the user who performed the second content confirmation (finalized the passage)
     address byTwo;
-    /// @dev The block at which the most recent content assignment or confirmation was performed
-    uint256 at;
+    /// @dev The address of the user who performed the most recent metadata assignment
+    address metadataBy;
 }
 
+/// @notice A passage, with content and metadata read from their SSTORE2 pointers and decompressed for readability
 struct ReadablePassage {
     /// @dev The decompressed, human readable content
     bytes readableContent;
+    /// @dev The decompressed, human readable metadata
+    bytes readableMetadata;
     /// @dev The address of the user who performed the initial content assignment (possibly an overwrite)
     address byZero;
     /// @dev The address of the user who performed the first content confirmation
     address byOne;
     /// @dev The address of the user who performed the second content confirmation (finalized the passage)
     address byTwo;
-    /// @dev The block at which the most recent content assignment or confirmation was performed
-    uint256 at;
+    /// @dev The address of the user who performed the most recent metadata assignment
+    address metadataBy;
+    /// @dev The timestamp at which the most recent content assignment or confirmation was performed
+    uint96 at;
+    /// @dev The timestamp at which the most recent metadata assignment was performed
+    uint96 metadataAt;
 }
 
 /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -163,33 +229,54 @@ struct ReadablePassage {
 
 /// @title A text preservation tool
 ///
+/// @notice System overview: a work admin calls `createWork`, which mints Ashurbanipal "pass" NFTs to the admin (or a
+/// specified address). The admin distributes passes to the community, optionally via an Enkidu contract, which handles
+/// public mint pricing and whitelisting. Pass holders then call `assignPassageContent` and `confirmPassageContent` to
+/// populate and finalize each passage.
+///
 /// @author Zelinar XY
 contract Nabu is Ownable {
     Ashurbanipal private _ashurbanipal;
 
-    /// @notice Address of the contract used to mint NFTs granting permission to write or confirm works' content
-    address private _ashurbanipalAddress;
-
     /// @notice A work's admin can ban an address from assigning or confirming passage content for that work
     mapping(uint256 workId => mapping(address user => bool isBlacklisted)) private _blacklist;
 
+    /// @notice All passages across all works, keyed by work id then passage id
     mapping(uint256 workId => mapping(uint256 passageId => Passage)) private _passages;
+    /// @notice All works, keyed by work id
     mapping(uint256 workId => Work) private _works;
 
+    /// @notice The id of the most recently created work; works are numbered sequentially from 1
     uint256 private _worksTip;
 
-    /// @notice A work's admin has 30 days to make updates to the work's title, author, etc.
-    modifier notTooLate(uint256 workId) {
-        uint256 expiredAt = _works[workId].createdAt + THIRTY_DAYS;
-        // Admin can still make changes in the `expiredAt` block itself
-        require(block.number < expiredAt + 1, TooLate(expiredAt));
+    /// @notice Only a work's admin can update the work's metadata, e.g. title and author
+    ///
+    /// @param workId The id of the work being modified
+    modifier onlyWorkAdmin(uint256 workId) {
+        address admin = _works[workId].admin;
+
+        if (msg.sender != admin) {
+            revert NotWorkAdmin(admin);
+        }
         _;
     }
 
-    /// @notice Only a work's admin can update the work's metadata, e.g. title and author
-    modifier onlyWorkAdmin(uint256 workId) {
-        address admin = _works[workId].admin;
-        require(msg.sender == admin, NotWorkAdmin(admin));
+    /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
+    ///
+    /// @param workId The id of the work being modified
+    modifier onlyWorkAdminNotTooLate(uint256 workId) {
+        Work storage work = _works[workId];
+        address admin = work.admin;
+
+        if (msg.sender != admin) {
+            revert NotWorkAdmin(admin);
+        }
+
+        uint256 expiredAt = work.createdAt + THIRTY_DAYS;
+
+        if (block.timestamp > expiredAt) {
+            revert TooLate(expiredAt);
+        }
         _;
     }
 
@@ -199,25 +286,22 @@ contract Nabu is Ownable {
     }
 
     /// @notice A work's admin can update the content of a passage even if that passage has been finalized
-    /// @notice Unlike other admin-only functions, this one has no time limitation (no `notTooLate` modifier)
     ///
+    /// @dev Unlike other admin-only functions, this one has no time limitation (no `notTooLate` modifier)
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
     /// @param content The content of the passage
-    function adminAssignPassageContent(uint256 workId, uint256 passageId, bytes memory content)
-        public
+    function adminAssignPassageContent(uint256 workId, uint256 passageId, bytes calldata content)
+        external
         onlyWorkAdmin(workId)
     {
-        // SSTORE2 max size
-        if (content.length > 24576) {
+        if (content.length > MAX_CONTENT_SIZE) {
             revert ContentTooLarge();
         }
 
-        Work storage work = _works[workId];
-
         // The passage doesn't exist
-        if (passageId > work.totalPassagesCount) {
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
             revert InvalidPassageId();
         }
 
@@ -227,40 +311,83 @@ contract Nabu is Ownable {
         // Track the address of the SSTORE2 write location for the event
         address contentPointer = SSTORE2.write({data: compressedContent});
 
-        // Assign the content
-        _passages[workId][passageId].content = contentPointer;
-        // Mark admin as having performed the initial content assignment
-        _passages[workId][passageId].byZero = msg.sender;
-        // Clear the user who performed the first confirmation, if any
-        _passages[workId][passageId].byOne = address(0);
-        // Clear the user who performed the second (final) confirmation, if any
-        _passages[workId][passageId].byTwo = address(0);
-        // Update the block number at which the initial content assignment was performed to the current block
-        _passages[workId][passageId].at = block.number;
+        Passage storage passage = _passages[workId][passageId];
 
-        emit PassageContentAssignedByAdmin(workId, passageId, msg.sender, contentPointer);
+        // Assign the content
+        passage.content = contentPointer;
+        // Mark admin as having performed the initial content assignment
+        passage.byZero = msg.sender;
+        // Clear the user who performed the first confirmation, if any
+        passage.byOne = address(0);
+        // Clear the user who performed the second (final) confirmation, if any
+        passage.byTwo = address(0);
+        // Update the timestamp at which the initial content assignment was performed to the current block
+        passage.at = uint96(block.timestamp);
+
+        emit PassageContentAssignedByAdmin({
+            workId: workId, passageId: passageId, by: msg.sender, contentPointer: contentPointer
+        });
+    }
+
+    /// @notice A work's admin can update the metadata of a passage even if that passage has been finalized
+    ///
+    /// @dev Unlike other admin-only functions, this one has no time limitation (no `notTooLate` modifier)
+    ///
+    /// @param workId The id of the work being updated
+    /// @param passageId The id of the passage being updated
+    /// @param metadata The metadata of the passage
+    function adminAssignPassageMetadata(uint256 workId, uint256 passageId, bytes calldata metadata)
+        external
+        onlyWorkAdmin(workId)
+    {
+        if (metadata.length > MAX_CONTENT_SIZE) {
+            revert MetadataTooLarge();
+        }
+
+        // The passage doesn't exist
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
+            revert InvalidPassageId();
+        }
+
+        bytes memory compressedMetadata = LibZip.flzCompress(metadata);
+
+        // Track the address of the SSTORE2 write location for the event
+        address metadataPointer = SSTORE2.write({data: compressedMetadata});
+
+        Passage storage passage = _passages[workId][passageId];
+
+        passage.metadata = metadataPointer;
+        passage.metadataBy = msg.sender;
+        passage.metadataAt = uint96(block.timestamp);
+
+        // Clear byTwo so the passage is no longer finalized. This prevents the admin from being able to unilaterally
+        // set a passage's metadata in stone (something they can't do for content either). byOne is intentionally
+        // retained: re-finalization requires a third unique confirmer, since byOne's address is still excluded.
+        passage.byTwo = address(0);
+
+        emit PassageMetadataAssignedByAdmin({
+            workId: workId, passageId: passageId, by: msg.sender, metadataPointer: metadataPointer
+        });
     }
 
     /// @notice Anyone holding a work's Ashurbanipal NFT can assign content to a passage
-    /// @notice Once a passage has received two confirmations, only the work's admin can change its content
-    /// @notice A user can overwrite a passage's existing content, resetting the confirmation count to zero
-    /// @notice If content is identical to the passage's current content, the confirmation count is incremented
+    ///
+    /// @dev Once a passage has received two confirmations, only the work's admin can change its content
+    /// @dev A user can overwrite a passage's existing content, resetting the confirmation count to zero
+    /// @dev If content is identical to the passage's current content, the confirmation count is incremented
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
     /// @param content The content of the passage
-    function assignPassageContent(uint256 workId, uint256 passageId, bytes memory content) public {
-        // SSTORE2 max size
-        if (content.length > 24576) {
+    function assignPassageContent(uint256 workId, uint256 passageId, bytes calldata content) external {
+        if (content.length > MAX_CONTENT_SIZE) {
             revert ContentTooLarge();
         }
-
-        Work storage work = _works[workId];
 
         // If the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
 
         // The passage doesn't exist
-        if (passageId > work.totalPassagesCount) {
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
             revert InvalidPassageId();
         }
 
@@ -269,7 +396,7 @@ contract Nabu is Ownable {
             revert Blacklisted();
         }
 
-        Passage memory passage = _passages[workId][passageId];
+        Passage storage passage = _passages[workId][passageId];
 
         // The passage has received two confirmations: it's finalized and only the work's admin can update it by
         // explicitly calling `adminAssignPassageContent`
@@ -277,7 +404,7 @@ contract Nabu is Ownable {
             revert PassageAlreadyFinalized();
         }
 
-        // A user can't confirm passage content they assigned in the first place; nor can they double-confirm
+        // A user can't confirm passage content they assigned in the first place
         if (passage.byZero == msg.sender || passage.byOne == msg.sender) {
             revert CannotDoubleConfirmPassage();
         }
@@ -294,13 +421,20 @@ contract Nabu is Ownable {
         }
 
         // Not enough time has elapsed
-        if (block.number < canAssignAfter) {
+        if (block.timestamp < canAssignAfter) {
             revert TooSoonToAssignContent(canAssignAfter);
         }
 
         // The user doesn't hold an NFT "pass" from the Ashurbanipal contract corresponding to this work
         if (_ashurbanipal.balanceOf({owner: msg.sender, id: workId}) == 0) {
             revert NoPass();
+        }
+
+        // Passes received via transfer must be held for one day before they can be used; passReceivedAt is zero for
+        // minted passes (which are exempt from the cooldown) and non-zero for transferred passes
+        uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
+        if (passReceiveBlock != 0 && block.timestamp < passReceiveBlock + ONE_DAY) {
+            revert PassCooldown(passReceiveBlock + ONE_DAY);
         }
 
         // Track confirmation index for the event: 0 if call is going to be recorded as `byZero` (i.e., a manual
@@ -314,56 +448,67 @@ contract Nabu is Ownable {
         bytes memory compressedContent = LibZip.flzCompress(content);
 
         // The passage already has content assigned to it
-        if (passage.content != address(0)) {
+        if (contentPointer != address(0)) {
             // The content being assigned is identical to the existing content (perform a confirmation)
-            if (keccak256(SSTORE2.read({pointer: passage.content})) == keccak256(compressedContent)) {
+            if (keccak256(SSTORE2.read({pointer: contentPointer})) == keccak256(compressedContent)) {
                 // The passage already has one confirmation
                 if (passage.byOne != address(0)) {
                     // Finalize the passage
-                    _passages[workId][passageId].byTwo = msg.sender;
+                    passage.byTwo = msg.sender;
                     confirmationIndex = 2;
                 } else {
                     // Record the first confirmation
-                    _passages[workId][passageId].byOne = msg.sender;
+                    passage.byOne = msg.sender;
                     confirmationIndex = 1;
                 }
             } else {
                 // The content being assigned differs from the passage's existing content: overwrite the content,
-                // record this user as having performed the intial assignment, and clear the first confirmation (if
+                // record this user as having performed the initial assignment, and clear the first confirmation (if
                 // there had been a second confirmation, the call would already have thrown an error)
                 contentPointer = SSTORE2.write({data: compressedContent});
-                _passages[workId][passageId].content = contentPointer;
-                _passages[workId][passageId].byZero = msg.sender;
-                _passages[workId][passageId].byOne = address(0);
+                passage.content = contentPointer;
+                passage.byZero = msg.sender;
+                passage.byOne = address(0);
                 confirmationIndex = 0;
             }
         } else {
             // The passage has not yet been assigned content: write the content and record this user as having
-            // performed the initial assignement
+            // performed the initial assignment
             contentPointer = SSTORE2.write({data: compressedContent});
-            _passages[workId][passageId].content = contentPointer;
-            _passages[workId][passageId].byZero = msg.sender;
+            passage.content = contentPointer;
+            passage.byZero = msg.sender;
         }
 
-        // Update the block number at which the last content update or confirmation was performed to the current block
-        _passages[workId][passageId].at = block.number;
+        // Update the timestamp at which the last content update or confirmation was performed to the current block
+        passage.at = uint96(block.timestamp);
 
-        emit PassageContentAssigned(workId, passageId, msg.sender, contentPointer, confirmationIndex);
+        emit PassageContentAssigned({
+            workId: workId,
+            passageId: passageId,
+            by: msg.sender,
+            contentPointer: contentPointer,
+            confirmationIndex: confirmationIndex
+        });
     }
 
-    /// @notice Anyone holding a work's Ashurbanipal NFT can confirm a passage's existing content
-    /// @notice Two confirmations finalizes a passage's content; at that point only the work's admin can change it
-    /// @notice The passage must already have assigned content (can't point to address(0)) or the call throws an error
+    /// @notice Anyone holding a work's Ashurbanipal NFT can assign arbitrary metadata to a passage
+    ///
+    /// @dev Metadata is optional: it can be assigned to some passages or none
+    /// @dev Once a passage has received two confirmations, only the work's admin can change its metadata
+    /// @dev Updating metadata after passage finalization clears the last confirmation (`byTwo`)
     ///
     /// @param workId The id of the work being updated
     /// @param passageId The id of the passage being updated
-    function confirmPassageContent(uint256 workId, uint256 passageId) public {
-        Work storage work = _works[workId];
+    /// @param metadata The metadata of the passage
+    function assignPassageMetadata(uint256 workId, uint256 passageId, bytes calldata metadata) external {
+        if (metadata.length > MAX_CONTENT_SIZE) {
+            revert MetadataTooLarge();
+        }
 
         // If the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
 
         // The passage doesn't exist
-        if (passageId > work.totalPassagesCount) {
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
             revert InvalidPassageId();
         }
 
@@ -372,7 +517,87 @@ contract Nabu is Ownable {
             revert Blacklisted();
         }
 
-        Passage memory passage = _passages[workId][passageId];
+        Passage storage passage = _passages[workId][passageId];
+
+        // The passage has received two confirmations: it's finalized and only the work's admin can update it by
+        // explicitly calling `adminAssignPassageContent`
+        if (passage.byTwo != address(0)) {
+            revert PassageAlreadyFinalized();
+        }
+
+        if (passage.metadataBy == msg.sender) {
+            revert CannotReassignOwnMetadata();
+        }
+
+        // The earliest block in which this function can be successfully called
+        uint256 canAssignAfter;
+
+        if (passage.metadataBy != address(0)) {
+            canAssignAfter = passage.metadataAt + SEVEN_DAYS;
+        } else {
+            canAssignAfter = passage.metadataAt;
+        }
+
+        // Not enough time has elapsed
+        if (block.timestamp < canAssignAfter) {
+            revert TooSoonToAssignMetadata(canAssignAfter);
+        }
+
+        // The user doesn't hold an NFT "pass" from the Ashurbanipal contract corresponding to this work
+        if (_ashurbanipal.balanceOf({owner: msg.sender, id: workId}) == 0) {
+            revert NoPass();
+        }
+
+        // Passes received via transfer must be held for one day before they can be used; passReceivedAt is zero for
+        // minted passes (which are exempt from the cooldown) and non-zero for transferred passes
+        uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
+        if (passReceiveBlock != 0 && block.timestamp < passReceiveBlock + ONE_DAY) {
+            revert PassCooldown(passReceiveBlock + ONE_DAY);
+        }
+
+        // Track the address of the SSTORE2 write location, whether new or existing, for the event
+        address metadataPointer = passage.metadata;
+
+        // Compress the content
+        bytes memory compressedMetadata = LibZip.flzCompress(metadata);
+
+        if (metadataPointer != address(0)) {
+            if (keccak256(SSTORE2.read({pointer: metadataPointer})) == keccak256(compressedMetadata)) {
+                revert NoChangeInMetadata();
+            }
+        }
+
+        metadataPointer = SSTORE2.write({data: compressedMetadata});
+        passage.metadata = metadataPointer;
+        passage.metadataBy = msg.sender;
+        passage.metadataAt = uint96(block.timestamp);
+
+        emit PassageMetadataAssigned({
+            workId: workId, passageId: passageId, by: msg.sender, metadataPointer: metadataPointer
+        });
+    }
+
+    /// @notice Anyone holding a work's Ashurbanipal NFT can confirm a passage's existing content
+    ///
+    /// @dev Two confirmations finalizes a passage's content; at that point only the work's admin can change it
+    /// @dev The passage must already have assigned content (can't point to address(0)) or the call throws an error
+    ///
+    /// @param workId The id of the work being updated
+    /// @param passageId The id of the passage being updated
+    function confirmPassageContent(uint256 workId, uint256 passageId) external {
+        // If the work doesn't exist, there won't be an NFT "pass" for it, so we forgo that check
+
+        // The passage doesn't exist
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
+            revert InvalidPassageId();
+        }
+
+        // The user is blacklisted
+        if (_blacklist[workId][msg.sender]) {
+            revert Blacklisted();
+        }
+
+        Passage storage passage = _passages[workId][passageId];
 
         // Can't confirm a passage with no assigned content
         if (passage.content == address(0)) {
@@ -384,7 +609,7 @@ contract Nabu is Ownable {
             revert PassageAlreadyFinalized();
         }
 
-        // The same user can't assign and confirm a passage's content; nor can they double-confirm
+        // The same user can't assign and confirm a passage's content
         if (passage.byZero == msg.sender || passage.byOne == msg.sender) {
             revert CannotDoubleConfirmPassage();
         }
@@ -401,7 +626,7 @@ contract Nabu is Ownable {
         }
 
         // Not enough time has elapsed
-        if (block.number < canConfirmAfter) {
+        if (block.timestamp < canConfirmAfter) {
             revert TooSoonToConfirmContent(canConfirmAfter);
         }
 
@@ -410,27 +635,36 @@ contract Nabu is Ownable {
             revert NoPass();
         }
 
+        // Passes received via transfer must be held for one day before they can be used; passReceivedAt is zero for
+        // minted passes (which are exempt from the cooldown) and non-zero for transferred passes
+        uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
+        if (passReceiveBlock != 0 && block.timestamp < passReceiveBlock + ONE_DAY) {
+            revert PassCooldown(passReceiveBlock + ONE_DAY);
+        }
+
         // Track confirmation index for the event: 1 if caller is going to be recorded as `byOne`, 2 if `byTwo`
         uint8 confirmationIndex = 1;
 
         if (passage.byOne != address(0)) {
             // Record this user as having performed the second (final) confirmation
-            _passages[workId][passageId].byTwo = msg.sender;
+            passage.byTwo = msg.sender;
             confirmationIndex = 2;
         } else {
             // Record this user as having performed the first confirmation
-            _passages[workId][passageId].byOne = msg.sender;
-            confirmationIndex = 1;
+            passage.byOne = msg.sender;
         }
 
-        // Update the block number at which the last content confirmation was performed to the current block
-        _passages[workId][passageId].at = block.number;
+        // Update the timestamp at which the last content confirmation was performed to the current block
+        passage.at = uint96(block.timestamp);
 
-        emit PassageContentConfirmed(workId, passageId, msg.sender, confirmationIndex);
+        emit PassageContentConfirmed({
+            workId: workId, passageId: passageId, by: msg.sender, confirmationIndex: confirmationIndex
+        });
     }
 
     /// @notice Create and configure a new work; the user who calls this function becomes the work's admin
-    /// @notice Absent `mintTo`, admin receives "pass" NFTs from the Ashurbanipal contract (count is equal to `supply`)
+    ///
+    /// @dev Absent `mintTo`, admin receives "pass" NFTs from the Ashurbanipal contract (count is equal to `supply`)
     ///
     /// @param author The real-world author of the work, e.g. Homer or Shakespeare
     /// @param metadata Arbitrary information the work's admin might like to add
@@ -445,13 +679,17 @@ contract Nabu is Ownable {
         string memory author,
         string memory metadata,
         string memory title,
-        uint256 totalPassagesCount,
+        uint96 totalPassagesCount,
         string memory uri,
         uint256 supply,
         address mintTo
-    ) public returns (uint256 newWorksTip) {
+    ) external returns (uint256 newWorksTip) {
         if (totalPassagesCount == 0) {
             revert ZeroPassagesCount();
+        }
+
+        if (supply == 0) {
+            revert ZeroSupply();
         }
 
         if (bytes(title).length == 0) {
@@ -463,131 +701,163 @@ contract Nabu is Ownable {
             mintToOrAdmin = msg.sender;
         }
 
-        _worksTip += 1;
-        _works[_worksTip] = Work(author, metadata, title, msg.sender, totalPassagesCount, block.number, uri);
+        uint256 workId;
+        unchecked {
+            workId = ++_worksTip;
+        }
+
+        _works[workId] = Work({
+            author: author,
+            metadata: metadata,
+            title: title,
+            uri: uri,
+            admin: msg.sender,
+            totalPassagesCount: totalPassagesCount,
+            createdAt: uint96(block.timestamp)
+        });
 
         // Mint a quantity (specified by the `supply` parameter) of Ashurbanipal ERC-1155 NFTs to mintTo (which falls
         // back to msg.sender, the work's admin). This recipient is responsible for distributing the NFTs, which serve
         // as "passes" allowing holders to assign or confirm the content of passages in the corresponding work
-        _ashurbanipal.mint({account: mintToOrAdmin, workId: _worksTip, supply: supply, workUri: uri});
-        newWorksTip = _worksTip;
+        _ashurbanipal.mint({account: mintToOrAdmin, workId: workId, supply: supply, workUri: uri});
+        newWorksTip = workId;
 
-        emit WorkCreated(author, metadata, title, totalPassagesCount, uri, supply, mintTo, _worksTip);
+        emit WorkCreated({
+            author: author,
+            metadata: metadata,
+            title: title,
+            totalPassagesCount: totalPassagesCount,
+            uri: uri,
+            supply: supply,
+            mintTo: mintToOrAdmin,
+            id: workId
+        });
     }
 
     /// @notice Get the Ashurbanipal contract address
     ///
-    /// @return ashurbanipalAddress The Ashurbanipal contract address
-    function getAshurbanipalAddress() public view returns (address ashurbanipalAddress) {
-        ashurbanipalAddress = _ashurbanipalAddress;
+    /// @return The Ashurbanipal contract address
+    function getAshurbanipalAddress() external view returns (address) {
+        return address(_ashurbanipal);
     }
 
     /// @notice Update the Ashurbanipal contract
-    /// @notice Restricted to the Nabu contract owner
+    ///
+    /// @dev Restricted to the Nabu contract owner
     ///
     /// @param newAshurbanipalAddress The new Ashurbanipal contract address
-    function updateAshurbanipal(address newAshurbanipalAddress) public onlyOwner {
-        _ashurbanipalAddress = newAshurbanipalAddress;
+    function updateAshurbanipal(address newAshurbanipalAddress) external onlyOwner {
+        if (newAshurbanipalAddress == address(0)) {
+            revert ZeroAddress();
+        }
+
         _ashurbanipal = Ashurbanipal(newAshurbanipalAddress);
         emit AshurbanipalUpdated(newAshurbanipalAddress);
     }
 
     /// @notice Update the blacklist for a work, either banning or un-banning an address
-    /// @notice Blacklisting also freezes users' Ashurbanipal "pass" NFTs: the user can neither send nor receive a pass
-    /// @notice Restricted to the work's current admin
+    ///
+    /// @dev Blacklisting also freezes users' Ashurbanipal "pass" NFTs: the user can neither send nor receive a pass
+    /// @dev Restricted to the work's current admin
     ///
     /// @param workId The id of the work
     /// @param user The address of the user to be updated
     /// @param shouldBan Should the user be banned or unbanned
-    function updateBlacklist(uint256 workId, address user, bool shouldBan) public onlyWorkAdmin(workId) {
+    function updateBlacklist(uint256 workId, address user, bool shouldBan) external onlyWorkAdmin(workId) {
         _blacklist[workId][user] = shouldBan;
 
         // Freeze the user's Ashurbanipal "pass" NFTs to prevent transfer to a sybil (or unfreeze)
         _ashurbanipal.updateFreezelist({workId: workId, user: user, shouldFreeze: shouldBan});
 
-        emit BlacklistUpdated(workId, user, shouldBan);
+        emit BlacklistUpdated({workId: workId, user: user, shouldBan: shouldBan});
     }
 
     /// @notice Update the admin address for a work
-    /// @notice Restricted to the work's current admin
-    /// @notice A work's admin can renounce their status by calling this function with a burn address (e.g. 0x0...dEaD)
+    ///
+    /// @dev Restricted to the work's current admin
+    /// @dev A work's admin can renounce their status by calling this function with a burn address (e.g. 0x0...dEaD)
     ///
     /// @param workId The id of the work
     /// @param newAdminAddress The address of the work's new admin
-    function updateWorkAdmin(uint256 workId, address newAdminAddress) public onlyWorkAdmin(workId) {
+    function updateWorkAdmin(uint256 workId, address newAdminAddress) external onlyWorkAdmin(workId) {
+        if (newAdminAddress == address(0)) {
+            revert ZeroAddress();
+        }
+
+        address previousAdminAddress = _works[workId].admin;
         _works[workId].admin = newAdminAddress;
-        emit WorkAdminUpdated(workId, newAdminAddress);
+        emit WorkAdminUpdated({
+            workId: workId, previousAdminAddress: previousAdminAddress, newAdminAddress: newAdminAddress
+        });
     }
 
     /// @notice Update the author of a work
-    /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
+    ///
+    /// @dev Restricted to the work's admin; must be called within 30 days of the work's creation
     ///
     /// @param workId The id of the work
     /// @param newAuthor The work's new author (the real-world author, e.g. Homer or Shakespeare)
-    function updateWorkAuthor(uint256 workId, string memory newAuthor) public notTooLate(workId) onlyWorkAdmin(workId) {
+    function updateWorkAuthor(uint256 workId, string calldata newAuthor) external onlyWorkAdminNotTooLate(workId) {
         _works[workId].author = newAuthor;
-        emit WorkAuthorUpdated(workId, newAuthor);
+        emit WorkAuthorUpdated({workId: workId, newAuthor: newAuthor});
     }
 
     /// @notice Update the metadata of a work
-    /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
+    ///
+    /// @dev Restricted to the work's admin; must be called within 30 days of the work's creation
     ///
     /// @param workId The id of the work
     /// @param newMetadata The work's new metadata (an arbitrary string: whatever the admin wants)
-    function updateWorkMetadata(uint256 workId, string memory newMetadata)
-        public
-        notTooLate(workId)
-        onlyWorkAdmin(workId)
-    {
+    function updateWorkMetadata(uint256 workId, string calldata newMetadata) external onlyWorkAdminNotTooLate(workId) {
         _works[workId].metadata = newMetadata;
-        emit WorkMetadataUpdated(workId, newMetadata);
+        emit WorkMetadataUpdated({workId: workId, newMetadata: newMetadata});
     }
 
     /// @notice Update the title of a work
-    /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
+    ///
+    /// @dev Restricted to the work's admin; must be called within 30 days of the work's creation
     ///
     /// @param workId The id of the work
     /// @param newTitle The work's new title, e.g. The Odyssey or Hamlet
-    function updateWorkTitle(uint256 workId, string memory newTitle) public notTooLate(workId) onlyWorkAdmin(workId) {
+    function updateWorkTitle(uint256 workId, string calldata newTitle) external onlyWorkAdminNotTooLate(workId) {
         if (bytes(newTitle).length == 0) {
             revert EmptyTitle();
         }
 
         _works[workId].title = newTitle;
-        emit WorkTitleUpdated(workId, newTitle);
+        emit WorkTitleUpdated({workId: workId, newTitle: newTitle});
     }
 
     /// @notice Update the total number of passages in a work
-    /// @notice Restricted to the work's admin; must be called within 30 days of the work's creation
     ///
+    /// @dev Restricted to the work's admin; must be called within 30 days of the work's creation
     /// @dev When creating a work, it's necessary to break it into a set number of passages ahead of time
     ///
     /// @param workId The id of the work
     /// @param newTotalPassagesCount The work's new total passage count: must be at least 1
-    function updateWorkTotalPassagesCount(uint256 workId, uint256 newTotalPassagesCount)
-        public
-        notTooLate(workId)
-        onlyWorkAdmin(workId)
+    function updateWorkTotalPassagesCount(uint256 workId, uint96 newTotalPassagesCount)
+        external
+        onlyWorkAdminNotTooLate(workId)
     {
         if (newTotalPassagesCount == 0) {
             revert ZeroPassagesCount();
         }
 
         _works[workId].totalPassagesCount = newTotalPassagesCount;
-        emit WorkTotalPassagesCountUpdated(workId, newTotalPassagesCount);
+        emit WorkTotalPassagesCountUpdated({workId: workId, newTotalPassagesCount: newTotalPassagesCount});
     }
 
     /// @notice Update the metadata URI of the ERC-1155 id associated with the work
-    /// @notice Restricted to the work's admin; no time restriction
     ///
+    /// @dev Restricted to the work's admin; no time restriction
     /// @dev See the Ashurbanipal contract, which defines NFT "passes" that grant permission to assign a work's content
     ///
     /// @param workId The id of the work
     /// @param newUri The work's new metadata URI
-    function updateWorkUri(uint256 workId, string memory newUri) public onlyWorkAdmin(workId) {
+    function updateWorkUri(uint256 workId, string calldata newUri) external onlyWorkAdmin(workId) {
         _ashurbanipal.updateUri({workId: workId, newUri: newUri});
         _works[workId].uri = newUri;
-        emit WorkUriUpdated(workId, newUri);
+        emit WorkUriUpdated({workId: workId, newUri: newUri});
     }
 
     /// @notice View a passage: decompressed content and confirmation metadata
@@ -597,42 +867,39 @@ contract Nabu is Ownable {
     ///
     /// @return readablePassage The passage
     function getPassage(uint256 workId, uint256 passageId)
-        public
+        external
         view
         returns (ReadablePassage memory readablePassage)
     {
-        Work storage work = _works[workId];
-
         // The passage doesn't exist
-        if (passageId > work.totalPassagesCount) {
+        if (passageId == 0 || passageId > _works[workId].totalPassagesCount) {
             revert InvalidPassageId();
         }
 
         Passage memory passage = _passages[workId][passageId];
 
-        // Trying to read passage content with a pointer of address(0) will result in out of gas errors
-        if (passage.content == address(0)) {
-            return ReadablePassage({
-                readableContent: bytes(""),
-                byZero: passage.byZero,
-                byOne: passage.byOne,
-                byTwo: passage.byTwo,
-                at: passage.at
-            });
+        bytes memory readableContent;
+        bytes memory readableMetadata;
+
+        if (passage.content != address(0)) {
+            bytes memory compressedContent = SSTORE2.read({pointer: passage.content});
+            readableContent = LibZip.flzDecompress(compressedContent);
         }
 
-        // Read the content from the store
-        bytes memory compressedContent = SSTORE2.read({pointer: passage.content});
-
-        // Decompress the content
-        bytes memory decompressedContent = LibZip.flzDecompress(compressedContent);
+        if (passage.metadata != address(0)) {
+            bytes memory compressedMetadata = SSTORE2.read({pointer: passage.metadata});
+            readableMetadata = LibZip.flzDecompress(compressedMetadata);
+        }
 
         readablePassage = ReadablePassage({
-            readableContent: decompressedContent,
+            readableContent: readableContent,
+            readableMetadata: readableMetadata,
             byZero: passage.byZero,
             byOne: passage.byOne,
             byTwo: passage.byTwo,
-            at: passage.at
+            metadataBy: passage.metadataBy,
+            at: passage.at,
+            metadataAt: passage.metadataAt
         });
     }
 
@@ -640,9 +907,9 @@ contract Nabu is Ownable {
     ///
     /// @param workId The id of the work
     ///
-    /// @return work The work
-    function getWork(uint256 workId) public view returns (Work memory work) {
-        work = _works[workId];
+    /// @return The work
+    function getWork(uint256 workId) external view returns (Work memory) {
+        return _works[workId];
     }
 
     /// @notice Check whether a user is banned from writing or confirming passages in a certain work
@@ -650,8 +917,8 @@ contract Nabu is Ownable {
     /// @param workId The id of the work
     /// @param user The address of the user
     ///
-    /// @return isBlacklisted The user's status
-    function getIsBlacklisted(uint256 workId, address user) public view returns (bool isBlacklisted) {
-        isBlacklisted = _blacklist[workId][user];
+    /// @return The user's blacklist status
+    function getIsBlacklisted(uint256 workId, address user) external view returns (bool) {
+        return _blacklist[workId][user];
     }
 }

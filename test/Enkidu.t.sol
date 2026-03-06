@@ -18,12 +18,14 @@ import {
     RADBRO,
     REMILIO,
     SCHIZOPOSTER,
+    TransferFailed,
     WhitelistedToken,
     ZeroCount
 } from "../src/Enkidu.sol";
 import {Humbaba, NonExistentToken} from "../src/Humbaba.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 import {MockERC721} from "./mocks/MockERC721.sol";
+import {MockReverter} from "./mocks/MockReverter.sol";
 import {Nabu} from "../src/Nabu.sol";
 
 contract EnkiduTest is Ownable, Test {
@@ -47,7 +49,7 @@ contract EnkiduTest is Ownable, Test {
     address mallory = makeAddr("Mallory");
 
     function setUp() public {
-        vm.roll(0);
+        vm.warp(0);
         _nabu = new Nabu();
         address nabuAddress = address(_nabu);
 
@@ -266,6 +268,15 @@ contract EnkiduTest is Ownable, Test {
         assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
     }
 
+    function test_mint_mintsForFree_whenCalledWithAny_andCallerOwnsHumbaba() public {
+        vm.prank(alice);
+        _humbaba.adminMintTo(address(bob));
+
+        vm.prank(bob);
+        _enkidu.mint(1, 7, address(bob), WhitelistedToken.Any);
+        assertEq(_ashurbanipal.balanceOf(address(bob), 1), 7, "Balance mismatch");
+    }
+
     function test_mint_mintsForFree_whenSplitIntoBatches() public {
         vm.prank(alice);
         _humbaba.adminMintTo(address(bob));
@@ -368,6 +379,18 @@ contract EnkiduTest is Ownable, Test {
         vm.prank(mallory);
         vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
         _enkidu.withdraw(10 * 0.05 ether, address(0));
+    }
+
+    function test_withdraw_reverts_whenRecipientRejectsEth() public {
+        vm.deal(address(bob), 0.05 ether);
+        vm.prank(bob);
+        _enkidu.mint{value: 0.05 ether}(1, 1, address(bob), WhitelistedToken.None);
+
+        MockReverter reverter = new MockReverter();
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(TransferFailed.selector));
+        _enkidu.withdraw(0.05 ether, address(reverter));
     }
 
     function test_withdraw_withdrawsToSpecifiedAddress() public {
