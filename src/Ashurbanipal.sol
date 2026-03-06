@@ -50,6 +50,7 @@ contract Ashurbanipal is ERC1155, Ownable {
     /// @dev Nabu uses these values to enforce a one-day holding period before new pass recipients can participate
     /// @dev This gives work admins time to blacklist bad actors who rotate passes to new addresses after each attack
     /// @dev Receiving additional passes when a user already has a non-zero balance won't update this value
+    /// @dev Public so Nabu can read it directly without a dedicated getter
     mapping(uint256 workId => mapping(address user => uint256 receivedAt)) public passReceivedAt;
 
     /// @notice Only the Nabu contract can invoke the function
@@ -137,6 +138,7 @@ contract Ashurbanipal is ERC1155, Ownable {
         return _uris[workId];
     }
 
+    // Required by Solady ERC1155 to enable the _beforeTokenTransfer hook
     function _useBeforeTokenTransfer() internal pure override returns (bool) {
         return true;
     }
@@ -162,6 +164,7 @@ contract Ashurbanipal is ERC1155, Ownable {
         }
     }
 
+    // Required by Solady ERC1155 to enable the _afterTokenTransfer hook
     function _useAfterTokenTransfer() internal pure override returns (bool) {
         return true;
     }

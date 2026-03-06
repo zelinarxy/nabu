@@ -101,6 +101,12 @@ uint256 constant MINT_LIMIT = 69;
 
 /// @title A mint contract for distributing Ashurbanipal NFTs
 ///
+/// @notice Passes are not minted here. They already exist in the Ashurbanipal contract. A work admin transfers passes
+/// to this contract when creating a work (see the `mintTo` param of Nabu's `createWork` function), then configures
+/// pricing and activates the id so the public can "mint."
+///
+/// @dev Inherits Solady's Receiver to allow this contract to hold ETH and ERC1155 tokens
+///
 /// @author Zelinar XY
 contract Enkidu is Ownable, Receiver {
     Ashurbanipal private _ashurbanipal;
@@ -218,6 +224,7 @@ contract Enkidu is Ownable, Receiver {
     /// @notice Transfer Ashurbanipal NFTs to a recipient for free
     ///
     /// @dev Only the contract owner can call this function
+    /// @dev For distributing passes directly to specific addresses outside the public mint flow
     ///
     /// @param id The id of the Ashurbanipal NFT
     /// @param count The quantity of NFTs to transfer
@@ -230,7 +237,8 @@ contract Enkidu is Ownable, Receiver {
     /// @notice Public "mint" function to transfer a quantity of Ashurbanipal NFTs to a recipient
     ///
     /// @dev The NFTs already exist and are held by the Ashurbanipal contract; "mint" reflects the end-user experience
-    /// @dev If the user holds a whitelisted token, caller should specify (see comment on the `WhitelistedToken` enum)
+    /// @dev If the user holds a whitelisted token, the caller (typically a frontend that has checked the user's
+    /// portfolio) should specify it to avoid unnecessary balance checks (see comment on the `WhitelistedToken` enum)
     /// @dev Ashurbanipal NFT ids correspond to Nabu work ids
     ///
     /// @param id The id of the Ashurbanipal NFT

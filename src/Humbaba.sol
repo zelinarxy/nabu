@@ -17,11 +17,15 @@ event BaseUriUpdated(string newBaseUri);
 
 /// @title An NFT serving as a whitelist pass for Enkidu minters
 ///
+/// @notice Holders of a Humbaba NFT are whitelisted in Enkidu: they can mint up to a certain number of
+/// Ashurbanipal passes for free, the same privilege granted to holders of certain Remilia assets
+///
 /// @author Zelinar XY
 contract Humbaba is ERC721, Ownable {
     /// @notice The base metadata uri
     string public baseUri;
 
+    /// @dev Token ids start at 1; incremented before each mint
     uint256 private nextTokenId = 1;
 
     /// @notice Initialize the contract with a base metadata uri and an owner

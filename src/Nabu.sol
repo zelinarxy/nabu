@@ -35,6 +35,7 @@ error InvalidPassageId();
 /// @dev Metadata exceeds SSTORE2's max data size (see MAX_CONTENT_SIZE)
 error MetadataTooLarge();
 /// @dev Attempting to write the same metadata twice doesn't perform a confirmation; revert to avoid wasting gas
+/// @dev Unlike content, metadata has no confirmation mechanism: duplicate metadata writes always revert
 error NoChangeInMetadata();
 /// @dev User must hold an Ashurbanipal pass corresponding to the work in order to assign or confirm content
 error NoPass();
@@ -87,11 +88,11 @@ event PassageContentAssignedByAdmin(uint256 workId, uint256 passageId, address b
 event PassageContentConfirmed(uint256 workId, uint256 passageId, address by, uint8 confirmationIndex);
 
 /// @dev A user assigned metadata to a passage
-/// @dev Content pointer is the SSTORE2 location
+/// @dev Metadata pointer is the SSTORE2 location
 event PassageMetadataAssigned(uint256 workId, uint256 passageId, address by, address metadataPointer);
 
 /// @dev A work admin assigned metadata to a passage
-/// @dev Content pointer is the SSTORE2 location
+/// @dev Metadata pointer is the SSTORE2 location
 event PassageMetadataAssignedByAdmin(uint256 workId, uint256 passageId, address by, address metadataPointer);
 
 /// @dev A work admin transferred ownership over the work
@@ -228,6 +229,11 @@ struct ReadablePassage {
 
 /// @title A text preservation tool
 ///
+/// @notice System overview: a work admin calls `createWork`, which mints Ashurbanipal "pass" NFTs to the admin (or a
+/// specified address). The admin distributes passes to the community, optionally via an Enkidu contract, which handles
+/// public mint pricing and whitelisting. Pass holders then call `assignPassageContent` and `confirmPassageContent` to
+/// populate and finalize each passage.
+///
 /// @author Zelinar XY
 contract Nabu is Ownable {
     Ashurbanipal private _ashurbanipal;
@@ -235,9 +241,12 @@ contract Nabu is Ownable {
     /// @notice A work's admin can ban an address from assigning or confirming passage content for that work
     mapping(uint256 workId => mapping(address user => bool isBlacklisted)) private _blacklist;
 
+    /// @notice All passages across all works, keyed by work id then passage id
     mapping(uint256 workId => mapping(uint256 passageId => Passage)) private _passages;
+    /// @notice All works, keyed by work id
     mapping(uint256 workId => Work) private _works;
 
+    /// @notice The id of the most recently created work; works are numbered sequentially from 1
     uint256 private _worksTip;
 
     /// @notice Only a work's admin can update the work's metadata, e.g. title and author
@@ -352,7 +361,8 @@ contract Nabu is Ownable {
         passage.metadataAt = uint96(block.timestamp);
 
         // Clear byTwo so the passage is no longer finalized. This prevents the admin from being able to unilaterally
-        // set a passage's metadata in stone (something they can't do for content either)
+        // set a passage's metadata in stone (something they can't do for content either). byOne is intentionally
+        // retained: re-finalization requires a third unique confirmer, since byOne's address is still excluded.
         passage.byTwo = address(0);
 
         emit PassageMetadataAssignedByAdmin({
@@ -420,7 +430,8 @@ contract Nabu is Ownable {
             revert NoPass();
         }
 
-        // Passes received via transfer must be held for one day before they can be used
+        // Passes received via transfer must be held for one day before they can be used; passReceivedAt is zero for
+        // minted passes (which are exempt from the cooldown) and non-zero for transferred passes
         uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
         if (passReceiveBlock != 0 && block.timestamp < passReceiveBlock + ONE_DAY) {
             revert PassCooldown(passReceiveBlock + ONE_DAY);
@@ -537,7 +548,8 @@ contract Nabu is Ownable {
             revert NoPass();
         }
 
-        // Passes received via transfer must be held for one day before they can be used
+        // Passes received via transfer must be held for one day before they can be used; passReceivedAt is zero for
+        // minted passes (which are exempt from the cooldown) and non-zero for transferred passes
         uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
         if (passReceiveBlock != 0 && block.timestamp < passReceiveBlock + ONE_DAY) {
             revert PassCooldown(passReceiveBlock + ONE_DAY);
@@ -623,7 +635,8 @@ contract Nabu is Ownable {
             revert NoPass();
         }
 
-        // Passes received via transfer must be held for one day before they can be used
+        // Passes received via transfer must be held for one day before they can be used; passReceivedAt is zero for
+        // minted passes (which are exempt from the cooldown) and non-zero for transferred passes
         uint256 passReceiveBlock = _ashurbanipal.passReceivedAt(workId, msg.sender);
         if (passReceiveBlock != 0 && block.timestamp < passReceiveBlock + ONE_DAY) {
             revert PassCooldown(passReceiveBlock + ONE_DAY);
