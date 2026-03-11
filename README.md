@@ -10,10 +10,10 @@ Nabu is an experiment in permissionless, decentralized text preservation using t
 
 | Contract | Sepolia address | Explorer link |
 |---|---|---|
-| Ashurbanipal | 0xFcF9aab2af05549a41dC0fd23584A138fC3e1DF2 | [→](https://sepolia.etherscan.io/address/0xfcf9aab2af05549a41dc0fd23584a138fc3e1df2#code) |
-| Enkidu | 0xbdA76Dba819272E469Ae9AcCcc9161Cd835e1f5e | [→](https://sepolia.etherscan.io/address/0xbdA76Dba819272E469Ae9AcCcc9161Cd835e1f5e#code) |
-| Humbaba | 0x86dD0B9f3BfF7a8fD573A1287da82fA95d8F6FDF | [→](https://sepolia.etherscan.io/address/0x86dd0b9f3bff7a8fd573a1287da82fa95d8f6fdf#code) |
-| Nabu | 0x881E623973fe5be9CeeACA91Aa8AA636ee751243 | [→](https://sepolia.etherscan.io/address/0x881e623973fe5be9ceeaca91aa8aa636ee751243#code) |
+| Ashurbanipal | 0x723dAbBF163c75Da3Ff04649bBB439AE1a16732b | [→](https://sepolia.etherscan.io/address/0x723dAbBF163c75Da3Ff04649bBB439AE1a16732b#code) |
+| Enkidu | 0x134016FFbb3c4E0BAc15Fb4f18cA097e6408A635 | [→](https://sepolia.etherscan.io/address/0x134016FFbb3c4E0BAc15Fb4f18cA097e6408A635#code) |
+| Humbaba | 0x310766caa36FDa354E401E08f8c334A5047edC7F | [→](https://sepolia.etherscan.io/address/0x310766caa36FDa354E401E08f8c334A5047edC7F#code) |
+| Nabu | 0x8952E3068398cAA5E56Af52c1733c17c3d5F4F79 | [→](https://sepolia.etherscan.io/address/0x8952E3068398cAA5E56Af52c1733c17c3d5F4F79#code) |
 
 ## The concept
 

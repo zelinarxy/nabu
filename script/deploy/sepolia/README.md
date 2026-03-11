@@ -6,10 +6,10 @@ For a general guide to Solidity scripting, see the [Foundry docs](https://getfou
 
 | Contract | Sepolia address | Explorer link |
 |---|---|---|
-| Ashurbanipal | 0x55be0d94a9A432Bbd56161516BbCa0c6081efb5f | [→](https://sepolia.etherscan.io/address/0x55be0d94a9A432Bbd56161516BbCa0c6081efb5f#code) |
-| Enkidu | 0x0D8AE464e55d210E3147DbC674d1F6D34fa81085 | [→](https://sepolia.etherscan.io/address/0x0D8AE464e55d210E3147DbC674d1F6D34fa81085#code) |
-| Humbaba | 0x03Ead8cAe839bEC7a0FA2B7E00bb172EF1D6150D | [→](https://sepolia.etherscan.io/address/0x03Ead8cAe839bEC7a0FA2B7E00bb172EF1D6150D#code) |
-| Nabu | 0x2E5E997776d79d416811f80bF16df58FCc6c3268 | [→](https://sepolia.etherscan.io/address/0x2E5E997776d79d416811f80bF16df58FCc6c3268#code) |
+| Ashurbanipal | 0x723dAbBF163c75Da3Ff04649bBB439AE1a16732b | [→](https://sepolia.etherscan.io/address/0x723dAbBF163c75Da3Ff04649bBB439AE1a16732b#code) |
+| Enkidu | 0x134016FFbb3c4E0BAc15Fb4f18cA097e6408A635 | [→](https://sepolia.etherscan.io/address/0x134016FFbb3c4E0BAc15Fb4f18cA097e6408A635#code) |
+| Humbaba | 0x310766caa36FDa354E401E08f8c334A5047edC7F | [→](https://sepolia.etherscan.io/address/0x310766caa36FDa354E401E08f8c334A5047edC7F#code) |
+| Nabu | 0x8952E3068398cAA5E56Af52c1733c17c3d5F4F79 | [→](https://sepolia.etherscan.io/address/0x8952E3068398cAA5E56Af52c1733c17c3d5F4F79#code) |
 
 ## Steps
 
