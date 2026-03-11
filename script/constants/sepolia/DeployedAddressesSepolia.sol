@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 // Update as needed
-address constant ASHURBANIPAL = 0x55be0d94a9A432Bbd56161516BbCa0c6081efb5f;
-address payable constant ENKIDU = payable(0x0D8AE464e55d210E3147DbC674d1F6D34fa81085);
-address constant HUMBABA = 0x03Ead8cAe839bEC7a0FA2B7E00bb172EF1D6150D;
-address constant NABU = 0x2E5E997776d79d416811f80bF16df58FCc6c3268;
+address constant ASHURBANIPAL = 0x723dAbBF163c75Da3Ff04649bBB439AE1a16732b;
+address payable constant ENKIDU = payable(0x134016FFbb3c4E0BAc15Fb4f18cA097e6408A635);
+address constant HUMBABA = 0x310766caa36FDa354E401E08f8c334A5047edC7F;
+address constant NABU = 0x8952E3068398cAA5E56Af52c1733c17c3d5F4F79;
